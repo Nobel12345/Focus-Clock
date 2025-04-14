@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Focus Clock</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f5f5f5;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      text-align: center;
+      background-color: white;
+      border-radius: 20px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      margin-top: 40px;
+    }
+    h1 {
+      font-size: 2.5rem;
+    }
+    #datetime {
+      font-size: 1.2rem;
+      margin: 10px 0;
+    }
+    #session-info {
+      font-size: 1.5rem;
+      font-weight: bold;
+      margin-top: 20px;
+    }
+    #timer {
+      font-size: 3rem;
+      margin: 20px 0;
+    }
+    .circle-container {
+      position: relative;
+      width: 250px;
+      height: 250px;
+      margin: 0 auto 20px;
+    }
+    svg circle {
+      fill: none;
+      stroke: #ddd;
+      stroke-width: 12;
+    }
+    svg circle:nth-child(2) {
+      stroke: #00bfff;
+      stroke-linecap: round;
+      stroke-dasharray: 754;
+      stroke-dashoffset: 754;
+      transition: stroke-dashoffset 1s linear;
+    }
+    .schedule {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      list-style: none;
+      padding: 0;
+      margin: 20px 0;
+    }
+    .schedule li {
+      background-color: #eee;
+      padding: 8px 12px;
+      border-radius: 10px;
+      margin: 5px;
+      font-weight: bold;
+      font-size: 1rem;
+    }
+    .schedule li.active {
+      background-color: #00bfff;
+      color: white;
+    }
+    #darkModeToggle, #muteToggle {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      margin-left: 10px;
+      padding: 8px 12px;
+      font-weight: bold;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      background-color: deeppink;
+      color: white;
+    }
+    #muteToggle {
+      right: 120px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Focus Clock</h1>
+    <div id="datetime"></div>
+    <div class="circle-container">
+      <svg width="250" height="250">
+        <circle cx="125" cy="125" r="120"></circle>
+        <circle cx="125" cy="125" r="120" id="progressCircle"></circle>
+      </svg>
+    </div>
+    <div id="session-info"></div>
+    <div id="timer">00:00:00</div>
+    <ul class="schedule">
+      <li>01</li><li>02</li><li>03</li><li>B</li><li>04</li><li>05</li>
+      <li>06</li><li>L</li><li>07</li><li>08</li><li>09</li>
+    </ul>
+  </div>
+  <button id="darkModeToggle">🌓 Dark Mode</button>
+  <button id="muteToggle">🔇 Mute</button>
+
+  <audio id="studyAlarm" src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg"></audio>
+  <audio id="breakAlarm" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
+
+  <script>
+    const datetime = document.getElementById("datetime");
+    const timer = document.getElementById("timer");
+    const sessionInfo = document.getElementById("session-info");
+    const circle = document.getElementById("progressCircle");
+    const studyAlarm = document.getElementById("studyAlarm");
+    const breakAlarm = document.getElementById("breakAlarm");
+
+    const darkModeToggle = document.getElementById("darkModeToggle");
+    const muteToggle = document.getElementById("muteToggle");
+
+    let isMuted = false;
+    let isDarkMode = false;
+
+    const schedule = [
+      { label: '01', start: '06:00', end: '07:30' },
+      { label: '02', start: '07:45', end: '09:15' },
+      { label: '03', start: '09:30', end: '11:00' },
+      { label: 'B', start: '11:00', end: '11:50' },
+      { label: '04', start: '12:00', end: '13:30' },
+      { label: '05', start: '13:45', end: '15:15' },
+      { label: '06', start: '15:30', end: '17:00' },
+      { label: 'L', start: '17:00', end: '17:50' },
+      { label: '07', start: '18:00', end: '19:30' },
+      { label: '08', start: '19:45', end: '21:15' },
+      { label: '09', start: '21:30', end: '23:00' }
+    ];
+
+    function parseTimeToMs(time) {
+      const [h, m] = time.split(':').map(Number);
+      const now = new Date();
+      now.setHours(h, m, 0, 0);
+      return now.getTime();
+    }
+
+    function updateClock() {
+      const now = new Date();
+      const formatted = `[${String(now.getMonth() + 1).padStart(2, '0')}.${String(now.getDate()).padStart(2, '0')} ${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][now.getDay()]}]\n${now.toLocaleTimeString('en-GB')}`;
+      datetime.innerText = formatted;
+
+      const nowMs = now.getTime();
+      let found = false;
+
+      document.querySelectorAll(".schedule li").forEach(li => li.classList.remove("active"));
+
+      for (let i = 0; i < schedule.length; i++) {
+        const session = schedule[i];
+        const start = parseTimeToMs(session.start);
+        const end = parseTimeToMs(session.end);
+        const isBreakSession = ['B', 'L'].includes(session.label);
+        const sessionDuration = (end - start);
+        const breakDuration = isBreakSession ? 10 * 60 * 1000 : 15 * 60 * 1000;
+
+        if (nowMs >= start && nowMs < end) {
+          const elapsed = nowMs - start;
+          const remaining = sessionDuration - elapsed;
+          updateTimer(remaining);
+          sessionInfo.innerText = `Session ${session.label}`;
+          document.querySelectorAll(".schedule li")[i].classList.add("active");
+          if (elapsed < 1000 && !isMuted) studyAlarm.play();
+          updateProgressCircle(elapsed / sessionDuration);
+          found = true;
+          break;
+        } else if (nowMs >= end && nowMs < end + breakDuration) {
+          const elapsed = nowMs - end;
+          const remaining = breakDuration - elapsed;
+          updateTimer(remaining);
+          sessionInfo.innerText = `Break after ${session.label}`;
+          if (elapsed < 1000 && !isMuted) breakAlarm.play();
+          updateProgressCircle(elapsed / breakDuration);
+          found = true;
+          break;
+        }
+      }
+
+      if (!found) {
+        updateTimer(0);
+        sessionInfo.innerText = `No active session`;
+        updateProgressCircle(0);
+      }
+    }
+
+    function updateTimer(ms) {
+      const h = String(Math.floor(ms / (1000 * 60 * 60))).padStart(2, '0');
+      const m = String(Math.floor((ms / (1000 * 60)) % 60)).padStart(2, '0');
+      const s = String(Math.floor((ms / 1000) % 60)).padStart(2, '0');
+      timer.innerText = `${h}:${m}:${s}`;
+    }
+
+    function updateProgressCircle(progress) {
+      const offset = 754 * (1 - progress);
+      circle.style.strokeDashoffset = offset;
+    }
+
+    setInterval(updateClock, 1000);
+
+    darkModeToggle.addEventListener('click', () => {
+      isDarkMode = !isDarkMode;
+      document.body.style.background = isDarkMode ? '#1e1e1e' : '#f5f5f5';
+      document.querySelector('.container').style.background = isDarkMode ? '#333' : 'white';
+      document.querySelector('.container').style.color = isDarkMode ? '#fff' : '#000';
+    });
+
+    muteToggle.addEventListener('click', () => {
+      isMuted = !isMuted;
+      muteToggle.innerText = isMuted ? '🔈 Unmute' : '🔇 Mute';
+    });
+  </script>
+</body>
+</html>
