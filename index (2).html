@@ -239,6 +239,66 @@
       transition: transform 0.3s ease;
       z-index: 89;
       min-width: 300px;
+      max-height: calc(100vh - 130px);
+      overflow-y: auto;
+    }
+
+    .reports-tab-container {
+      position: sticky;
+      top: 0;
+      background-color: white;
+      padding-bottom: 10px;
+      z-index: 2;
+    }
+
+    .reports-content {
+      display: none;
+      padding-bottom: 20px;
+    }
+
+    .reports-content.active {
+      display: block;
+    }
+
+    /* Make sure dark mode affects scrollable content */
+    .reports-menubar::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .reports-menubar::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 4px;
+    }
+
+    .reports-menubar::-webkit-scrollbar-thumb {
+      background: #888;
+      border-radius: 4px;
+    }
+
+    .reports-menubar::-webkit-scrollbar-thumb:hover {
+      background: #555;
+    }
+
+    /* Update dark mode styles for reports */
+    body.dark-mode .reports-menubar {
+      background-color: #333;
+      color: #fff;
+    }
+
+    body.dark-mode .reports-tab-container {
+      background-color: #333;
+    }
+
+    body.dark-mode .reports-menubar::-webkit-scrollbar-track {
+      background: #444;
+    }
+
+    body.dark-mode .reports-menubar::-webkit-scrollbar-thumb {
+      background: #666;
+    }
+
+    body.dark-mode .reports-menubar::-webkit-scrollbar-thumb:hover {
+      background: #888;
     }
     
     .reports-menubar.hidden {
@@ -261,12 +321,6 @@
       background-color: deeppink;
     }
     
-    .reports-tab-container {
-      display: flex;
-      margin-bottom: 15px;
-      border-bottom: 1px solid #ddd;
-    }
-    
     .reports-tab {
       padding: 8px 15px;
       cursor: pointer;
@@ -278,14 +332,6 @@
     .reports-tab.active {
       background-color: #00bfff;
       color: white;
-    }
-    
-    .reports-content {
-      display: none;
-    }
-    
-    .reports-content.active {
-      display: block;
     }
     
     .study-summary {
@@ -530,6 +576,218 @@
     .save-sessions-btn:hover {
       background-color: #228b22;
     }
+
+    /* Sound settings styles */
+    .sound-settings-menubar {
+      position: fixed;
+      top: 160px;
+      right: 0;
+      background-color: white;
+      padding: 20px;
+      border-radius: 10px 0 0 10px;
+      box-shadow: -2px 2px 10px rgba(0, 0, 0, 0.1);
+      transform: translateX(100%);
+      transition: transform 0.3s ease;
+      z-index: 88;
+      width: 320px;
+      max-height: calc(100vh - 180px);
+      overflow-y: auto;
+    }
+
+    .sound-settings-menubar.visible {
+      transform: translateX(0);
+    }
+
+    .sound-settings-toggle {
+      position: fixed;
+      top: 160px;
+      right: 0;
+      background-color: #00bfff;
+      color: white;
+      padding: 8px;
+      border-radius: 10px 0 0 10px;
+      cursor: pointer;
+      z-index: 89;
+    }
+
+    .sound-settings-toggle:hover {
+      background-color: deeppink;
+    }
+
+    .sound-section {
+      background-color: #f8f9fa;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px 0;
+      border: 1px solid #e9ecef;
+    }
+
+    .sound-section h4 {
+      margin: 0 0 15px 0;
+      color: #495057;
+    }
+
+    select {
+      width: 100%;
+      padding: 8px;
+      margin: 8px 0;
+      border: 1px solid #ced4da;
+      border-radius: 5px;
+      background-color: white;
+      font-size: 0.9em;
+    }
+
+    select optgroup {
+      font-weight: bold;
+      color: #495057;
+    }
+
+    select option {
+      padding: 5px;
+      color: #212529;
+    }
+
+    .volume-control {
+      margin: 15px 0;
+    }
+
+    .volume-control label {
+      display: block;
+      margin-bottom: 5px;
+      color: #6c757d;
+      font-size: 0.9em;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      margin: 8px 0;
+    }
+
+    .sound-control-buttons {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .test-sound-btn, .stop-sound-btn {
+      flex: 1;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 0.9em;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+    }
+
+    .test-sound-btn {
+      background-color: #00bfff;
+      color: white;
+    }
+
+    .stop-sound-btn {
+      background-color: #dc3545;
+      color: white;
+    }
+
+    .test-sound-btn:hover {
+      background-color: #0099cc;
+    }
+
+    .stop-sound-btn:hover {
+      background-color: #c82333;
+    }
+
+    .sound-settings-footer {
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    .reset-sounds-btn {
+      background-color: #6c757d;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      padding: 8px 16px;
+      cursor: pointer;
+      font-size: 0.9em;
+      transition: background-color 0.2s;
+    }
+
+    .reset-sounds-btn:hover {
+      background-color: #5a6268;
+    }
+
+    /* Dark mode styles */
+    body.dark-mode .sound-settings-menubar {
+      background-color: #333;
+      color: #fff;
+    }
+
+    body.dark-mode .sound-section {
+      background-color: #444;
+      border-color: #555;
+    }
+
+    body.dark-mode .sound-section h4 {
+      color: #fff;
+    }
+
+    body.dark-mode select {
+      background-color: #444;
+      border-color: #555;
+      color: #fff;
+    }
+
+    body.dark-mode select optgroup {
+      background-color: #333;
+      color: #fff;
+    }
+
+    body.dark-mode select option {
+      background-color: #444;
+      color: #fff;
+    }
+
+    body.dark-mode .volume-control label {
+      color: #adb5bd;
+    }
+
+    /* Add these styles for the playing state */
+    .test-sound-btn.playing {
+      background-color: #28a745;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.6; }
+      100% { opacity: 1; }
+    }
+
+    /* Update the existing sound control buttons style */
+    .sound-control-buttons {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .test-sound-btn, .stop-sound-btn {
+      flex: 1;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 0.9em;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+    }
   </style>
 </head>
 <body>
@@ -704,8 +962,101 @@
   </div>
   
   <button id="darkModeToggle">🌓 Dark Mode</button>
-  <button id="muteToggle">🔇 Mute</button>
+  <button id="muteToggle">🔊 Sound</button>
   <button id="authButton">👤 Sign In</button>
+
+  <!-- Sound Settings Menubar -->
+  <div class="sound-settings-toggle" id="soundSettingsToggle">🔔</div>
+  <div class="sound-settings-menubar hidden" id="soundSettingsMenubar">
+    <h3>Sound Settings</h3>
+    <div class="sound-control">
+      <label>Master Volume</label>
+      <input type="range" id="masterVolume" min="0" max="100" value="100">
+      <span id="masterVolumeValue">100%</span>
+    </div>
+    
+    <div class="sound-section">
+      <h4>Focus Time Alarm</h4>
+      <select id="focusAlarmSound">
+        <optgroup label="Classic Alarms">
+          <option value="alarm_clock">Classic Alarm Clock</option>
+          <option value="digital">Digital Alarm</option>
+          <option value="mechanical">Mechanical Alarm</option>
+          <option value="electronic">Electronic Beep</option>
+        </optgroup>
+        <optgroup label="Nature">
+          <option value="morning_birds">Morning Birds</option>
+          <option value="ocean_wave">Ocean Wave</option>
+          <option value="forest_morning">Forest Morning</option>
+          <option value="gentle_stream">Gentle Stream</option>
+        </optgroup>
+        <optgroup label="Musical">
+          <option value="marimba">Marimba</option>
+          <option value="xylophone">Xylophone</option>
+          <option value="bell_chime">Bell Chime</option>
+          <option value="music_box">Music Box</option>
+        </optgroup>
+        <optgroup label="Gentle">
+          <option value="soft_chime">Soft Chime</option>
+          <option value="wind_chimes">Wind Chimes</option>
+          <option value="crystal">Crystal</option>
+          <option value="peaceful">Peaceful Wake</option>
+        </optgroup>
+      </select>
+      <div class="volume-control">
+        <label>Volume</label>
+        <input type="range" id="focusAlarmVolume" min="0" max="100" value="100">
+        <span id="focusAlarmVolumeValue">100%</span>
+      </div>
+      <div class="sound-control-buttons">
+        <button type="button" class="test-sound-btn" id="testFocusSound">Test Sound</button>
+        <button type="button" class="stop-sound-btn" id="stopFocusSound">Stop</button>
+      </div>
+    </div>
+
+    <div class="sound-section">
+      <h4>Break Time Alarm</h4>
+      <select id="breakAlarmSound">
+        <optgroup label="Notification">
+          <option value="notification_simple">Simple Notification</option>
+          <option value="notification_gentle">Gentle Alert</option>
+          <option value="notification_soft">Soft Alert</option>
+          <option value="notification_chime">Chime Alert</option>
+        </optgroup>
+        <optgroup label="Nature">
+          <option value="bird_chirp">Bird Chirp</option>
+          <option value="water_drop">Water Drop</option>
+          <option value="leaves_rustle">Leaves Rustle</option>
+          <option value="light_rain">Light Rain</option>
+        </optgroup>
+        <optgroup label="Musical">
+          <option value="small_bell">Small Bell</option>
+          <option value="triangle">Triangle</option>
+          <option value="wind_bell">Wind Bell</option>
+          <option value="tiny_music_box">Tiny Music Box</option>
+        </optgroup>
+        <optgroup label="Minimal">
+          <option value="beep_short">Short Beep</option>
+          <option value="pop">Pop Sound</option>
+          <option value="click">Click</option>
+          <option value="tap">Tap</option>
+        </optgroup>
+      </select>
+      <div class="volume-control">
+        <label>Volume</label>
+        <input type="range" id="breakAlarmVolume" min="0" max="100" value="100">
+        <span id="breakAlarmVolumeValue">100%</span>
+      </div>
+      <div class="sound-control-buttons">
+        <button type="button" class="test-sound-btn" id="testBreakSound">Test Sound</button>
+        <button type="button" class="stop-sound-btn" id="stopBreakSound">Stop</button>
+      </div>
+    </div>
+
+    <div class="sound-settings-footer">
+      <button type="button" class="reset-sounds-btn" id="resetSounds">Reset to Default</button>
+    </div>
+  </div>
 
   <!-- Session Editor Menubar -->
   <div class="session-editor-toggle" id="sessionEditorToggle">📝</div>
@@ -733,8 +1084,17 @@
     </div>
   </div>
 
-  <audio id="studyAlarm" src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg"></audio>
-  <audio id="breakAlarm" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
+  <!-- Remove the default audio elements since we'll create them dynamically -->
+  <audio id="studyAlarm"></audio>
+  <audio id="breakAlarm"></audio>
+  
+  <!-- Additional alarm sounds -->
+  <audio id="bell_alarm" src="https://actions.google.com/sounds/v1/alarms/mechanical_clock_ring.ogg"></audio>
+  <audio id="digital_alarm" src="https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg"></audio>
+  <audio id="gentle_alarm" src="https://actions.google.com/sounds/v1/alarms/peaceful_morning_wake.ogg"></audio>
+  <audio id="chime_alarm" src="https://actions.google.com/sounds/v1/alarms/small_bell_chime.ogg"></audio>
+  <audio id="notification_alarm" src="https://actions.google.com/sounds/v1/alarms/notification_simple_01.ogg"></audio>
+  <audio id="soft_alarm" src="https://actions.google.com/sounds/v1/alarms/gentle_notification.ogg"></audio>
 
   <script>
     // Firebase configuration
@@ -771,10 +1131,6 @@
     const timer = document.getElementById("timer");
     const sessionInfo = document.getElementById("session-info");
     const circle = document.getElementById("progressCircle");
-    const studyAlarm = document.getElementById("studyAlarm");
-    const breakAlarm = document.getElementById("breakAlarm");
-    const darkModeToggle = document.getElementById("darkModeToggle");
-    const muteToggle = document.getElementById("muteToggle");
 
     // User menubar elements
     const userMenubarToggle = document.getElementById("userMenubarToggle");
@@ -1199,6 +1555,12 @@
       return now.getTime();
     }
 
+    // Remove the default audio elements since we'll create them dynamically
+    const studyAlarm = document.getElementById("studyAlarm");
+    const breakAlarm = document.getElementById("breakAlarm");
+    if (studyAlarm) studyAlarm.remove();
+    if (breakAlarm) breakAlarm.remove();
+
     function updateClock() {
       const now = new Date();
       const formatted = `[${String(now.getMonth() + 1).padStart(2, '0')}.${String(now.getDate()).padStart(2, '0')} ${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][now.getDay()]}]\n${now.toLocaleTimeString('en-GB')}`;
@@ -1206,6 +1568,7 @@
 
       const nowMs = now.getTime();
       let found = false;
+      let lastSessionEnd = null;
 
       document.querySelectorAll(".schedule li").forEach(li => li.classList.remove("active"));
 
@@ -1220,36 +1583,66 @@
           const elapsed = nowMs - start;
           const remaining = sessionDuration - elapsed;
           updateTimer(remaining);
-          sessionInfo.innerText = `Session ${session.label}`;
+          sessionInfo.innerText = isBreakSession ? `Break Time (${session.label})` : `Session ${session.label}`;
           document.querySelectorAll(".schedule li")[i].classList.add("active");
-          if (elapsed < 1000 && !isMuted) studyAlarm.play();
+
+          // Play sound at the start of session (within first second)
+          if (elapsed < 1000 && !isMuted) {
+            playSessionSound(isBreakSession);
+          }
+
           updateProgressCircle(elapsed / sessionDuration);
           found = true;
           break;
-        } else if (!isBreakSession && i < sessionSchedule.length - 1) {
-          // Only check for break periods between non-break sessions
-          const nextSession = sessionSchedule[i + 1];
-          const breakStart = end;
-          const breakEnd = parseTimeToMs(nextSession.start);
-          const breakDuration = breakEnd - breakStart;
-
-          if (nowMs >= breakStart && nowMs < breakEnd) {
-            const elapsed = nowMs - breakStart;
-            const remaining = breakDuration - elapsed;
-            updateTimer(remaining);
-            sessionInfo.innerText = `Break after ${session.label}`;
-            if (elapsed < 1000 && !isMuted) breakAlarm.play();
-            updateProgressCircle(elapsed / breakDuration);
-            found = true;
-            break;
-          }
         }
+
+        lastSessionEnd = end;
       }
 
       if (!found) {
         updateTimer(0);
         sessionInfo.innerText = 'No active session';
         updateProgressCircle(0);
+      }
+    }
+
+    // Function to play the appropriate session sound
+    function playSessionSound(isBreak) {
+      try {
+        // Get the appropriate sound settings
+        const settings = isBreak ? soundSettings.breakAlarm : soundSettings.focusAlarm;
+        const soundType = isBreak ? soundSettings.breakAlarm.sound : soundSettings.focusAlarm.sound;
+        
+        // Create a new audio element
+        const audio = new Audio();
+        
+        // Get the sound URL
+        const soundUrl = getAlarmSource(soundType);
+        if (!soundUrl) {
+          console.error('Could not get sound URL for type:', soundType);
+          return;
+        }
+        
+        // Configure the audio
+        audio.src = soundUrl;
+        audio.volume = (settings.volume / 100) * (soundSettings.masterVolume / 100);
+        
+        // Add event listeners for error handling
+        audio.addEventListener('error', (e) => {
+          console.error('Error playing sound:', e);
+        });
+        
+        // Play the sound
+        audio.play().catch(error => {
+          console.error('Error playing sound:', error);
+        });
+        
+        // Clean up after playing
+        audio.addEventListener('ended', () => {
+          audio.remove();
+        });
+      } catch (error) {
+        console.error('Error in playSessionSound:', error);
       }
     }
 
@@ -1269,31 +1662,38 @@
 
     darkModeToggle.addEventListener('click', () => {
       isDarkMode = !isDarkMode;
-      document.body.style.background = isDarkMode ? '#1e1e1e' : '#f5f5f5';
-      document.querySelector('.container').style.background = isDarkMode ? '#333' : 'white';
-      document.querySelector('.container').style.color = isDarkMode ? '#fff' : '#000';
+      document.body.classList.toggle('dark-mode');
       
-      // Update auth box colors for dark mode
       if (isDarkMode) {
+        document.body.style.background = '#1e1e1e';
+        document.querySelector('.container').style.background = '#333';
+        document.querySelector('.container').style.color = '#fff';
         document.querySelector('.auth-box').style.backgroundColor = '#333';
         document.querySelector('.auth-box').style.color = '#fff';
         userMenubar.style.backgroundColor = '#333';
         userMenubar.style.color = '#fff';
         reportsMenubar.style.backgroundColor = '#333';
         reportsMenubar.style.color = '#fff';
+        soundSettingsMenubar.style.backgroundColor = '#333';
+        soundSettingsMenubar.style.color = '#fff';
       } else {
+        document.body.style.background = '#f5f5f5';
+        document.querySelector('.container').style.background = 'white';
+        document.querySelector('.container').style.color = '#000';
         document.querySelector('.auth-box').style.backgroundColor = 'white';
         document.querySelector('.auth-box').style.color = '#000';
         userMenubar.style.backgroundColor = 'white';
         userMenubar.style.color = '#000';
         reportsMenubar.style.backgroundColor = 'white';
         reportsMenubar.style.color = '#000';
+        soundSettingsMenubar.style.backgroundColor = 'white';
+        soundSettingsMenubar.style.color = '#000';
       }
     });
 
     muteToggle.addEventListener('click', () => {
       isMuted = !isMuted;
-      muteToggle.innerText = isMuted ? '🔈 Unmute' : '🔇 Mute';
+      muteToggle.innerText = isMuted ? '🔈 Unmute' : '🔊 Sound';
     });
 
     // User menubar toggle
@@ -2000,6 +2400,328 @@
         renderSessionList();
         alert('Sessions saved successfully!');
       }
+    });
+
+    // Add these variables at the beginning of the script
+    const soundSettingsToggle = document.getElementById('soundSettingsToggle');
+    const soundSettingsMenubar = document.getElementById('soundSettingsMenubar');
+    const masterVolume = document.getElementById('masterVolume');
+    const focusAlarmVolume = document.getElementById('focusAlarmVolume');
+    const breakAlarmVolume = document.getElementById('breakAlarmVolume');
+    const focusAlarmSound = document.getElementById('focusAlarmSound');
+    const breakAlarmSound = document.getElementById('breakAlarmSound');
+
+    // Sound settings state
+    let soundSettings = {
+      masterVolume: 100,
+      focusAlarm: {
+        sound: 'alarm_clock',
+        volume: 100
+      },
+      breakAlarm: {
+        sound: 'notification_simple',
+        volume: 100
+      }
+    };
+
+    // Load saved sound settings
+    function loadSoundSettings() {
+      const saved = localStorage.getItem('soundSettings');
+      if (saved) {
+        soundSettings = JSON.parse(saved);
+        masterVolume.value = soundSettings.masterVolume;
+        focusAlarmVolume.value = soundSettings.focusAlarm.volume;
+        breakAlarmVolume.value = soundSettings.breakAlarm.volume;
+        focusAlarmSound.value = soundSettings.focusAlarm.sound;
+        breakAlarmSound.value = soundSettings.breakAlarm.sound;
+        updateVolumeDisplays();
+      }
+    }
+
+    // Save sound settings
+    function saveSoundSettings() {
+      localStorage.setItem('soundSettings', JSON.stringify(soundSettings));
+    }
+
+    // Update volume displays
+    function updateVolumeDisplays() {
+      document.getElementById('masterVolumeValue').textContent = `${masterVolume.value}%`;
+      document.getElementById('focusAlarmVolumeValue').textContent = `${focusAlarmVolume.value}%`;
+      document.getElementById('breakAlarmVolumeValue').textContent = `${breakAlarmVolume.value}%`;
+    }
+
+    // Sound testing functionality
+    const soundTestingState = {
+      currentTestSound: null,
+      isPlaying: false,
+      playingType: null
+    };
+
+    function testAlarmSound(type) {
+      try {
+        // Stop any currently playing sound first
+        stopTestSound();
+
+        const testButton = document.getElementById(`test${type.charAt(0).toUpperCase() + type.slice(1)}Sound`);
+        const stopButton = document.getElementById(`stop${type.charAt(0).toUpperCase() + type.slice(1)}Sound`);
+        
+        // Get the correct settings based on type
+        const settings = type === 'focus' ? soundSettings.focusAlarm : soundSettings.breakAlarm;
+        const soundSelect = type === 'focus' ? focusAlarmSound : breakAlarmSound;
+        const selectedSound = soundSelect.value;
+        
+        // Get the sound URL
+        const soundUrl = getAlarmSource(selectedSound);
+        if (!soundUrl) {
+          throw new Error('Invalid sound URL');
+        }
+
+        // Create and configure the audio element
+        const audio = new Audio();
+        audio.src = soundUrl;
+        
+        // Update UI to show loading state
+        testButton.innerHTML = '⌛ Loading...';
+        testButton.disabled = true;
+        
+        // Set up event handlers
+        audio.addEventListener('canplaythrough', () => {
+          // Set volume after audio is loaded
+          audio.volume = (settings.volume / 100) * (soundSettings.masterVolume / 100);
+          
+          // Update UI to show playing state
+          testButton.classList.add('playing');
+          testButton.innerHTML = '⏸ Playing...';
+          testButton.disabled = false;
+          stopButton.style.display = 'block';
+          
+          // Store the current playing state
+          soundTestingState.currentTestSound = audio;
+          soundTestingState.isPlaying = true;
+          soundTestingState.playingType = type;
+          
+          // Play the sound
+          audio.play().catch(error => {
+            console.error('Error playing sound:', error);
+            stopTestSound();
+            alert('Error playing the selected sound. Please try another sound.');
+          });
+        }, { once: true });
+
+        audio.addEventListener('ended', () => {
+          stopTestSound();
+        });
+
+        audio.addEventListener('error', (e) => {
+          console.error('Error loading sound:', e);
+          stopTestSound();
+          alert('Error loading the selected sound. Please try another sound.');
+        });
+
+      } catch (error) {
+        console.error('Error in testAlarmSound:', error);
+        stopTestSound();
+        alert('Error playing the selected sound. Please try another sound.');
+      }
+    }
+
+    function stopTestSound() {
+      try {
+        if (soundTestingState.currentTestSound) {
+          soundTestingState.currentTestSound.pause();
+          soundTestingState.currentTestSound = null;
+        }
+
+        // Reset UI for both focus and break buttons
+        ['focus', 'break'].forEach(type => {
+          const testButton = document.getElementById(`test${type.charAt(0).toUpperCase() + type.slice(1)}Sound`);
+          const stopButton = document.getElementById(`stop${type.charAt(0).toUpperCase() + type.slice(1)}Sound`);
+          
+          if (testButton) {
+            testButton.classList.remove('playing');
+            testButton.innerHTML = '▶ Test Sound';
+            testButton.disabled = false;
+          }
+          
+          if (stopButton) {
+            stopButton.style.display = 'block';
+          }
+        });
+        
+        // Reset playing state
+        soundTestingState.isPlaying = false;
+        soundTestingState.playingType = null;
+      } catch (error) {
+        console.error('Error in stopTestSound:', error);
+      }
+    }
+
+    // Update the getAlarmSource function with working sound URLs
+    function getAlarmSource(soundType) {
+      const soundMap = {
+        // Classic Alarms
+        alarm_clock: 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3',
+        digital: 'https://assets.mixkit.co/active_storage/sfx/2867/2867-preview.mp3',
+        mechanical: 'https://assets.mixkit.co/active_storage/sfx/2868/2868-preview.mp3',
+        electronic: 'https://assets.mixkit.co/active_storage/sfx/2866/2866-preview.mp3',
+        
+        // Nature
+        morning_birds: 'https://assets.mixkit.co/active_storage/sfx/2526/2526-preview.mp3',
+        ocean_wave: 'https://assets.mixkit.co/active_storage/sfx/2437/2437-preview.mp3',
+        forest_morning: 'https://assets.mixkit.co/active_storage/sfx/2527/2527-preview.mp3',
+        gentle_stream: 'https://assets.mixkit.co/active_storage/sfx/2438/2438-preview.mp3',
+        
+        // Musical
+        marimba: 'https://assets.mixkit.co/active_storage/sfx/2515/2515-preview.mp3',
+        xylophone: 'https://assets.mixkit.co/active_storage/sfx/2516/2516-preview.mp3',
+        bell_chime: 'https://assets.mixkit.co/active_storage/sfx/2517/2517-preview.mp3',
+        music_box: 'https://assets.mixkit.co/active_storage/sfx/2518/2518-preview.mp3',
+        
+        // Gentle
+        soft_chime: 'https://assets.mixkit.co/active_storage/sfx/2519/2519-preview.mp3',
+        wind_chimes: 'https://assets.mixkit.co/active_storage/sfx/2520/2520-preview.mp3',
+        crystal: 'https://assets.mixkit.co/active_storage/sfx/2521/2521-preview.mp3',
+        peaceful: 'https://assets.mixkit.co/active_storage/sfx/2522/2522-preview.mp3',
+        
+        // Notifications
+        notification_simple: 'https://assets.mixkit.co/active_storage/sfx/1629/1629-preview.mp3',
+        notification_gentle: 'https://assets.mixkit.co/active_storage/sfx/1630/1630-preview.mp3',
+        notification_soft: 'https://assets.mixkit.co/active_storage/sfx/1631/1631-preview.mp3',
+        notification_chime: 'https://assets.mixkit.co/active_storage/sfx/1632/1632-preview.mp3',
+        
+        // Nature (Break)
+        bird_chirp: 'https://assets.mixkit.co/active_storage/sfx/2523/2523-preview.mp3',
+        water_drop: 'https://assets.mixkit.co/active_storage/sfx/2439/2439-preview.mp3',
+        leaves_rustle: 'https://assets.mixkit.co/active_storage/sfx/2524/2524-preview.mp3',
+        light_rain: 'https://assets.mixkit.co/active_storage/sfx/2440/2440-preview.mp3',
+        
+        // Musical (Break)
+        small_bell: 'https://assets.mixkit.co/active_storage/sfx/2525/2525-preview.mp3',
+        triangle: 'https://assets.mixkit.co/active_storage/sfx/2526/2526-preview.mp3',
+        wind_bell: 'https://assets.mixkit.co/active_storage/sfx/2527/2527-preview.mp3',
+        tiny_music_box: 'https://assets.mixkit.co/active_storage/sfx/2528/2528-preview.mp3',
+        
+        // Minimal
+        beep_short: 'https://assets.mixkit.co/active_storage/sfx/1628/1628-preview.mp3',
+        pop: 'https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3',
+        click: 'https://assets.mixkit.co/active_storage/sfx/2355/2355-preview.mp3',
+        tap: 'https://assets.mixkit.co/active_storage/sfx/2356/2356-preview.mp3'
+      };
+      
+      // Fallback sounds in case the primary ones fail
+      const fallbackSounds = {
+        default: 'https://assets.mixkit.co/active_storage/sfx/1628/1628-preview.mp3',
+        alarm: 'https://assets.mixkit.co/active_storage/sfx/2866/2866-preview.mp3',
+        notification: 'https://assets.mixkit.co/active_storage/sfx/1629/1629-preview.mp3'
+      };
+      
+      const soundUrl = soundMap[soundType];
+      if (!soundUrl) {
+        console.warn('Sound type not found:', soundType, 'Using default sound');
+        return fallbackSounds.default;
+      }
+      
+      return soundUrl;
+    }
+
+    // Initialize sound controls when DOM is loaded
+    window.addEventListener('DOMContentLoaded', function() {
+      // Initialize sound controls
+      loadSoundSettings();
+      updateVolumeDisplays();
+      
+      // Add event listeners for test sound buttons
+      document.getElementById('testFocusSound').addEventListener('click', () => testAlarmSound('focus'));
+      document.getElementById('testBreakSound').addEventListener('click', () => testAlarmSound('break'));
+      document.getElementById('stopFocusSound').addEventListener('click', stopTestSound);
+      document.getElementById('stopBreakSound').addEventListener('click', stopTestSound);
+
+      // Set initial button text
+      document.getElementById('testFocusSound').innerHTML = '▶ Test Sound';
+      document.getElementById('testBreakSound').innerHTML = '▶ Test Sound';
+      document.getElementById('stopFocusSound').innerHTML = '⏹ Stop';
+      document.getElementById('stopBreakSound').innerHTML = '⏹ Stop';
+    });
+
+    // Add cleanup when sound settings panel is closed
+    soundSettingsToggle.addEventListener('click', () => {
+      soundSettingsMenubar.classList.toggle('hidden');
+      if (soundSettingsMenubar.classList.contains('hidden')) {
+        stopTestSound();
+      }
+    });
+
+    // Update sound settings toggle functionality
+    soundSettingsToggle.addEventListener('click', () => {
+      soundSettingsMenubar.classList.toggle('visible');
+      if (!soundSettingsMenubar.classList.contains('visible')) {
+        stopTestSound();
+      }
+    });
+
+    // Update the sound initialization
+    function initializeSoundSettings() {
+      // Load saved sound settings
+      loadSoundSettings();
+      updateVolumeDisplays();
+
+      // Add event listeners for volume controls
+      masterVolume.addEventListener('input', () => {
+        soundSettings.masterVolume = parseInt(masterVolume.value);
+        updateVolumeDisplays();
+        saveSoundSettings();
+      });
+
+      focusAlarmVolume.addEventListener('input', () => {
+        soundSettings.focusAlarm.volume = parseInt(focusAlarmVolume.value);
+        updateVolumeDisplays();
+        saveSoundSettings();
+      });
+
+      breakAlarmVolume.addEventListener('input', () => {
+        soundSettings.breakAlarm.volume = parseInt(breakAlarmVolume.value);
+        updateVolumeDisplays();
+        saveSoundSettings();
+      });
+
+      // Add event listeners for sound selection
+      focusAlarmSound.addEventListener('change', () => {
+        soundSettings.focusAlarm.sound = focusAlarmSound.value;
+        saveSoundSettings();
+      });
+
+      breakAlarmSound.addEventListener('change', () => {
+        soundSettings.breakAlarm.sound = breakAlarmSound.value;
+        saveSoundSettings();
+      });
+
+      // Add event listeners for test buttons
+      document.getElementById('testFocusSound').addEventListener('click', () => testAlarmSound('focus'));
+      document.getElementById('testBreakSound').addEventListener('click', () => testAlarmSound('break'));
+      document.getElementById('stopFocusSound').addEventListener('click', stopTestSound);
+      document.getElementById('stopBreakSound').addEventListener('click', stopTestSound);
+    }
+
+    // Update the window load event listener
+    window.addEventListener('load', function() {
+      initializeSoundSettings();
+      loadSavedGoals();
+      loadTodaySessions();
+      createStudyCharts();
+      updateAverages();
+      initializeSessionEditor();
+      
+      // Start session tracking
+      trackSessionTime();
+      
+      // Set up updates
+      setInterval(() => {
+        trackSessionTime();
+        updateAllReports();
+      }, 1000);
+      
+      // Initial update
+      updateAllReports();
     });
   </script>
 </body>
