@@ -788,6 +788,15 @@
       justify-content: center;
       gap: 5px;
     }
+
+    .break-indicator {
+      background-color: #f0f0f0 !important;
+      border: 1px dashed #999 !important;
+    }
+    .break-indicator.active {
+      background-color: #e0e0e0 !important;
+      border-color: #666 !important;
+    }
   </style>
 </head>
 <body>
@@ -1568,10 +1577,10 @@
 
       const nowMs = now.getTime();
       let found = false;
-      let lastSessionEnd = null;
 
       document.querySelectorAll(".schedule li").forEach(li => li.classList.remove("active"));
 
+      // First check for scheduled sessions
       for (let i = 0; i < sessionSchedule.length; i++) {
         const session = sessionSchedule[i];
         const start = parseTimeToMs(session.start);
@@ -1596,7 +1605,37 @@
           break;
         }
 
-        lastSessionEnd = end;
+        // Check for break time between sessions
+        if (i < sessionSchedule.length - 1) {
+          const nextSession = sessionSchedule[i + 1];
+          const breakStart = end;
+          const breakEnd = parseTimeToMs(nextSession.start);
+
+          // Only if there's actually a break (time gap between sessions)
+          if (breakEnd > breakStart && nowMs >= breakStart && nowMs < breakEnd) {
+            const breakDuration = breakEnd - breakStart;
+            const elapsed = nowMs - breakStart;
+            const remaining = breakDuration - elapsed;
+            
+            // Update UI for break time
+            updateTimer(remaining);
+            sessionInfo.innerText = `Break between ${session.label} and ${nextSession.label}`;
+            updateProgressCircle(elapsed / breakDuration);
+
+            // Play break sound at the start of break
+            if (elapsed < 1000 && !isMuted) {
+              playSessionSound(true); // true for break sound
+            }
+
+            // Also play a reminder sound when 1 minute is left in the break
+            if (remaining <= 61000 && remaining > 60000 && !isMuted) {
+              playBreakEndReminder();
+            }
+
+            found = true;
+            break;
+          }
+        }
       }
 
       if (!found) {
@@ -1604,6 +1643,76 @@
         sessionInfo.innerText = 'No active session';
         updateProgressCircle(0);
       }
+    }
+
+    // Function to play break end reminder sound
+    function playBreakEndReminder() {
+      try {
+        // Create a new audio element for the reminder
+        const audio = new Audio();
+        
+        // Use a gentle notification sound for the reminder
+        const reminderSound = 'notification_gentle'; // You can change this to any preferred sound
+        const soundUrl = getAlarmSource(reminderSound);
+        
+        if (!soundUrl) {
+          console.error('Could not get sound URL for reminder');
+          return;
+        }
+        
+        // Configure the audio with slightly lower volume for the reminder
+        audio.src = soundUrl;
+        audio.volume = (soundSettings.breakAlarm.volume / 100) * (soundSettings.masterVolume / 100) * 0.7; // 70% of normal volume
+        
+        // Add event listeners for error handling
+        audio.addEventListener('error', (e) => {
+          console.error('Error playing reminder sound:', e);
+        });
+        
+        // Play the reminder sound
+        audio.play().catch(error => {
+          console.error('Error playing reminder sound:', error);
+        });
+        
+        // Clean up after playing
+        audio.addEventListener('ended', () => {
+          audio.remove();
+        });
+      } catch (error) {
+        console.error('Error in playBreakEndReminder:', error);
+      }
+    }
+
+    // Update the session display to show break times
+    function updateScheduleDisplay() {
+      const scheduleUl = document.querySelector('.schedule');
+      scheduleUl.innerHTML = '';
+      
+      sessionSchedule.forEach((session, index) => {
+        // Add the session
+        const sessionLi = document.createElement('li');
+        sessionLi.textContent = session.label;
+        scheduleUl.appendChild(sessionLi);
+
+        // Add break indicator if there's a next session with a break
+        if (index < sessionSchedule.length - 1) {
+          const nextSession = sessionSchedule[index + 1];
+          const breakStart = parseTimeToMs(session.end);
+          const breakEnd = parseTimeToMs(nextSession.start);
+          
+          if (breakEnd > breakStart) {
+            const breakDuration = Math.round((breakEnd - breakStart) / 60000); // Convert to minutes
+            if (breakDuration > 0) {
+              const breakLi = document.createElement('li');
+              breakLi.textContent = `${breakDuration}m`;
+              breakLi.classList.add('break-indicator');
+              breakLi.style.fontSize = '0.8em';
+              breakLi.style.color = '#666';
+              scheduleUl.appendChild(breakLi);
+            }
+          }
+        }
+      });
     }
 
     // Function to play the appropriate session sound
@@ -2209,16 +2318,6 @@
       
       // Update schedule display
       updateScheduleDisplay();
-    }
-
-    function updateScheduleDisplay() {
-      const scheduleUl = document.querySelector('.schedule');
-      scheduleUl.innerHTML = '';
-      sessionSchedule.forEach(session => {
-        const li = document.createElement('li');
-        li.textContent = session.label;
-        scheduleUl.appendChild(li);
-      });
     }
 
     function deleteSession(index) {
