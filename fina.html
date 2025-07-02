@@ -136,11 +136,33 @@
         }
 
         // --- AUTHENTICATION ---
-        onAuthStateChanged(auth, user => {
+        onAuthStateChanged(auth, async (user) => {
             if (user) {
                 userId = user.uid;
-                handleUserSignIn(user);
+                try {
+                    const profileRef = doc(db, `artifacts/${appId}/public/data/user_profiles`, user.uid);
+                    const profileSnap = await getDoc(profileRef);
+
+                    if (!profileSnap.exists()) {
+                        // This is a new user. Prompt for a name.
+                        if (user.displayName) {
+                            ui.displayNameInput.value = user.displayName;
+                        }
+                        showModal('add-name-modal');
+                    } else {
+                        // This is a returning user. Load the app.
+                        ui.userDisplayName.textContent = profileSnap.data().displayName || user.email;
+                        ui.userInfo.classList.remove('hidden');
+                        ui.authScreen.classList.remove('active');
+                        ui.appContainer.classList.add('active', 'flex');
+                        initializeAppData();
+                    }
+                } catch (error) {
+                    handleError(error, 'User Profile Check');
+                    await signOut(auth);
+                }
             } else {
+                // User is signed out
                 userId = null;
                 ui.authScreen.classList.add('active');
                 ui.appContainer.classList.remove('active', 'flex');
@@ -150,31 +172,6 @@
                 if (rankingInterval) clearInterval(rankingInterval);
             }
         });
-        
-        async function handleUserSignIn(user) {
-            try {
-                const profileRef = doc(db, `artifacts/${appId}/public/data/user_profiles`, user.uid);
-                const profileSnap = await getDoc(profileRef);
-
-                if (!profileSnap.exists()) {
-                    // First time user, prompt for name
-                    if (user.displayName) {
-                        ui.displayNameInput.value = user.displayName;
-                    }
-                    showModal('add-name-modal');
-                } else {
-                    // Returning user, load the app
-                    ui.userDisplayName.textContent = profileSnap.data().displayName || user.email;
-                    ui.userInfo.classList.remove('hidden');
-                    ui.authScreen.classList.remove('active');
-                    ui.appContainer.classList.add('active', 'flex');
-                    initializeAppData();
-                }
-            } catch (error) {
-                handleError(error, 'User Profile Check');
-                signOut(auth);
-            }
-        }
 
         async function handleGoogleSignIn() {
             const provider = new GoogleAuthProvider();
