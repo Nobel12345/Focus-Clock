@@ -1,228 +1,406 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Focus Clock</title>
-  <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #f5f5f5;
-      margin: 0;
-      padding: 0;
-    }
-    .container {
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 20px;
-      text-align: center;
-      background-color: white;
-      border-radius: 20px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-      margin-top: 40px;
-    }
-    h1 {
-      font-size: 2.5rem;
-    }
-    #datetime {
-      font-size: 1.2rem;
-      margin: 10px 0;
-    }
-    #session-info {
-      font-size: 1.5rem;
-      font-weight: bold;
-      margin-top: 20px;
-    }
-    #timer {
-      font-size: 3rem;
-      margin: 20px 0;
-    }
-    .circle-container {
-      position: relative;
-      width: 250px;
-      height: 250px;
-      margin: 0 auto 20px;
-    }
-    svg circle {
-      fill: none;
-      stroke: #ddd;
-      stroke-width: 12;
-    }
-    svg circle:nth-child(2) {
-      stroke: #00bfff;
-      stroke-linecap: round;
-      stroke-dasharray: 754;
-      stroke-dashoffset: 754;
-      transition: stroke-dashoffset 1s linear;
-    }
-    .schedule {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      list-style: none;
-      padding: 0;
-      margin: 20px 0;
-    }
-    .schedule li {
-      background-color: #eee;
-      padding: 8px 12px;
-      border-radius: 10px;
-      margin: 5px;
-      font-weight: bold;
-      font-size: 1rem;
-    }
-    .schedule li.active {
-      background-color: #00bfff;
-      color: white;
-    }
-    #darkModeToggle, #muteToggle {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      margin-left: 10px;
-      padding: 8px 12px;
-      font-weight: bold;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-      background-color: deeppink;
-      color: white;
-    }
-    #muteToggle {
-      right: 120px;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h1>Focus Clock</h1>
-    <div id="datetime"></div>
-    <div class="circle-container">
-      <svg width="250" height="250">
-        <circle cx="125" cy="125" r="120"></circle>
-        <circle cx="125" cy="125" r="120" id="progressCircle"></circle>
-      </svg>
-    </div>
-    <div id="session-info"></div>
-    <div id="timer">00:00:00</div>
-    <ul class="schedule">
-      <li>01</li><li>02</li><li>03</li><li>B</li><li>04</li><li>05</li>
-      <li>06</li><li>L</li><li>07</li><li>08</li><li>09</li>
-    </ul>
-  </div>
-  <button id="darkModeToggle">🌓 Dark Mode</button>
-  <button id="muteToggle">🔇 Mute</button>
-
-  <audio id="studyAlarm" src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg"></audio>
-  <audio id="breakAlarm" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
-
-  <script>
-    const datetime = document.getElementById("datetime");
-    const timer = document.getElementById("timer");
-    const sessionInfo = document.getElementById("session-info");
-    const circle = document.getElementById("progressCircle");
-    const studyAlarm = document.getElementById("studyAlarm");
-    const breakAlarm = document.getElementById("breakAlarm");
-
-    const darkModeToggle = document.getElementById("darkModeToggle");
-    const muteToggle = document.getElementById("muteToggle");
-
-    let isMuted = false;
-    let isDarkMode = false;
-
-    const schedule = [
-      { label: '01', start: '06:00', end: '07:30' },
-      { label: '02', start: '07:45', end: '09:15' },
-      { label: '03', start: '09:30', end: '11:00' },
-      { label: 'B', start: '11:00', end: '11:50' },
-      { label: '04', start: '12:00', end: '13:30' },
-      { label: '05', start: '13:45', end: '15:15' },
-      { label: '06', start: '15:30', end: '17:00' },
-      { label: 'L', start: '17:00', end: '17:50' },
-      { label: '07', start: '18:00', end: '19:30' },
-      { label: '08', start: '19:45', end: '21:15' },
-      { label: '09', start: '21:30', end: '23:00' }
-    ];
-
-    function parseTimeToMs(time) {
-      const [h, m] = time.split(':').map(Number);
-      const now = new Date();
-      now.setHours(h, m, 0, 0);
-      return now.getTime();
-    }
-
-    function updateClock() {
-      const now = new Date();
-      const formatted = `[${String(now.getMonth() + 1).padStart(2, '0')}.${String(now.getDate()).padStart(2, '0')} ${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][now.getDay()]}]\n${now.toLocaleTimeString('en-GB')}`;
-      datetime.innerText = formatted;
-
-      const nowMs = now.getTime();
-      let found = false;
-
-      document.querySelectorAll(".schedule li").forEach(li => li.classList.remove("active"));
-
-      for (let i = 0; i < schedule.length; i++) {
-        const session = schedule[i];
-        const start = parseTimeToMs(session.start);
-        const end = parseTimeToMs(session.end);
-        const isBreakSession = ['B', 'L'].includes(session.label);
-        const sessionDuration = (end - start);
-        const breakDuration = isBreakSession ? 10 * 60 * 1000 : 15 * 60 * 1000;
-
-        if (nowMs >= start && nowMs < end) {
-          const elapsed = nowMs - start;
-          const remaining = sessionDuration - elapsed;
-          updateTimer(remaining);
-          sessionInfo.innerText = `Session ${session.label}`;
-          document.querySelectorAll(".schedule li")[i].classList.add("active");
-          if (elapsed < 1000 && !isMuted) studyAlarm.play();
-          updateProgressCircle(elapsed / sessionDuration);
-          found = true;
-          break;
-        } else if (nowMs >= end && nowMs < end + breakDuration) {
-          const elapsed = nowMs - end;
-          const remaining = breakDuration - elapsed;
-          updateTimer(remaining);
-          sessionInfo.innerText = `Break after ${session.label}`;
-          if (elapsed < 1000 && !isMuted) breakAlarm.play();
-          updateProgressCircle(elapsed / breakDuration);
-          found = true;
-          break;
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Awesome App</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles for the Inter font */
+        body {
+            font-family: 'Inter', sans-serif;
         }
-      }
+    </style>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900">
+    <div id="root"></div>
 
-      if (!found) {
-        updateTimer(0);
-        sessionInfo.innerText = `No active session`;
-        updateProgressCircle(0);
-      }
-    }
+    <!-- Firebase SDKs -->
+    <script type="module">
+        // Firebase Core
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        // Firebase Auth
+        import {
+            getAuth,
+            GoogleAuthProvider,
+            signInWithPopup,
+            signOut,
+            onAuthStateChanged,
+            signInWithCustomToken,
+            signInAnonymously
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        // Firebase Firestore
+        import {
+            getFirestore,
+            collection,
+            doc,
+            addDoc,
+            deleteDoc,
+            onSnapshot,
+            query,
+            orderBy,
+            serverTimestamp
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    function updateTimer(ms) {
-      const h = String(Math.floor(ms / (1000 * 60 * 60))).padStart(2, '0');
-      const m = String(Math.floor((ms / (1000 * 60)) % 60)).padStart(2, '0');
-      const s = String(Math.floor((ms / 1000) % 60)).padStart(2, '0');
-      timer.innerText = `${h}:${m}:${s}`;
-    }
+        // React and ReactDOM (from CDN)
+        import React, { useState, useEffect } from 'https://esm.sh/react@18.2.0';
+        import ReactDOM from 'https://esm.sh/react-dom@18.2.0/client';
 
-    function updateProgressCircle(progress) {
-      const offset = 754 * (1 - progress);
-      circle.style.strokeDashoffset = offset;
-    }
+        // Define global variables provided by the Canvas environment
+        // These variables are expected to be injected into the environment by the platform.
+        // We'll use the provided firebaseConfig directly.
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id'; // This is for Firestore pathing in Canvas
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-    setInterval(updateClock, 1000);
+        // Your Firebase configuration (updated with your provided details)
+        const firebaseConfig = {
+            apiKey: "AIzaSyDuBXHarpbukYh4EUAn235IIvA4B19jRMI",
+            authDomain: "nobeltime-98ea5.firebaseapp.com",
+            projectId: "nobeltime-98ea5",
+            appId: "1:902117809689:web:70a05ec306705de51e9488"
+        };
 
-    darkModeToggle.addEventListener('click', () => {
-      isDarkMode = !isDarkMode;
-      document.body.style.background = isDarkMode ? '#1e1e1e' : '#f5f5f5';
-      document.querySelector('.container').style.background = isDarkMode ? '#333' : 'white';
-      document.querySelector('.container').style.color = isDarkMode ? '#fff' : '#000';
-    });
 
-    muteToggle.addEventListener('click', () => {
-      isMuted = !isMuted;
-      muteToggle.innerText = isMuted ? '🔈 Unmute' : '🔇 Mute';
-    });
-  </script>
+        // Main App component (converted from original React code)
+        const App = () => {
+            const [user, setUser] = useState(null); // Stores the authenticated user object
+            const [loading, setLoading] = useState(true); // Manages loading state during auth checks
+            const [error, setError] = useState(''); // Stores any error messages
+            const [db, setDb] = useState(null); // Firestore instance
+            const [auth, setAuth] = useState(null); // Firebase Auth instance
+            const [userId, setUserId] = useState(null); // Current user's ID
+            const [notes, setNotes] = useState([]); // Stores user-specific notes
+            const [newNote, setNewNote] = useState(''); // Input field for new note
+
+            // Initialize Firebase and set up auth listener
+            useEffect(() => {
+                try {
+                    const app = initializeApp(firebaseConfig);
+                    const authInstance = getAuth(app);
+                    const dbInstance = getFirestore(app);
+
+                    setAuth(authInstance);
+                    setDb(dbInstance);
+
+                    // Sign in with custom token if available, otherwise anonymously
+                    const signInUser = async () => {
+                        try {
+                            if (initialAuthToken) {
+                                await signInWithCustomToken(authInstance, initialAuthToken);
+                            } else {
+                                await signInAnonymously(authInstance);
+                            }
+                        } catch (e) {
+                            console.error("Error signing in:", e);
+                            setError("Failed to sign in automatically. Please try Google Sign-in.");
+                        } finally {
+                            setLoading(false);
+                        }
+                    };
+
+                    signInUser();
+
+                    // Set up authentication state observer
+                    const unsubscribe = onAuthStateChanged(authInstance, (currentUser) => {
+                        setUser(currentUser);
+                        if (currentUser) {
+                            setUserId(currentUser.uid); // Set userId from authenticated user
+                        } else {
+                            setUserId(null); // Clear userId if no user
+                        }
+                        setLoading(false); // Authentication check is complete
+                    });
+
+                    // Cleanup subscription on unmount
+                    return () => unsubscribe();
+                } catch (e) {
+                    console.error("Firebase initialization error:", e);
+                    setError("Failed to initialize Firebase. Check console for details.");
+                    setLoading(false);
+                }
+            }, []); // Empty dependency array means this runs once on component mount
+
+            // Listen for notes when userId and db are available
+            useEffect(() => {
+                if (db && userId && user) { // Ensure db, userId, and user are ready
+                    // Define the collection path for private user data
+                    const notesCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/notes`);
+                    // Create a query to order notes by creation time (optional, but good for display)
+                    const q = query(notesCollectionRef, orderBy('createdAt', 'desc'));
+
+                    const unsubscribe = onSnapshot(q, (snapshot) => {
+                        const fetchedNotes = snapshot.docs.map(doc => ({
+                            id: doc.id,
+                            ...doc.data()
+                        }));
+                        setNotes(fetchedNotes);
+                    }, (err) => {
+                        console.error("Error fetching notes:", err);
+                        setError("Failed to load notes.");
+                    });
+
+                    // Cleanup listener on unmount or when userId/db changes
+                    return () => unsubscribe();
+                } else if (!user && !loading) {
+                    // If user logs out, clear notes
+                    setNotes([]);
+                }
+            }, [db, userId, user, loading]); // Re-run when db, userId, user, or loading state changes
+
+            // Function to handle Google Sign-in
+            const signInWithGoogle = async () => {
+                if (!auth) {
+                    setError("Firebase Auth not initialized.");
+                    return;
+                }
+                setLoading(true);
+                setError('');
+                try {
+                    const provider = new GoogleAuthProvider();
+                    await signInWithPopup(auth, provider);
+                } catch (e) {
+                    console.error("Google Sign-in error:", e);
+                    // Handle specific errors like popup closed by user
+                    if (e.code === 'auth/popup-closed-by-user') {
+                        setError("Sign-in process cancelled.");
+                    } else {
+                        setError(`Sign-in failed: ${e.message}`);
+                    }
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            // Function to handle user sign-out
+            const signOutUser = async () => {
+                if (!auth) {
+                    setError("Firebase Auth not initialized.");
+                    return;
+                }
+                setLoading(true);
+                setError('');
+                try {
+                    await signOut(auth);
+                    setUser(null); // Clear user state
+                    setUserId(null); // Clear userId
+                    setNotes([]); // Clear notes on sign out
+                } catch (e) {
+                    console.error("Sign-out error:", e);
+                    setError(`Sign-out failed: ${e.message}`);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            // Function to save a new note
+            const saveNote = async () => {
+                if (!db || !userId || !newNote.trim()) {
+                    setError("Please enter a note or ensure you are signed in.");
+                    return;
+                }
+                try {
+                    const notesCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/notes`);
+                    await addDoc(notesCollectionRef, {
+                        text: newNote.trim(),
+                        createdAt: serverTimestamp() // Use server timestamp for consistent ordering
+                    });
+                    setNewNote(''); // Clear input after saving
+                    setError(''); // Clear any previous error
+                } catch (e) {
+                    console.error("Error adding note:", e);
+                    setError(`Failed to save note: ${e.message}`);
+                }
+            };
+
+            // Function to delete a note
+            const deleteNote = async (noteId) => {
+                if (!db || !userId) {
+                    setError("Database not ready or user not signed in.");
+                    return;
+                }
+                try {
+                    const noteDocRef = doc(db, `artifacts/${appId}/users/${userId}/notes`, noteId);
+                    await deleteDoc(noteDocRef);
+                    setError(''); // Clear any previous error
+                } catch (e) {
+                    console.error("Error deleting note:", e);
+                    setError(`Failed to delete note: ${e.message}`);
+                }
+            };
+
+            // Render loading state
+            if (loading) {
+                return React.createElement(
+                    'div',
+                    { className: 'flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100' },
+                    React.createElement('div', { className: 'text-xl font-semibold' }, 'Loading...')
+                );
+            }
+
+            return React.createElement(
+                'div',
+                { className: 'min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4 font-sans text-gray-900 dark:text-gray-100' },
+                React.createElement(
+                    'div',
+                    { className: 'bg-white dark:bg-gray-800 p-8 rounded-xl shadow-2xl w-full max-w-md border border-gray-200 dark:border-gray-700' },
+                    React.createElement(
+                        'h1',
+                        { className: 'text-3xl font-extrabold text-center text-indigo-700 dark:text-indigo-400 mb-6' },
+                        'My Awesome App'
+                    ),
+                    error && React.createElement(
+                        'div',
+                        { className: 'bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-300 px-4 py-3 rounded-md relative mb-4', role: 'alert' },
+                        React.createElement('strong', { className: 'font-bold' }, 'Error!'),
+                        React.createElement('span', { className: 'block sm:inline ml-2' }, error)
+                    ),
+                    user ? (
+                        // User is signed in
+                        React.createElement(
+                            'div',
+                            { className: 'text-center' },
+                            React.createElement(
+                                'h2',
+                                { className: 'text-2xl font-bold text-gray-800 dark:text-gray-200 mb-4' },
+                                'Welcome!'
+                            ),
+                            user.photoURL && React.createElement('img', {
+                                src: user.photoURL,
+                                alt: 'Profile',
+                                className: 'w-24 h-24 rounded-full mx-auto mb-4 border-4 border-indigo-300 dark:border-indigo-600 shadow-md',
+                                onError: (e) => { e.target.onerror = null; e.target.src = "https://placehold.co/96x96/cccccc/333333?text=User"; }
+                            }),
+                            React.createElement(
+                                'p',
+                                { className: 'text-lg font-medium text-gray-700 dark:text-gray-300 mb-2' },
+                                'Hello, ',
+                                user.displayName || 'User',
+                                '!'
+                            ),
+                            React.createElement(
+                                'p',
+                                { className: 'text-sm text-gray-500 dark:text-gray-400 mb-6' },
+                                user.email
+                            ),
+                            React.createElement(
+                                'p',
+                                { className: 'text-xs text-gray-400 dark:text-gray-500 mb-6' },
+                                'Your User ID: ',
+                                React.createElement('span', { className: 'font-mono break-all' }, userId)
+                            ),
+                            // Notes Section
+                            React.createElement(
+                                'div',
+                                { className: 'mt-8 pt-6 border-t border-gray-200 dark:border-gray-700' },
+                                React.createElement(
+                                    'h3',
+                                    { className: 'text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4' },
+                                    'Your Notes'
+                                ),
+                                React.createElement(
+                                    'div',
+                                    { className: 'flex mb-4' },
+                                    React.createElement('input', {
+                                        type: 'text',
+                                        value: newNote,
+                                        onChange: (e) => setNewNote(e.target.value),
+                                        placeholder: 'Write a new note...',
+                                        className: 'flex-grow p-3 rounded-l-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400'
+                                    }),
+                                    React.createElement(
+                                        'button',
+                                        {
+                                            onClick: saveNote,
+                                            className: 'bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-5 rounded-r-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800'
+                                        },
+                                        'Add Note'
+                                    )
+                                ),
+                                notes.length === 0 ? (
+                                    React.createElement(
+                                        'p',
+                                        { className: 'text-gray-500 dark:text-gray-400' },
+                                        'No notes yet. Add one above!'
+                                    )
+                                ) : (
+                                    React.createElement(
+                                        'ul',
+                                        { className: 'space-y-3 max-h-60 overflow-y-auto pr-2' },
+                                        notes.map((note) =>
+                                            React.createElement(
+                                                'li',
+                                                { key: note.id, className: 'flex items-center justify-between bg-gray-100 dark:bg-gray-700 p-3 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600' },
+                                                React.createElement(
+                                                    'span',
+                                                    { className: 'text-gray-800 dark:text-gray-200 text-left flex-grow break-words pr-2' },
+                                                    note.text
+                                                ),
+                                                React.createElement(
+                                                    'button',
+                                                    {
+                                                        onClick: () => deleteNote(note.id),
+                                                        className: 'text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-600 ml-4 p-1 rounded-full hover:bg-red-100 dark:hover:bg-red-800 transition duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-red-500',
+                                                        title: 'Delete Note'
+                                                    },
+                                                    React.createElement(
+                                                        'svg',
+                                                        { xmlns: 'http://www.w3.org/2000/svg', className: 'h-5 w-5', viewBox: '0 0 20 20', fill: 'currentColor' },
+                                                        React.createElement('path', { fillRule: 'evenodd', d: 'M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 11-2 0v6a1 1 0 112 0V8z', clipRule: 'evenodd' })
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                            ),
+                            React.createElement(
+                                'button',
+                                {
+                                    onClick: signOutUser,
+                                    className: 'mt-8 w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800'
+                                },
+                                'Sign Out'
+                            )
+                        )
+                    ) : (
+                        // User is not signed in
+                        React.createElement(
+                            'div',
+                            { className: 'text-center' },
+                            React.createElement(
+                                'p',
+                                { className: 'text-gray-600 dark:text-gray-300 mb-6' },
+                                'Sign in to access your personalized content.'
+                            ),
+                            React.createElement(
+                                'button',
+                                {
+                                    onClick: signInWithGoogle,
+                                    className: 'w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg flex items-center justify-center space-x-3 transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800'
+                                },
+                                React.createElement(
+                                    'svg',
+                                    { className: 'w-5 h-5', viewBox: '0 0 48 48', fill: 'none', xmlns: 'http://www.w3.org/2000/svg' },
+                                    React.createElement('path', { d: 'M44.5 20H24V28.5H35.5C34.75 32.5 32.25 35.5 28.5 37.5L28.25 37.75L34 42.25L34.25 42.5C40.5 37 44.5 29 44.5 20Z', fill: '#4285F4' }),
+                                    React.createElement('path', { d: 'M24 44C30.5 44 36 41.5 39.75 37.5L34 33C32.25 34.25 29.75 35.25 27 35.25C21.75 35.25 17.25 31.75 15.5 26.75L15.25 26.5L9.5 31L9.25 31.25C12.75 37.75 17.75 42.5 24 44Z', fill: '#34A853' }),
+                                    React.createElement('path', { d: 'M8.5 29.5C8.25 28.25 8 27 8 24C8 21 8.25 19.75 8.5 18.5L8.25 18.25L2.5 13.75L2.25 14C1 16.75 0 20.25 0 24C0 27.75 1 31.25 2.25 34L8.25 29.5H8.5Z', fill: '#FBBC05' }),
+                                    React.createElement('path', { d: 'M24 12.75C27 12.75 29.5 13.75 31.25 15.5L36 10.75C32.25 7.25 27 4.75 24 4.75C17.75 4.75 12.75 9.5 9.25 16L15.25 20.25C17 15.25 21.5 11.75 26.75 11.75H27Z', fill: '#EA4335' })
+                                ),
+                                'Sign in with Google'
+                            )
+                        )
+                    )
+                )
+            );
+        };
+
+        // Render the React App component into the root div
+        const container = document.getElementById('root');
+        const root = ReactDOM.createRoot(container);
+        root.render(React.createElement(App, null));
+    </script>
 </body>
 </html>
