@@ -99,6 +99,7 @@
             selectSubjectModal: document.getElementById('select-subject-modal'),
             addNameModal: document.getElementById('add-name-modal'),
             addNameForm: document.getElementById('add-name-form'),
+            displayNameInput: document.getElementById('display-name-input'),
             liveSessionsGrid: document.getElementById('live-sessions-grid'),
             sessionTimer: document.getElementById('session-timer'),
             totalTimeDisplay: document.getElementById('total-time-display'),
@@ -138,13 +139,7 @@
         onAuthStateChanged(auth, user => {
             if (user) {
                 userId = user.uid;
-                checkAndCreateUserProfile(user, () => {
-                    ui.userDisplayName.textContent = auth.currentUser.displayName || auth.currentUser.email;
-                    ui.userInfo.classList.remove('hidden');
-                    ui.authScreen.classList.remove('active');
-                    ui.appContainer.classList.add('active', 'flex');
-                    initializeAppData();
-                });
+                handleUserSignIn(user);
             } else {
                 userId = null;
                 ui.authScreen.classList.add('active');
@@ -155,6 +150,31 @@
                 if (rankingInterval) clearInterval(rankingInterval);
             }
         });
+        
+        async function handleUserSignIn(user) {
+            try {
+                const profileRef = doc(db, `artifacts/${appId}/public/data/user_profiles`, user.uid);
+                const profileSnap = await getDoc(profileRef);
+
+                if (!profileSnap.exists()) {
+                    // First time user, prompt for name
+                    if (user.displayName) {
+                        ui.displayNameInput.value = user.displayName;
+                    }
+                    showModal('add-name-modal');
+                } else {
+                    // Returning user, load the app
+                    ui.userDisplayName.textContent = profileSnap.data().displayName || user.email;
+                    ui.userInfo.classList.remove('hidden');
+                    ui.authScreen.classList.remove('active');
+                    ui.appContainer.classList.add('active', 'flex');
+                    initializeAppData();
+                }
+            } catch (error) {
+                handleError(error, 'User Profile Check');
+                signOut(auth);
+            }
+        }
 
         async function handleGoogleSignIn() {
             const provider = new GoogleAuthProvider();
@@ -178,39 +198,24 @@
             catch (error) { handleError(error, 'Login'); }
         }
 
-        async function checkAndCreateUserProfile(user, onComplete) {
-            try {
-                if (!user.displayName) {
-                    showModal('add-name-modal');
-                    return; // Stop execution until name is set
-                }
-                const profileRef = doc(db, `artifacts/${appId}/public/data/user_profiles`, user.uid);
-                const profileSnap = await getDoc(profileRef);
-                if (!profileSnap.exists()) {
+        async function handleAddName(e) {
+            e.preventDefault();
+            const newName = ui.displayNameInput.value.trim();
+            if (newName && auth.currentUser) {
+                try {
+                    // Update Auth profile first
+                    await updateProfile(auth.currentUser, { displayName: newName });
+                    
+                    // Now create the Firestore profile
+                    const profileRef = doc(db, `artifacts/${appId}/public/data/user_profiles`, auth.currentUser.uid);
                     await setDoc(profileRef, {
-                        displayName: user.displayName,
+                        displayName: newName,
                         totalStudyTime: 0,
                         createdAt: serverTimestamp()
                     });
-                }
-                onComplete();
-            } catch (error) {
-                handleError(error, 'User Profile Check');
-                signOut(auth);
-            }
-        }
-
-        async function handleAddName(e) {
-            e.preventDefault();
-            const nameInput = document.getElementById('display-name-input');
-            const newName = nameInput.value.trim();
-            if (newName && auth.currentUser) {
-                try {
-                    await updateProfile(auth.currentUser, { displayName: newName });
-                    const profileRef = doc(db, `artifacts/${appId}/public/data/user_profiles`, auth.currentUser.uid);
-                    await setDoc(profileRef, { displayName: newName }, { merge: true });
                     
                     hideModals();
+                    // Manually trigger the app load now that the profile is created
                     ui.userDisplayName.textContent = newName;
                     ui.userInfo.classList.remove('hidden');
                     ui.authScreen.classList.remove('active');
@@ -304,14 +309,16 @@
             }, 1000);
         }
 
-        function stopTimer() {
+        async function stopTimer() {
             if (!activeTimerInterval || !activeSubjectId) return;
             const elapsedSeconds = Math.round((Date.now() - sessionStartTime) / 1000);
             
             clearInterval(activeTimerInterval);
-            logStudySession(activeSubjectId, elapsedSeconds);
             
-            setPublicStatus(false);
+            // Await the logging and status updates before refreshing the UI
+            await logStudySession(activeSubjectId, elapsedSeconds);
+            await setPublicStatus(false);
+            
             activeTimerInterval = null;
             activeSubjectId = null;
             sessionStartTime = 0;
@@ -320,7 +327,9 @@
             ui.activeSubjectDisplay.textContent = "";
             ui.startStudyingBtn.classList.remove('hidden');
             ui.stopStudyingBtn.classList.add('hidden');
-            calculateAndRenderTodayTotal();
+            
+            // Now that the data is saved, update the total
+            await calculateAndRenderTodayTotal();
         }
 
         // --- RENDERING ---
