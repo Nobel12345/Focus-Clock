@@ -3,2585 +3,466 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YPT Study App</title>
-    <!-- Tailwind CSS CDN -->
+    <title>FocusFlow - Study Timer</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Inter Font -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
     <style>
-        /* Custom styles for the Inter font */
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-        /* Hide scrollbar for elements that are intentionally overflowing for specific UI patterns */
-        .overflow-y-auto::-webkit-scrollbar {
-            display: none;
-        }
-        .overflow-y-auto {
-            -ms-overflow-style: none;  /* IE and Edge */
-            scrollbar-width: none;  /* Firefox */
-        }
+        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .nav-item.active svg, .nav-item.active p { color: #3B82F6; }
+        #auth-screen, .page, #app-container, .modal { display: none; }
+        #auth-screen.active, .page.active, #app-container.active, .modal.active { display: flex; }
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        .timer-text { font-weight: 900; letter-spacing: -0.05em; }
     </style>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900">
-    <div id="root"></div>
+<body class="bg-gray-900 text-white flex flex-col h-screen antialiased">
 
-    <!-- Firebase SDKs -->
+    <!-- Authentication Screen (starts as active) -->
+    <div id="auth-screen" class="active flex-col items-center justify-center h-full p-4 fade-in">
+        <div class="w-full max-w-sm text-center">
+            <h1 class="text-4xl font-bold text-white mb-2">FocusFlow</h1>
+            <p class="text-gray-400 mb-8">Your Ultimate Study Companion</p>
+            <div id="auth-form-container" class="bg-gray-800 p-8 rounded-2xl shadow-lg">
+                <form id="login-form" class="space-y-4"><h2 class="text-2xl font-bold text-white mb-4">Login</h2><input type="email" id="login-email" placeholder="Email" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required><input type="password" id="login-password" placeholder="Password" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Sign In</button></form>
+                <form id="signup-form" class="hidden space-y-4"><h2 class="text-2xl font-bold text-white mb-4">Create Account</h2><input type="email" id="signup-email" placeholder="Email" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required><input type="password" id="signup-password" placeholder="Password (min. 6 characters)" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Sign Up</button></form>
+                <p id="auth-error" class="text-red-400 text-sm mt-4 h-5"></p>
+                <div class="flex items-center my-6"><hr class="flex-grow border-gray-600"><span class="mx-4 text-gray-500">OR</span><hr class="flex-grow border-gray-600"></div>
+                <button id="google-signin-btn" class="w-full bg-white text-gray-800 font-semibold py-3 rounded-lg flex items-center justify-center transition hover:bg-gray-200"><svg class="w-6 h-6 mr-3" viewBox="0 0 48 48"><path fill="#4285F4" d="M43.611 20.083H24v8.838h11.002c-0.463 2.878-2.18 5.424-4.852 7.199l7.217 5.626C43.02 37.21 46 29.54 46 20.083z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.897-5.781l-7.217-5.626c-2.13 1.442-4.852 2.308-7.68 2.308-5.878 0-10.845-3.965-12.624-9.26l-7.42 5.781C6.383 39.04 14.46 48 24 48z"/><path fill="#FBBC05" d="M11.376 28.71c-0.565-1.71-0.565-3.526 0-5.236l-7.42-5.781C1.678 21.24 0 26.52 0 32.14c0 5.62 1.678 10.9 4.053 14.18l7.323-5.61z"/><path fill="#EA4335" d="M24 10.73c3.52 0 6.565 1.218 9.015 3.655l6.345-6.345C35.93 2.13 30.48 0 24 0 14.46 0 6.383 8.96 2.053 17.71l7.42 5.781c1.779-5.295 6.746-9.26 12.624-9.26z"/></svg>Sign in with Google</button>
+                <p class="mt-8 text-sm text-gray-400"><span id="login-toggle-text">Don't have an account?</span><button id="auth-toggle-btn" class="font-semibold text-blue-400 hover:text-blue-300">Sign Up</button></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App Container (hidden until logged in) -->
+    <div id="app-container" class="flex-col h-screen">
+        <main class="flex-grow overflow-hidden">
+            <!-- Timer/Home Page -->
+            <div id="page-timer" class="page active flex-col h-full overflow-hidden"><header class="p-4 md:p-6 flex items-center justify-between z-10"><div class="flex items-center space-x-4"><h1 class="text-2xl font-bold text-gray-100">FocusFlow</h1><div id="user-info" class="hidden bg-gray-800/50 rounded-lg px-3 py-1.5 text-xs text-gray-400">Welcome, <span id="user-display-name"></span></div></div><button id="sign-out-btn" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg text-sm transition">Sign Out</button></header><div class="relative flex-grow flex items-center justify-center"><div id="live-sessions-grid" class="absolute inset-0 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2 p-4 overflow-hidden"></div><div class="relative text-center z-10 bg-gray-900/50 backdrop-blur-sm p-8 rounded-full"><p id="active-subject-display" class="text-xl font-semibold text-blue-400 h-7 mb-2"></p><h2 id="session-timer" class="text-7xl md:text-8xl timer-text text-white">00:00:00</h2><p id="total-time-display" class="text-gray-400 mt-2">Total Today: 00:00:00</p><div id="timer-controls" class="mt-8"><button id="start-studying-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-full text-lg transition-transform transform hover:scale-105">Start Studying</button><button id="stop-studying-btn" class="hidden bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-10 rounded-full text-lg transition-transform transform hover:scale-105">Stop</button></div></div></div></div>
+            <!-- Other pages (Stats, Planner, Ranking) -->
+            <div id="page-stats" class="page flex-col p-4 md:p-6 space-y-4 h-full overflow-y-auto no-scrollbar"><header class="flex items-center justify-between"><h1 class="text-2xl font-bold text-gray-100">My Stats</h1></header><div class="flex justify-center bg-gray-800/50 rounded-lg p-1"><button class="stat-period-btn active flex-1 p-2 rounded-md bg-blue-600" data-period="today">Today</button><button class="stat-period-btn flex-1 p-2 rounded-md" data-period="7days">7 Days</button><button class="stat-period-btn flex-1 p-2 rounded-md" data-period="30days">30 Days</button></div><div class="bg-gray-800 p-4 rounded-2xl shadow-lg flex-grow"><canvas id="stats-chart"></canvas></div></div>
+            <div id="page-planner" class="page flex-col p-4 md:p-6 space-y-4 h-full overflow-hidden"><header class="flex items-center justify-between"><h1 class="text-2xl font-bold text-gray-100">Daily Planner</h1></header><div class="flex-grow bg-gray-800 rounded-2xl p-4 flex flex-col overflow-hidden"><div class="flex items-center mb-4"><input type="text" id="todo-input" placeholder="Add a new task..." class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition"><button id="add-todo-btn" class="ml-3 px-4 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold transition">Add</button></div><div id="todo-list" class="flex-grow overflow-y-auto space-y-2 no-scrollbar"></div></div></div>
+            <div id="page-ranking" class="page flex-col p-4 md:p-6 space-y-4 h-full overflow-hidden"><header class="flex items-center justify-between"><h1 class="text-2xl font-bold text-gray-100">Global Rankings</h1></header><div id="ranking-list" class="flex-grow bg-gray-800 rounded-2xl p-4 overflow-y-auto no-scrollbar space-y-2"></div></div>
+        </main>
+        <nav class="bg-gray-800 border-t border-gray-700 grid grid-cols-5"><button class="nav-item p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors active" data-page="timer"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg><p class="text-xs mt-1">Timer</p></button><button class="nav-item p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors" data-page="stats"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg><p class="text-xs mt-1">Stats</p></button><button class="nav-item p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors" data-page="ranking"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg><p class="text-xs mt-1">Ranking</p></button><button class="nav-item p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors" data-page="planner"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg><p class="text-xs mt-1">Planner</p></button><button id="add-subject-btn" class="p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg><p class="text-xs mt-1 text-blue-400">Add Subject</p></button></nav>
+    </div>
+
+    <!-- Modals -->
+    <div id="select-subject-modal" class="modal fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm items-center justify-center p-4 z-50"><div class="bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-md"><h3 class="text-xl font-bold mb-4">Select a Subject to Begin</h3><div id="modal-subjects-list" class="space-y-3 max-h-64 overflow-y-auto no-scrollbar"></div><button id="cancel-select-subject-btn" class="mt-6 w-full px-5 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg font-semibold transition">Cancel</button></div></div>
+    <div id="add-subject-modal" class="modal fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm items-center justify-center p-4 z-50"><div class="bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm"><h3 class="text-xl font-bold mb-4">Add New Subject</h3><input type="text" id="subject-name-input" placeholder="e.g., Quantum Physics" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition"><div class="mt-4"><p class="text-sm text-gray-400 mb-2">Choose a color:</p><div id="color-picker" class="flex justify-between"></div></div><p class="text-red-500 text-sm mt-2 hidden" id="subject-name-error">Subject name cannot be empty.</p><div class="flex justify-end space-x-3 mt-6"><button id="cancel-add-btn" class="px-5 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg font-semibold transition">Cancel</button><button id="confirm-add-btn" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold transition">Add</button></div></div></div>
+    <div id="add-name-modal" class="modal fixed inset-0 bg-black bg-opacity-80 backdrop-blur-sm items-center justify-center p-4 z-50"><div class="bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm"><h3 class="text-xl font-bold mb-2">Welcome!</h3><p class="text-gray-400 mb-4">Please set your display name to continue.</p><form id="add-name-form"><input type="text" id="display-name-input" placeholder="Enter your name" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required><button type="submit" class="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Save and Continue</button></form></div></div>
+
     <script type="module">
-        // Firebase Core
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        // Firebase Auth
-        import {
-            getAuth,
-            onAuthStateChanged,
-            createUserWithEmailAndPassword,
-            signInWithEmailAndPassword,
-            GoogleAuthProvider,
-            signInWithPopup,
-            signInWithCustomToken,
-            signInAnonymously,
-            updateProfile
-        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        // Firebase Firestore
-        import {
-            getFirestore,
-            collection,
-            addDoc,
-            query,
-            where,
-            getDocs,
-            onSnapshot,
-            updateDoc,
-            arrayUnion,
-            arrayRemove,
-            doc,
-            setDoc,
-            deleteDoc,
-            orderBy,
-            serverTimestamp
-        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, collection, onSnapshot, addDoc, updateDoc, serverTimestamp, setDoc, getDoc, deleteDoc, query, where, getDocs, Timestamp, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // React and ReactDOM (from CDN)
-        import React, { useState, useEffect, createContext, useContext, useRef } from 'https://esm.sh/react@18.2.0';
-        import ReactDOM from 'https://esm.sh/react-dom@18.2.0/client';
-
-        // Chart.js (from CDN)
-        import {
-            Chart as ChartJS,
-            CategoryScale,
-            LinearScale,
-            BarElement,
-            Title,
-            Tooltip,
-            Legend
-        } from 'https://esm.sh/chart.js@4.4.1'; // Use a specific version that works with React-Chartjs-2
-        import { Bar } from 'https://esm.sh/react-chartjs-2@5.2.0'; // Use a specific version compatible with Chart.js v4
-
-        // Register Chart.js components required for the Bar chart
-        ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
-
-        // Define a context for Firebase and user authentication
-        const FirebaseContext = createContext(null);
-
-        // Firebase Configuration and Initialization
-        // Using the user-provided firebaseConfig
+        // --- CONFIG & STATE ---
         const firebaseConfig = {
             apiKey: "AIzaSyDuBXHarpbukYh4EUAn235IIvA4B19jRMI",
             authDomain: "nobeltime-98ea5.firebaseapp.com",
             databaseURL: "https://nobeltime-98ea5-default-rtdb.firebaseio.com",
             projectId: "nobeltime-98ea5",
-            storageBucket: "nobeltime-98ea5.firebasestorage.app",
+            storageBucket: "nobeltime-98ea5.appspot.com",
             messagingSenderId: "902117809689",
             appId: "1:902117809689:web:70a05ec306705de51e9488",
             measurementId: "G-YK70TKD9R9"
         };
-
-        // Use the __app_id provided by the Canvas environment, or a default
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-
-        // Initialize Firebase app outside of the component to avoid re-initialization
+        const appId = 'focusflow-study-timer';
         const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
         const auth = getAuth(app);
+        const db = getFirestore(app);
+        let userId = null, subjects = [], todos = [], activeTimerInterval = null, activeSubjectId = null, sessionStartTime = 0, selectedColor = null, statsChart = null, rankingInterval = null;
+        let unsubscribers = [];
+        const subjectColors = [{ name: 'blue', hex: '#3B82F6'}, { name: 'red', hex: '#EF4444'}, { name: 'green', hex: '#22C55E'}, { name: 'yellow', hex: '#EAB308'}, { name: 'purple', hex: '#8B5CF6'}, { name: 'pink', hex: '#EC4899'}];
 
-        // Custom hook to provide Firebase instances and user info
-        function useFirebase() {
-            const [user, setUser] = useState(null);
-            const [userId, setUserId] = useState(null); // Explicit userId state
-            const [loadingAuth, setLoadingAuth] = useState(true);
-            const [authInitialized, setAuthInitialized] = useState(false); // New state to track initial auth attempt
-
-            useEffect(() => {
-                const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-                    setUser(currentUser);
-                    setUserId(currentUser?.uid);
-                    if (authInitialized || currentUser) {
-                        setLoadingAuth(false);
-                        console.log("Auth state changed, loadingAuth set to false. User:", currentUser?.uid);
-                    } else {
-                        console.log("Auth state changed, but not yet initialized or no user. Still loading.");
-                    }
-                });
-
-                const initializeAuth = async () => {
-                    if (!authInitialized) {
-                        try {
-                            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                                try {
-                                    await signInWithCustomToken(auth, __initial_auth_token);
-                                    console.log("Signed in with custom token.");
-                                } catch (tokenError) {
-                                    console.warn("Firebase Hint: Custom token mismatch or other token error. Attempting anonymous sign-in.", tokenError);
-                                    try {
-                                        await signInAnonymously(auth);
-                                        console.log("Signed in anonymously after custom token attempt.");
-                                    } catch (anonError) {
-                                        console.error("Error signing in anonymously after custom token failure:", anonError);
-                                        setLoadingAuth(false);
-                                        setAuthInitialized(true);
-                                        return;
-                                    }
-                                }
-                            } else {
-                                try {
-                                    await signInAnonymously(auth);
-                                    console.log("Signed in anonymously (no custom token provided).");
-                                } catch (anonError) {
-                                    console.error("Error signing in anonymously:", anonError);
-                                    setLoadingAuth(false);
-                                    setAuthInitialized(true);
-                                    return;
-                                }
-                            }
-                        } catch (error) {
-                            console.error("Unexpected error during initial Firebase sign-in:", error);
-                        } finally {
-                            setAuthInitialized(true);
-                            setLoadingAuth(false);
-                            console.log("Initial auth attempt completed, loadingAuth set to false.");
-                        }
-                    }
-                };
-
-                initializeAuth();
-
-                return () => unsubscribe();
-            }, [authInitialized]);
-
-            return { db, auth, user, userId, loadingAuth, setUser, setUserId, setLoadingAuth };
-        }
-
-        // Helper for Confirmation Modal
-        const ConfirmationModal = ({ message, onClose }) => React.createElement(
-            'div',
-            { className: 'fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50' },
-            React.createElement(
-                'div',
-                { className: 'bg-white p-6 rounded-lg shadow-xl max-w-sm w-full text-center' },
-                React.createElement('p', { className: 'text-lg font-semibold mb-4' }, message),
-                React.createElement(
-                    'button',
-                    {
-                        onClick: onClose,
-                        className: 'px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-200'
-                    },
-                    'OK'
-                )
-            )
-        );
-
-        // WelcomeScreen Component
-        function WelcomeScreen({ onAuthSuccess }) {
-            const { auth, setLoadingAuth, setUser, setUserId } = useContext(FirebaseContext);
-            const [email, setEmail] = useState('');
-            const [password, setPassword] = useState('');
-            const [message, setMessage] = useState('');
-            const [showConfirmation, setShowConfirmation] = useState(false);
-
-            const handleAuthAction = async (actionType) => {
-                console.log("Attempting auth action:", actionType);
-                setLoadingAuth(true);
-                setMessage('');
-
-                if (email.trim() === '') {
-                    setMessage('Email cannot be empty.');
-                    setShowConfirmation(true);
-                    setLoadingAuth(false);
-                    return;
-                }
-                if (password.trim() === '') {
-                    setMessage('Password cannot be empty.');
-                    setShowConfirmation(true);
-                    setLoadingAuth(false);
-                    return;
-                }
-
-                try {
-                    let userCredential;
-                    if (actionType === 'signIn') {
-                        userCredential = await signInWithEmailAndPassword(auth, email, password);
-                        setMessage(`Signed in as ${userCredential.user.email}.`);
-                    } else if (actionType === 'createAccount') {
-                        userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                        setMessage(`Account created for ${userCredential.user.email}.`);
-                    }
-                    setUser(userCredential.user);
-                    setUserId(userCredential.user.uid);
-
-                    console.log("Authentication successful. Showing confirmation modal.");
-                    setShowConfirmation(true);
-                    setTimeout(() => {
-                        onAuthSuccess();
-                    }, 1500);
-                } catch (error) {
-                    console.error("Authentication error caught:", error);
-                    let errorMessage = "Authentication failed. Please try again.";
-                    if (error.code === 'auth/invalid-email') {
-                        errorMessage = "Invalid email address format.";
-                    } else if (error.code === 'auth/user-disabled') {
-                        errorMessage = "User account disabled.";
-                    } else if (error.code === 'auth/user-not-found') {
-                        errorMessage = "Incorrect email/Gmail.";
-                    } else if (error.code === 'auth/wrong-password') {
-                        errorMessage = "Incorrect password.";
-                    } else if (error.code === 'auth/email-already-in-use') {
-                        errorMessage = "Email already in use. Please sign in instead of creating a new account.";
-                    } else if (error.code === 'auth/weak-password') {
-                        errorMessage = "Password is too weak. Please use at least 6 characters.";
-                    } else if (error.code === 'auth/unauthorized-domain') {
-                        errorMessage = "Unauthorized domain. Please add this domain to your Firebase project's authorized domains.";
-                        console.warn("Firebase Error: auth/unauthorized-domain. To fix this, go to your Firebase project settings -> Authentication -> Settings tab -> Authorized domains, and add the domain where your app is hosted. Current origin:", window.location.origin);
-                    } else {
-                        errorMessage = "Both email and password incorrect or other authentication issue.";
-                    }
-                    console.log("Showing confirmation modal with message:", errorMessage);
-                    setMessage(errorMessage);
-                    setShowConfirmation(true);
-                    setLoadingAuth(false);
-                }
-            };
-
-            return React.createElement(
-                'div',
-                { className: 'min-h-screen bg-white flex flex-col items-center justify-center p-4 font-sans' },
-                React.createElement(
-                    'div',
-                    { className: 'flex flex-col items-center justify-center flex-grow' },
-                    React.createElement(
-                        'div',
-                        { className: 'w-32 h-32 mb-8' },
-                        React.createElement(
-                            'svg',
-                            { viewBox: '0 0 100 100', fill: 'none', xmlns: 'http://www.w3.org/2000/svg' },
-                            React.createElement('path', { d: 'M90.5 45.1L19.5 5.9C15.8 3.9 11.5 6.6 11.5 10.8V89.2C11.5 93.4 15.8 96.1 19.5 94.1L90.5 54.9C94.2 52.9 94.2 47.1 90.5 45.1Z', fill: 'url(#paint0_linear)', stroke: '#333333', strokeWidth: '2' }),
-                            React.createElement(
-                                'defs',
-                                null,
-                                React.createElement(
-                                    'linearGradient',
-                                    { id: 'paint0_linear', x1: '11.5', y1: '50', x2: '94.5', y2: '50', gradientUnits: 'userSpaceOnUse' },
-                                    React.createElement('stop', { stopColor: '#FF8C00' }),
-                                    React.createElement('stop', { offset: '1', stopColor: '#FFD700' })
-                                )
-                            )
-                        )
-                    ),
-                    React.createElement(
-                        'p',
-                        { className: 'text-gray-700 text-lg mb-8 text-center max-w-sm' },
-                        'Study, don\'t do it alone, do it on YPT with others!'
-                    ),
-                    React.createElement('input', {
-                        type: 'email',
-                        placeholder: 'Email',
-                        value: email,
-                        onChange: (e) => setEmail(e.target.value),
-                        className: 'w-full max-w-xs py-3 px-4 mb-3 border border-gray-300 rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-orange-400'
-                    }),
-                    React.createElement('input', {
-                        type: 'password',
-                        placeholder: 'Password',
-                        value: password,
-                        onChange: (e) => setPassword(e.target.value),
-                        className: 'w-full max-w-xs py-3 px-4 mb-6 border border-gray-300 rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-orange-400'
-                    }),
-                    React.createElement(
-                        'button',
-                        {
-                            onClick: () => handleAuthAction('signIn'),
-                            className: 'w-full max-w-xs py-3 mb-4 bg-orange-400 text-white font-bold rounded-lg shadow-md hover:bg-orange-500 transition duration-200 text-lg'
-                        },
-                        'Sign In'
-                    ),
-                    React.createElement(
-                        'button',
-                        {
-                            onClick: () => handleAuthAction('createAccount'),
-                            className: 'w-full max-w-xs py-3 bg-orange-500 text-white font-bold rounded-lg shadow-md hover:bg-orange-600 transition duration-200 text-lg'
-                        },
-                        'Create Account'
-                    )
-                ),
-                React.createElement(
-                    'p',
-                    { className: 'text-gray-400 text-sm mb-4' },
-                    'Palto'
-                ),
-                showConfirmation && React.createElement(ConfirmationModal, { message: message, onClose: () => setShowConfirmation(false) })
-            );
-        }
-
-        // Navbar Component
-        function Navbar({ setActiveTab, activeTab }) {
-            return React.createElement(
-                'div',
-                { className: 'bg-white border-t border-gray-200 p-3 flex justify-around items-center shadow-lg fixed bottom-0 left-0 w-full z-10' },
-                React.createElement(
-                    'div',
-                    {
-                        className: `flex flex-col items-center cursor-pointer p-2 rounded-md transition-colors duration-200 ${activeTab === 'timer' ? 'text-blue-600' : 'text-gray-500'}`,
-                        onClick: () => setActiveTab('timer')
-                    },
-                    React.createElement('svg', { className: 'w-6 h-6', fill: 'currentColor', viewBox: '0 0 20 20', xmlns: 'http://www.w3.org/2000/svg' }, React.createElement('path', { d: 'M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z' })),
-                    React.createElement('span', { className: 'text-xs mt-1' }, 'Home')
-                ),
-                React.createElement(
-                    'div',
-                    {
-                        className: `flex flex-col items-center cursor-pointer p-2 rounded-md transition-colors duration-200 ${activeTab === 'study-group' ? 'text-blue-600' : 'text-gray-500'}`,
-                        onClick: () => setActiveTab('study-group')
-                    },
-                    React.createElement('svg', { className: 'w-6 h-6', fill: 'currentColor', viewBox: '0 0 20 20', xmlns: 'http://www.w3.org/2000/svg' }, React.createElement('path', { fillRule: 'evenodd', d: 'M3 6a3 3 0 013-3h10a2 2 0 012 2v8a2 2 0 01-2 2H6a3 3 0 01-3-3V6zm4 6a1 1 0 11-2 0 1 1 0 012 0zm1-3a1 1 0 100 2h2a1 1 0 100-2H8zm7-1a1 1 0 11-2 0 1 1 0 012 0z', clipRule: 'evenodd' })),
-                    React.createElement('span', { className: 'text-xs mt-1' }, 'Groups')
-                ),
-                React.createElement(
-                    'div',
-                    {
-                        className: `flex flex-col items-center cursor-pointer p-2 rounded-md transition-colors duration-200 ${activeTab === 'more' ? 'text-blue-600' : 'text-gray-500'}`,
-                        onClick: () => setActiveTab('more')
-                    },
-                    React.createElement('svg', { className: 'w-6 h-6', fill: 'currentColor', viewBox: '0 0 20 20', xmlns: 'http://www.w3.org/2000/svg' }, React.createElement('path', { d: 'M10 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4z' })),
-                    React.createElement('span', { className: 'text-xs mt-1' }, 'More')
-                )
-            );
-        }
-
-        // Function to generate a diverse set of colors
-        const generateColors = (numColors) => {
-            const colors = [];
-            for (let i = 0; i < numColors; i++) {
-                const hue = (i * 360) / numColors;
-                colors.push(`hsl(${hue}, 70%, 55%)`);
-            }
-            colors.push('#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF', '#800000', '#008000', '#000080', '#808000', '#800080', '#008080', '#C0C0C0', '#808080', '#404040', '#000000', '#FFFFFF');
-            return colors.sort(() => 0.5 - Math.random()).slice(0, numColors);
+        // --- UI ELEMENTS ---
+        const ui = {
+            authScreen: document.getElementById('auth-screen'),
+            appContainer: document.getElementById('app-container'),
+            loginForm: document.getElementById('login-form'),
+            signupForm: document.getElementById('signup-form'),
+            authToggleBtn: document.getElementById('auth-toggle-btn'),
+            loginToggleText: document.getElementById('login-toggle-text'),
+            googleSigninBtn: document.getElementById('google-signin-btn'),
+            signOutBtn: document.getElementById('sign-out-btn'),
+            authError: document.getElementById('auth-error'),
+            userDisplayName: document.getElementById('user-display-name'),
+            userInfo: document.getElementById('user-info'),
+            pages: document.querySelectorAll('.page'),
+            navItems: document.querySelectorAll('.nav-item'),
+            modals: document.querySelectorAll('.modal'),
+            addSubjectBtn: document.getElementById('add-subject-btn'),
+            selectSubjectModal: document.getElementById('select-subject-modal'),
+            addNameModal: document.getElementById('add-name-modal'),
+            addNameForm: document.getElementById('add-name-form'),
+            liveSessionsGrid: document.getElementById('live-sessions-grid'),
+            sessionTimer: document.getElementById('session-timer'),
+            totalTimeDisplay: document.getElementById('total-time-display'),
+            activeSubjectDisplay: document.getElementById('active-subject-display'),
+            startStudyingBtn: document.getElementById('start-studying-btn'),
+            stopStudyingBtn: document.getElementById('stop-studying-btn'),
+            modalSubjectsList: document.getElementById('modal-subjects-list'),
+            colorPicker: document.getElementById('color-picker'),
+            todoList: document.getElementById('todo-list'),
+            todoInput: document.getElementById('todo-input'),
+            addTodoBtn: document.getElementById('add-todo-btn'),
+            rankingList: document.getElementById('ranking-list'),
+            statPeriodBtns: document.querySelectorAll('.stat-period-btn'),
         };
 
-        // ColorPickerModal Component
-        function ColorPickerModal({ onClose, onSelectColor, selectedColor }) {
-            const colors = generateColors(50);
-
-            return React.createElement(
-                'div',
-                { className: 'fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 p-4' },
-                React.createElement(
-                    'div',
-                    { className: 'bg-white rounded-lg shadow-xl w-full max-w-lg overflow-hidden' },
-                    React.createElement(
-                        'div',
-                        { className: 'flex justify-between items-center p-4 border-b border-gray-200 shadow-sm' },
-                        React.createElement('h3', { className: 'text-xl font-bold flex-grow text-center text-gray-800' }, 'Select Color'),
-                        React.createElement(
-                            'button',
-                            { onClick: onClose, className: 'text-blue-600 font-semibold text-lg hover:text-blue-800 transition duration-200' },
-                            'Done'
-                        )
-                    ),
-                    React.createElement(
-                        'div',
-                        { className: 'p-4 grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 gap-3 max-h-80 overflow-y-auto' },
-                        colors.map((color, index) =>
-                            React.createElement(
-                                'div',
-                                {
-                                    key: index,
-                                    className: `w-8 h-8 rounded-full cursor-pointer flex items-center justify-center transition-transform transform hover:scale-110 shadow-md`,
-                                    style: { backgroundColor: color, border: `2px solid ${selectedColor === color ? '#3B82F6' : 'transparent'}` },
-                                    onClick: () => onSelectColor(color)
-                                },
-                                selectedColor === color && React.createElement(
-                                    'svg',
-                                    { className: 'w-5 h-5 text-white', fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', xmlns: 'http://www.w3.org/2000/svg' },
-                                    React.createElement('path', { strokeLinecap: 'round', strokeLinejoin: 'round', strokeWidth: '3', d: 'M5 13l4 4L19 7' })
-                                )
-                            )
-                        )
-                    )
-                )
-            );
+        // --- UTILS & HELPERS ---
+        const formatTime = s => `${Math.floor(s/3600).toString().padStart(2,'0')}:${Math.floor(s%3600/60).toString().padStart(2,'0')}:${Math.floor(s%60).toString().padStart(2,'0')}`;
+        const showPage = pageId => {
+            ui.pages.forEach(p => p.classList.toggle('active', p.id === `page-${pageId}`));
+            ui.navItems.forEach(n => n.classList.toggle('active', n.dataset.page === pageId));
+            if (pageId === 'stats') renderStatsChart('today');
+            if (pageId === 'ranking') renderRankings();
+        };
+        const showModal = modalId => document.getElementById(modalId).classList.add('active');
+        const hideModals = () => ui.modals.forEach(m => m.classList.remove('active'));
+        
+        function handleError(error, context = 'An unexpected error') {
+            console.error(`${context}:`, error);
+            if (error.code === 'permission-denied' || error.code === 'PERMISSION_DENIED') {
+                ui.authError.textContent = "Permissions error. Please check Firestore rules.";
+            } else {
+                ui.authError.textContent = `${context}: ${error.message}`;
+            }
         }
 
-        // AddSubjectModal Component
-        function AddSubjectModal({ onClose, onSave, initialSubject = '', initialColor = '#FF8C00', setMessage, setShowConfirmation }) {
-            const [subjectName, setSubjectName] = useState(initialSubject);
-            const [subjectColor, setSubjectColor] = useState(initialColor);
-            const [showColorPicker, setShowColorPicker] = useState(false);
-
-            const handleSave = () => {
-                if (subjectName.trim() === '') {
-                    setMessage('Subject name cannot be empty.');
-                    setShowConfirmation(true);
-                    return;
-                }
-                onSave(subjectName, subjectColor);
-                onClose();
-            };
-
-            return React.createElement(
-                'div',
-                { className: 'fixed inset-0 bg-gray-600 bg-opacity-75 flex items-start justify-center z-50 p-4' },
-                React.createElement(
-                    'div',
-                    { className: 'bg-gray-100 rounded-lg shadow-xl w-full max-w-md mt-8 overflow-hidden' },
-                    React.createElement(
-                        'div',
-                        { className: 'bg-white text-gray-800 p-4 flex justify-between items-center shadow-sm' },
-                        React.createElement(
-                            'button',
-                            { onClick: onClose, className: 'text-gray-600 font-semibold text-lg hover:text-gray-800 transition duration-200' },
-                            'Cancel'
-                        ),
-                        React.createElement('h3', { className: 'text-xl font-bold flex-grow text-center' }, 'Subject Name'),
-                        React.createElement(
-                            'button',
-                            { onClick: handleSave, className: 'text-blue-600 font-semibold text-lg hover:text-blue-800 transition duration-200' },
-                            'Done'
-                        )
-                    ),
-                    React.createElement(
-                        'div',
-                        { className: 'p-4 bg-gray-100' },
-                        React.createElement(
-                            'div',
-                            { className: 'mb-6' },
-                            React.createElement('input', {
-                                type: 'text',
-                                value: subjectName,
-                                onChange: (e) => setSubjectName(e.target.value),
-                                placeholder: 'e.g. Math, Science, History...',
-                                className: 'w-full p-3 border border-gray-300 rounded-lg text-lg text-gray-700 focus:ring-blue-500 focus:border-blue-500 transition duration-200 shadow-sm'
-                            })
-                        ),
-                        React.createElement(
-                            'div',
-                            {
-                                className: 'bg-white p-4 rounded-lg shadow-sm flex items-center justify-between cursor-pointer',
-                                onClick: () => setShowColorPicker(true)
-                            },
-                            React.createElement('span', { className: 'text-gray-700 font-medium text-lg' }, 'Subject Color'),
-                            React.createElement('div', {
-                                className: 'w-8 h-8 rounded-full cursor-pointer shadow-md',
-                                style: { backgroundColor: subjectColor, border: `2px solid ${subjectColor}` }
-                            })
-                        )
-                    )
-                ),
-                showColorPicker && React.createElement(ColorPickerModal, {
-                    onClose: () => setShowColorPicker(false),
-                    onSelectColor: (color) => {
-                        setSubjectColor(color);
-                        setShowColorPicker(false);
-                    },
-                    selectedColor: subjectColor
-                })
-            );
-        }
-
-        // SubjectMenu Component
-        function SubjectMenu({ onClose, onEdit, onDelete, onAddTodo, position }) {
-            const menuRef = useRef(null);
-            const [adjustedPosition, setAdjustedPosition] = useState(position);
-
-            useEffect(() => {
-                if (menuRef.current) {
-                    const menuRect = menuRef.current.getBoundingClientRect();
-                    const viewportWidth = window.innerWidth;
-                    const viewportHeight = window.innerHeight;
-
-                    let newX = position.x;
-                    let newY = position.y;
-
-                    if (menuRect.right > viewportWidth) {
-                        newX = viewportWidth - menuRect.width - 10;
-                    }
-                    if (menuRect.bottom > viewportHeight) {
-                        newY = viewportHeight - menuRect.height - 10;
-                    }
-                    newX = Math.max(10, newX);
-                    newY = Math.max(10, newY);
-
-                    if (newX !== position.x || newY !== position.y) {
-                        setAdjustedPosition({ x: newX, y: newY });
-                    }
-                }
-            }, [position]);
-
-            return React.createElement(
-                'div',
-                {
-                    ref: menuRef,
-                    className: 'fixed bg-white rounded-lg shadow-lg py-2 z-50 min-w-[160px]',
-                    style: { top: adjustedPosition.y, left: adjustedPosition.x },
-                    onClick: (e) => e.stopPropagation()
-                },
-                React.createElement(
-                    'button',
-                    {
-                        className: 'block w-full text-left px-4 py-2 text-gray-800 hover:bg-gray-100 transition duration-150',
-                        onClick: onEdit
-                    },
-                    'Edit subject'
-                ),
-                React.createElement(
-                    'button',
-                    {
-                        className: 'block w-full text-left px-4 py-2 text-gray-800 hover:bg-gray-100 transition duration-150',
-                        onClick: onDelete
-                    },
-                    'Delete subject'
-                ),
-                React.createElement(
-                    'button',
-                    {
-                        className: 'block w-full text-left px-4 py-2 text-gray-800 hover:bg-gray-100 transition duration-150',
-                        onClick: onAddTodo
-                    },
-                    '+ To-do'
-                )
-            );
-        }
-
-        // AddTodoModal Component
-        function AddTodoModal({ onClose, onSaveTodo, subjectName, setMessage, setShowConfirmation }) {
-            const [todoDescription, setTodoDescription] = useState('');
-
-            const handleSave = () => {
-                if (todoDescription.trim() === '') {
-                    setMessage('To-do description cannot be empty.');
-                    setShowConfirmation(true);
-                    return;
-                }
-                onSaveTodo(todoDescription);
-                onClose();
-            };
-
-            return React.createElement(
-                'div',
-                { className: 'fixed inset-0 bg-gray-600 bg-opacity-75 flex items-start justify-center z-50 p-4' },
-                React.createElement(
-                    'div',
-                    { className: 'bg-gray-100 rounded-lg shadow-xl w-full max-w-md mt-8 overflow-hidden' },
-                    React.createElement(
-                        'div',
-                        { className: 'bg-white text-gray-800 p-4 flex justify-between items-center shadow-sm' },
-                        React.createElement(
-                            'button',
-                            { onClick: onClose, className: 'text-gray-600 font-semibold text-lg hover:text-gray-800 transition duration-200' },
-                            'Cancel'
-                        ),
-                        React.createElement('h3', { className: 'text-xl font-bold flex-grow text-center' }, 'Add To-do for ', subjectName),
-                        React.createElement(
-                            'button',
-                            { onClick: handleSave, className: 'text-blue-600 font-semibold text-lg hover:text-blue-800 transition duration-200' },
-                            'Save'
-                        )
-                    ),
-                    React.createElement(
-                        'div',
-                        { className: 'p-4 bg-gray-100' },
-                        React.createElement('textarea', {
-                            value: todoDescription,
-                            onChange: (e) => setTodoDescription(e.target.value),
-                            placeholder: 'e.g. Finish chapter 3, Practice math problems...',
-                            className: 'w-full p-3 border border-gray-300 rounded-lg text-lg text-gray-700 focus:ring-blue-500 focus:border-blue-500 transition duration-200 shadow-sm h-32'
-                        })
-                    )
-                )
-            );
-        }
-
-        // Timer Component
-        function Timer() {
-            const { db, userId, loadingAuth } = useContext(FirebaseContext);
-            const [time, setTime] = useState(0);
-            const [isRunning, setIsRunning] = useState(false);
-            const [subjects, setSubjects] = useState([]);
-            const [activeSubjectId, setActiveSubjectId] = useState(null);
-            const [intervalId, setIntervalId] = useState(null);
-            const [showAddSubjectModal, setShowAddSubjectModal] = useState(false);
-            const [message, setMessage] = useState('');
-            const [showConfirmation, setShowConfirmation] = useState(false);
-            const [showSubjectMenu, setShowSubjectMenu] = useState(false);
-            const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
-            const [selectedSubjectForMenu, setSelectedSubjectForMenu] = useState(null);
-            const [isEditingSubject, setIsEditingSubject] = useState(false);
-            const [showAddTodoModal, setShowAddTodoModal] = useState(false);
-            const [todos, setTodos] = useState([]);
-
-            useEffect(() => {
-                if (!db || !userId || loadingAuth) return;
-
-                const subjectsRef = collection(db, `artifacts/${appId}/users/${userId}/studySubjects`);
-                const q = query(subjectsRef, where('uid', '==', userId));
-
-                const unsubscribe = onSnapshot(q, (snapshot) => {
-                    const fetchedSubjects = snapshot.docs.map(doc => ({
-                        id: doc.id,
-                        ...doc.data(),
-                        totalStudyTime: doc.data().totalStudyTime || 0,
-                        currentSessionTime: 0
-                    }));
-                    setSubjects(fetchedSubjects);
-                    if (fetchedSubjects.length > 0 && activeSubjectId === null) {
-                        setActiveSubjectId(fetchedSubjects[0].id);
-                    } else if (activeSubjectId !== null && !fetchedSubjects.some(sub => sub.id === activeSubjectId)) {
-                        setActiveSubjectId(null);
-                    }
-                }, (error) => {
-                    console.error("Error fetching subjects:", error);
-                    setMessage("Error loading subjects. Please try again.");
-                    setShowConfirmation(true);
+        // --- AUTHENTICATION ---
+        onAuthStateChanged(auth, user => {
+            if (user) {
+                userId = user.uid;
+                checkAndCreateUserProfile(user, () => {
+                    ui.userDisplayName.textContent = auth.currentUser.displayName || auth.currentUser.email;
+                    ui.userInfo.classList.remove('hidden');
+                    ui.authScreen.classList.remove('active');
+                    ui.appContainer.classList.add('active', 'flex');
+                    initializeAppData();
                 });
-
-                return () => unsubscribe();
-            }, [db, userId, loadingAuth]);
-
-            useEffect(() => {
-                if (!db || !userId || !activeSubjectId || loadingAuth) {
-                    setTodos([]);
-                    return;
-                }
-
-                const todosRef = collection(db, `artifacts/${appId}/users/${userId}/todos`);
-                const q = query(todosRef, where('uid', '==', userId), where('subjectId', '==', activeSubjectId));
-
-                const unsubscribe = onSnapshot(q, (snapshot) => {
-                    const fetchedTodos = snapshot.docs.map(doc => ({
-                        id: doc.id,
-                        ...doc.data()
-                    }));
-                    setTodos(fetchedTodos.sort((a, b) => a.completed - b.completed || a.createdAt.toDate() - b.createdAt.toDate()));
-                }, (error) => {
-                    console.error("Error fetching todos:", error);
-                    setMessage("Error loading to-do items. Please try again.");
-                    setShowConfirmation(true);
-                });
-
-                return () => unsubscribe();
-            }, [db, userId, activeSubjectId, loadingAuth]);
-
-            useEffect(() => {
-                if (isRunning && activeSubjectId) {
-                    const id = setInterval(() => {
-                        setSubjects(prevSubjects =>
-                            prevSubjects.map(sub =>
-                                sub.id === activeSubjectId
-                                    ? { ...sub, currentSessionTime: sub.currentSessionTime + 1 }
-                                    : sub
-                            )
-                        );
-                    }, 1000);
-                    setIntervalId(id);
-                } else {
-                    if (intervalId) {
-                        clearInterval(intervalId);
-                        setIntervalId(null);
-                    }
-                }
-
-                return () => {
-                    if (intervalId) {
-                        clearInterval(intervalId);
-                    }
-                };
-            }, [isRunning, activeSubjectId]);
-
-            const formatTime = (totalSeconds) => {
-                const hours = Math.floor(totalSeconds / 3600);
-                const minutes = Math.floor((totalSeconds % 3600) / 60);
-                const seconds = totalSeconds % 60;
-
-                return [hours, minutes, seconds]
-                    .map((unit) => String(unit).padStart(2, '0'))
-                    .join(':');
-            };
-
-            const activeSubject = subjects.find(sub => sub.id === activeSubjectId);
-            const currentTotalTime = activeSubject ? activeSubject.currentSessionTime : 0;
-
-            const handleStart = (subjectId) => {
-                if (!subjectId) {
-                    setMessage('Please select or add a subject to start.');
-                    setShowConfirmation(true);
-                    return;
-                }
-                setIsRunning(true);
-                setActiveSubjectId(subjectId);
-            };
-
-            const handlePause = () => {
-                setIsRunning(false);
-            };
-
-            const handleStop = async () => {
-                setIsRunning(false);
-                if (!activeSubjectId) {
-                    setMessage("No subject selected to stop timer.");
-                    setShowConfirmation(true);
-                    return;
-                }
-
-                const subjectToUpdate = subjects.find(sub => sub.id === activeSubjectId);
-
-                if (subjectToUpdate && subjectToUpdate.currentSessionTime > 0) {
-                    try {
-                        if (!db || !userId) {
-                            setMessage("Firestore not ready. Please wait for authentication.");
-                            setShowConfirmation(true);
-                            return;
-                        }
-
-                        const subjectDocRef = doc(db, `artifacts/${appId}/users/${userId}/studySubjects`, activeSubjectId);
-                        const newTotalStudyTime = (subjectToUpdate.totalStudyTime || 0) + subjectToUpdate.currentSessionTime;
-
-                        await updateDoc(subjectDocRef, {
-                            totalStudyTime: newTotalStudyTime,
-                        });
-
-                        const sessionsRef = collection(db, `artifacts/${appId}/users/${userId}/sessions`);
-                        await addDoc(sessionsRef, {
-                            uid: userId,
-                            subjectId: activeSubjectId,
-                            subjectName: subjectToUpdate.name,
-                            duration: subjectToUpdate.currentSessionTime,
-                            createdAt: new Date(),
-                        });
-
-                        setMessage(`Session for ${subjectToUpdate.name} saved: ${formatTime(subjectToUpdate.currentSessionTime)}.`);
-                        setShowConfirmation(true);
-
-                        setSubjects(prevSubjects =>
-                            prevSubjects.map(sub =>
-                                sub.id === activeSubjectId
-                                    ? { ...sub, currentSessionTime: 0 }
-                                    : sub
-                            )
-                        );
-                        setActiveSubjectId(null);
-                    } catch (error) {
-                        console.error("Error saving session:", error);
-                        setMessage("Error saving session. Please try again.");
-                        setShowConfirmation(true);
-                    }
-                } else {
-                    setMessage("No study time recorded for the active subject to save.");
-                    setShowConfirmation(true);
-                }
-            };
-
-            const handleSaveSubject = async (name, color) => {
-                if (!db || !userId) {
-                    setMessage("Firestore not ready. Please wait for authentication.");
-                    setShowConfirmation(true);
-                    return;
-                }
-                try {
-                    const subjectsRef = collection(db, `artifacts/${appId}/users/${userId}/studySubjects`);
-                    if (isEditingSubject && selectedSubjectForMenu) {
-                        const subjectDocRef = doc(db, `artifacts/${appId}/users/${userId}/studySubjects`, selectedSubjectForMenu.id);
-                        await updateDoc(subjectDocRef, {
-                            name: name,
-                            color: color,
-                        });
-                        setMessage(`Subject "${name}" updated!`);
-                    } else {
-                        const newSubjectDoc = await addDoc(subjectsRef, {
-                            uid: userId,
-                            name: name,
-                            color: color,
-                            createdAt: new Date(),
-                            totalStudyTime: 0,
-                        });
-                        setActiveSubjectId(newSubjectDoc.id);
-                        setMessage(`Subject "${name}" added!`);
-                    }
-                    setShowConfirmation(true);
-                    setIsEditingSubject(false);
-                    setSelectedSubjectForMenu(null);
-                } catch (error) {
-                    console.error("Error saving/updating subject:", error);
-                    setMessage("Error saving/updating subject. Please try again.");
-                    setShowConfirmation(true);
-                }
-            };
-
-            const handleDeleteSubject = async (subjectId) => {
-                if (!db || !userId) {
-                    setMessage("Firestore not ready. Please wait for authentication.");
-                    setShowConfirmation(true);
-                    return;
-                }
-                try {
-                    await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/studySubjects`, subjectId));
-                    setMessage("Subject deleted successfully!");
-                    setShowConfirmation(true);
-                    if (activeSubjectId === subjectId) {
-                        setActiveSubjectId(null);
-                        setIsRunning(false);
-                    }
-                    setShowSubjectMenu(false);
-                } catch (error) {
-                    console.error("Error deleting subject:", error);
-                    setMessage("Error deleting subject. Please try again.");
-                    setShowConfirmation(true);
-                }
-            };
-
-            const handleEditSubject = (subject) => {
-                setSelectedSubjectForMenu(subject);
-                setIsEditingSubject(true);
-                setShowAddSubjectModal(true);
-                setShowSubjectMenu(false);
-            };
-
-            const handleAddTodo = (subject) => {
-                setSelectedSubjectForMenu(subject);
-                setShowAddTodoModal(true);
-                setShowSubjectMenu(false);
-            };
-
-            const handleSaveTodo = async (description) => {
-                if (!db || !userId || !selectedSubjectForMenu?.id) {
-                    setMessage("Firestore not ready or no subject selected for To-do.");
-                    setShowConfirmation(true);
-                    return;
-                }
-                try {
-                    const todosRef = collection(db, `artifacts/${appId}/users/${userId}/todos`);
-                    await addDoc(todosRef, {
-                        uid: userId,
-                        subjectId: selectedSubjectForMenu.id,
-                        description: description,
-                        completed: false,
-                        createdAt: new Date(),
-                    });
-                    setMessage(`To-do added for "${selectedSubjectForMenu.name}"!`);
-                    setShowConfirmation(true);
-                    setShowAddTodoModal(false);
-                } catch (error) {
-                    console.error("Error saving To-do:", error);
-                    setMessage("Error saving To-do. Please try again.");
-                    setShowConfirmation(true);
-                }
-            };
-
-            const handleToggleTodoComplete = async (todoId, currentStatus) => {
-                if (!db || !userId) {
-                    setMessage("Firestore not ready. Please wait for authentication.");
-                    setShowConfirmation(true);
-                    return;
-                }
-                try {
-                    const todoDocRef = doc(db, `artifacts/${appId}/users/${userId}/todos`, todoId);
-                    await updateDoc(todoDocRef, {
-                        completed: !currentStatus,
-                    });
-                    setMessage(`To-do status updated!`);
-                    setShowConfirmation(true);
-                } catch (error) {
-                    console.error("Error updating To-do status:", error);
-                    setMessage("Error updating To-do status. Please try again.");
-                    setShowConfirmation(true);
-                }
-            };
-
-            const handleThreeDotClick = (e, subject) => {
-                e.stopPropagation();
-                setSelectedSubjectForMenu(subject);
-                setMenuPosition({ x: e.clientX, y: e.clientY });
-                setShowSubjectMenu(true);
-            };
-
-            useEffect(() => {
-                const handleClickOutside = () => {
-                    if (showSubjectMenu) {
-                        setShowSubjectMenu(false);
-                        setSelectedSubjectForMenu(null);
-                    }
-                };
-                window.addEventListener('click', handleClickOutside);
-                return () => window.removeEventListener('click', handleClickOutside);
-            }, [showSubjectMenu]);
-
-            if (loadingAuth) {
-                return React.createElement(
-                    'div',
-                    { className: 'flex items-center justify-center min-h-screen bg-gray-100 text-gray-700' },
-                    React.createElement('p', null, 'Loading authentication...')
-                );
+            } else {
+                userId = null;
+                ui.authScreen.classList.add('active');
+                ui.appContainer.classList.remove('active', 'flex');
+                unsubscribers.forEach(unsub => unsub());
+                unsubscribers = [];
+                if (statsChart) statsChart.destroy();
+                if (rankingInterval) clearInterval(rankingInterval);
             }
+        });
 
-            const today = new Date();
-            const options = { weekday: 'short', month: 'numeric', day: 'numeric' };
-            const formattedDate = today.toLocaleDateString('en-US', options);
-            const dDayValue = "D-Day";
-
-            return React.createElement(
-                'div',
-                { className: 'min-h-screen bg-gray-100 flex flex-col font-sans' },
-                React.createElement(
-                    'div',
-                    { className: 'bg-orange-500 text-white p-4 flex flex-col items-center relative' },
-                    React.createElement(
-                        'div',
-                        { className: 'w-full flex justify-between items-center mb-4' },
-                        React.createElement('svg', { className: 'w-6 h-6 text-white', fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', xmlns: 'http://www.w3.org/2000/svg' }, React.createElement('path', { strokeLinecap: 'round', strokeLinejoin: 'round', strokeWidth: '2', d: 'M4 6h16M4 12h16M4 18h16' })),
-                        React.createElement('span', { className: 'text-sm font-semibold' }, formattedDate),
-                        React.createElement('span', { className: 'text-sm font-semibold' }, dDayValue)
-                    ),
-                    React.createElement(
-                        'div',
-                        { className: 'text-6xl font-bold mb-4 tracking-wide' },
-                        formatTime(currentTotalTime)
-                    ),
-                    React.createElement('svg', { className: 'w-5 h-5 text-white absolute bottom-4 right-4', fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', xmlns: 'http://www.w3.org/2000/svg' }, React.createElement('path', { strokeLinecap: 'round', strokeLinejoin: 'round', strokeWidth: '2', d: 'M8.228 9.247a4.5 4.5 0 011.13-1.897l8.932-8.931a1 1 0 011.414 0l2.121 2.121a1 1 0 010 1.414l-8.931 8.932a4.5 4.5 0 01-1.897 1.13zM12 18v.01M12 12v6' }))
-                ),
-                React.createElement(
-                    'div',
-                    { className: 'bg-white shadow-md flex justify-around p-3 text-gray-600 font-medium text-lg' },
-                    React.createElement('div', { className: 'flex-1 text-center border-b-2 border-blue-600 pb-2 text-blue-600' }, 'Timer'),
-                    React.createElement('div', { className: 'flex-1 text-center pb-2' }, 'Books'),
-                    React.createElement('div', { className: 'flex-1 text-center pb-2' }, 'Insights'),
-                    React.createElement('div', { className: 'flex-1 text-center pb-2' }, 'Planner')
-                ),
-                React.createElement(
-                    'div',
-                    { className: 'flex-grow bg-gray-100 p-4' },
-                    React.createElement(
-                        'div',
-                        { className: 'flex justify-start gap-3 mb-4' },
-                        React.createElement(
-                            'button',
-                            {
-                                onClick: () => {
-                                    setIsEditingSubject(false);
-                                    setSelectedSubjectForMenu(null);
-                                    setShowAddSubjectModal(true);
-                                },
-                                className: 'px-4 py-2 bg-gray-200 text-gray-800 rounded-lg text-md font-semibold hover:bg-gray-300 transition duration-200'
-                            },
-                            '+ Subject'
-                        )
-                    ),
-                    subjects.length > 0 ? (
-                        React.createElement(
-                            'div',
-                            { className: 'w-full max-w-md mx-auto' },
-                            subjects.map(sub =>
-                                React.createElement(
-                                    'div',
-                                    {
-                                        key: sub.id,
-                                        className: `flex items-center justify-between py-3 px-4 mb-2 rounded-lg shadow-sm bg-white border ${activeSubjectId === sub.id ? 'border-blue-500' : 'border-gray-200'}`,
-                                        onClick: () => setActiveSubjectId(sub.id)
-                                    },
-                                    React.createElement(
-                                        'div',
-                                        { className: 'flex items-center' },
-                                        isRunning && activeSubjectId === sub.id ? (
-                                            React.createElement('svg', { onClick: (e) => { e.stopPropagation(); handlePause(); }, className: 'w-6 h-6 mr-3 cursor-pointer', fill: 'currentColor', viewBox: '0 0 20 20', xmlns: 'http://www.w3.org/2000/svg', style: { color: sub.color } }, React.createElement('path', { fillRule: 'evenodd', d: 'M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z', clipRule: 'evenodd' }))
-                                        ) : (
-                                            React.createElement('svg', { onClick: (e) => { e.stopPropagation(); handleStart(sub.id); }, className: 'w-6 h-6 mr-3 cursor-pointer', fill: 'currentColor', viewBox: '0 0 20 20', xmlns: 'http://www.w3.org/2000/svg', style: { color: sub.color } }, React.createElement('path', { fillRule: 'evenodd', d: 'M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z', clipRule: 'evenodd' }))
-                                        ),
-                                        React.createElement(
-                                            'span',
-                                            { className: 'text-gray-800 font-medium text-lg' },
-                                            sub.name
-                                        )
-                                    ),
-                                    React.createElement(
-                                        'div',
-                                        { className: 'flex items-center' },
-                                        React.createElement(
-                                            'span',
-                                            { className: 'text-gray-600 text-lg mr-4' },
-                                            formatTime(sub.currentSessionTime)
-                                        ),
-                                        React.createElement('svg', {
-                                            className: 'w-5 h-5 text-gray-400 cursor-pointer',
-                                            fill: 'currentColor',
-                                            viewBox: '0 0 20 20',
-                                            xmlns: 'http://www.w3.org/2000/svg',
-                                            onClick: (e) => handleThreeDotClick(e, sub)
-                                        }, React.createElement('path', { d: 'M10 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4z' }))
-                                    )
-                                )
-                            )
-                        )
-                    ) : (
-                        React.createElement(
-                            'div',
-                            { className: 'text-center text-gray-600 text-lg mt-8' },
-                            React.createElement('p', null, 'No subjects added yet.'),
-                            React.createElement('p', null, 'Click "+ Subject" to add your first study subject!')
-                        )
-                    )
-                ),
-                activeSubjectId && todos.length > 0 && React.createElement(
-                    'div',
-                    { className: 'w-full max-w-md mx-auto mt-6 p-4 bg-white rounded-lg shadow-sm' },
-                    React.createElement('h4', { className: 'text-lg font-semibold text-gray-800 mb-3' }, 'To-dos for ', activeSubject?.name),
-                    todos.map(todo =>
-                        React.createElement(
-                            'div',
-                            { key: todo.id, className: 'flex items-center mb-2' },
-                            React.createElement('input', {
-                                type: 'checkbox',
-                                checked: todo.completed,
-                                onChange: () => handleToggleTodoComplete(todo.id, todo.completed),
-                                className: 'form-checkbox h-5 w-5 text-blue-600 rounded mr-3 cursor-pointer'
-                            }),
-                            React.createElement(
-                                'span',
-                                { className: `text-gray-700 text-base ${todo.completed ? 'line-through text-gray-500' : ''}` },
-                                todo.description
-                            )
-                        )
-                    )
-                ),
-                activeSubjectId && todos.length === 0 && React.createElement(
-                    'div',
-                    { className: 'w-full max-w-md mx-auto mt-6 p-4 bg-white rounded-lg shadow-sm text-center text-gray-500' },
-                    'No to-do items for ', activeSubject?.name, ' yet. Click \'+ To-do\' in the subject menu to add one!'
-                ),
-                showConfirmation && React.createElement(ConfirmationModal, { message: message, onClose: () => setShowConfirmation(false) }),
-                showAddSubjectModal && React.createElement(AddSubjectModal, {
-                    onClose: () => {
-                        setShowAddSubjectModal(false);
-                        setIsEditingSubject(false);
-                        setSelectedSubjectForMenu(null);
-                    },
-                    onSave: handleSaveSubject,
-                    initialSubject: isEditingSubject && selectedSubjectForMenu ? selectedSubjectForMenu.name : '',
-                    initialColor: isEditingSubject && selectedSubjectForMenu ? selectedSubjectForMenu.color : '#FF8C00',
-                    setMessage: setMessage,
-                    setShowConfirmation: setShowConfirmation
-                }),
-                showSubjectMenu && selectedSubjectForMenu && React.createElement(SubjectMenu, {
-                    onClose: () => setShowSubjectMenu(false),
-                    onEdit: () => handleEditSubject(selectedSubjectForMenu),
-                    onDelete: () => handleDeleteSubject(selectedSubjectForMenu.id),
-                    onAddTodo: () => handleAddTodo(selectedSubjectForMenu),
-                    position: menuPosition
-                }),
-                showAddTodoModal && selectedSubjectForMenu && React.createElement(AddTodoModal, {
-                    onClose: () => setShowAddTodoModal(false),
-                    onSaveTodo: handleSaveTodo,
-                    subjectName: selectedSubjectForMenu.name,
-                    setMessage: setMessage,
-                    setShowConfirmation: setShowConfirmation
-                })
-            );
+        async function handleGoogleSignIn() {
+            const provider = new GoogleAuthProvider();
+            try { await signInWithPopup(auth, provider); } 
+            catch (error) { handleError(error, 'Google Sign-In'); }
+        }
+        
+        async function handleEmailSignUp(e) {
+            e.preventDefault();
+            const email = ui.signupForm.querySelector('#signup-email').value;
+            const password = ui.signupForm.querySelector('#signup-password').value;
+            try { await createUserWithEmailAndPassword(auth, email, password); } 
+            catch (error) { handleError(error, 'Sign-up'); }
         }
 
-        // Stats Component
-        function Stats() {
-            const { db, userId, loadingAuth } = useContext(FirebaseContext);
-            const [dailyData, setDailyData] = useState({ labels: [], data: [] });
-            const [filter, setFilter] = useState('daily');
-            const [message, setMessage] = useState('');
-            const [showConfirmation, setShowConfirmation] = useState(false);
-
-            useEffect(() => {
-                const fetchSessions = async () => {
-                    if (!db || !userId || loadingAuth) return;
-
-                    try {
-                        const sessionsRef = collection(db, `artifacts/${appId}/users/${userId}/sessions`);
-                        const q = query(sessionsRef, where('uid', '==', userId));
-                        const snapshot = await getDocs(q);
-
-                        const data = {};
-                        const sortedSessions = snapshot.docs
-                            .map(doc => ({ ...doc.data(), id: doc.id }))
-                            .sort((a, b) => a.createdAt.toDate() - b.createdAt.toDate());
-
-                        sortedSessions.forEach(session => {
-                            const { duration, createdAt } = session;
-                            const dateObj = createdAt?.toDate();
-                            if (!dateObj) return;
-
-                            let dateKey;
-                            if (filter === 'weekly') {
-                                dateKey = `${dateObj.getFullYear()}-W${getWeekNumber(dateObj)}`;
-                            } else {
-                                dateKey = dateObj.toLocaleDateString();
-                            }
-
-                            data[dateKey] = (data[dateKey] || 0) + duration / 60;
-                        });
-
-                        const labels = Object.keys(data).sort((a, b) => {
-                            if (filter === 'weekly') {
-                                const [yearA, weekA] = a.split('-W').map(Number);
-                                const [yearB, weekB] = b.split('-W').map(Number);
-                                if (yearA !== yearB) return yearA - yearB;
-                                return weekA - weekB;
-                            } else {
-                                return new Date(a) - new Date(b);
-                            }
-                        });
-                        const values = labels.map(key => data[key]);
-
-                        setDailyData({ labels, data: values });
-                        if (labels.length === 0) {
-                            setMessage("No study data available. Start a session on the Timer page!");
-                            setShowConfirmation(true);
-                        }
-                    } catch (error) {
-                        console.error("Error fetching sessions:", error);
-                        setMessage("Error loading study data. Please try again later.");
-                        setShowConfirmation(true);
-                    }
-                };
-
-                fetchSessions();
-            }, [filter, db, userId, loadingAuth]);
-
-            const getWeekNumber = (d) => {
-                const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-                date.setUTCDate(date.getUTCDate() + 4 - (date.getUTCDay() || 7));
-                const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
-                const weekNo = Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
-                return weekNo;
-            };
-
-            const chartData = {
-                labels: dailyData.labels,
-                datasets: [
-                    {
-                        label: 'Study Time (minutes)',
-                        data: dailyData.data,
-                        backgroundColor: 'rgba(59, 130, 246, 0.7)',
-                        borderColor: 'rgba(37, 99, 235, 1)',
-                        borderWidth: 1,
-                        borderRadius: 5,
-                    }
-                ]
-            };
-
-            const chartOptions = {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                        labels: {
-                            font: {
-                                size: 14,
-                                family: 'Inter, sans-serif',
-                            },
-                            color: '#333',
-                        }
-                    },
-                    title: {
-                        display: true,
-                        text: `Your ${filter === 'weekly' ? 'Weekly' : 'Daily'} Study Time`,
-                        font: {
-                            size: 18,
-                            family: 'Inter, sans-serif',
-                            weight: 'bold',
-                        },
-                        color: '#222',
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                let label = context.dataset.label || '';
-                                if (label) {
-                                    label += ': ';
-                                }
-                                if (context.parsed.y !== null) {
-                                    label += `${context.parsed.y.toFixed(1)} mins`;
-                                }
-                                return label;
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    x: {
-                        grid: {
-                            display: false,
-                        },
-                        ticks: {
-                            font: {
-                                size: 12,
-                                family: 'Inter, sans-serif',
-                            },
-                            color: '#555',
-                        }
-                    },
-                    y: {
-                        beginAtZero: true,
-                        grid: {
-                            color: '#e0e0e0',
-                        },
-                        ticks: {
-                            font: {
-                                size: 12,
-                                family: 'Inter, sans-serif',
-                            },
-                            color: '#555',
-                            callback: function(value) {
-                                return `${value} mins`;
-                            }
-                        }
-                    }
-                }
-            };
-
-            if (loadingAuth) {
-                return React.createElement(
-                    'div',
-                    { className: 'flex items-center justify-center min-h-screen bg-gray-100 text-gray-700' },
-                    React.createElement('p', null, 'Loading authentication...')
-                );
-            }
-
-            return React.createElement(
-                'div',
-                { className: 'min-h-screen bg-gray-100 p-6 flex flex-col items-center font-sans' },
-                React.createElement('h2', { className: 'text-3xl font-bold text-gray-800 mb-6 text-center' }, 'Your Study Statistics'),
-                React.createElement(
-                    'div',
-                    { className: 'flex gap-4 mb-8' },
-                    React.createElement(
-                        'button',
-                        {
-                            className: `px-6 py-2 rounded-full text-lg font-semibold transition-colors duration-200 shadow-md ${filter === 'daily' ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`,
-                            onClick: () => setFilter('daily')
-                        },
-                        'Daily'
-                    ),
-                    React.createElement(
-                        'button',
-                        {
-                            className: `px-6 py-2 rounded-full text-lg font-semibold transition-colors duration-200 shadow-md ${filter === 'weekly' ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`,
-                            onClick: () => setFilter('weekly')
-                        },
-                        'Weekly'
-                    )
-                ),
-                React.createElement(
-                    'div',
-                    { className: 'bg-white p-6 rounded-2xl shadow-xl w-full max-w-4xl h-96' },
-                    dailyData.labels.length > 0 ? (
-                        React.createElement(Bar, { options: chartOptions, data: chartData })
-                    ) : (
-                        React.createElement(
-                            'div',
-                            { className: 'flex items-center justify-center h-full text-gray-600 text-xl' },
-                            'No study data available. Start a session on the Timer page!'
-                        )
-                    )
-                ),
-                showConfirmation && React.createElement(ConfirmationModal, { message: message, onClose: () => setShowConfirmation(false) })
-            );
+        async function handleEmailLogin(e) {
+            e.preventDefault();
+            const email = ui.loginForm.querySelector('#login-email').value;
+            const password = ui.loginForm.querySelector('#login-password').value;
+            try { await signInWithEmailAndPassword(auth, email, password); } 
+            catch (error) { handleError(error, 'Login'); }
         }
 
-        // Leaderboard Component
-        function Leaderboard() {
-            const { userId, loadingAuth } = useContext(FirebaseContext);
-
-            if (loadingAuth) {
-                return React.createElement(
-                    'div',
-                    { className: 'flex items-center justify-center min-h-screen bg-gray-100 text-gray-700' },
-                    React.createElement('p', null, 'Loading authentication...')
-                );
-            }
-
-            return React.createElement(
-                'div',
-                { className: 'min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4 font-sans' },
-                React.createElement('h2', { className: 'text-3xl font-bold text-gray-800 mb-6 text-center' }, 'Leaderboard'),
-                React.createElement(
-                    'div',
-                    { className: 'bg-white p-8 rounded-2xl shadow-xl w-full max-w-lg text-center' },
-                    React.createElement(
-                        'p',
-                        { className: 'text-gray-700 text-lg mb-4' },
-                        'This is where the global or group leaderboard will be displayed.'
-                    ),
-                    React.createElement(
-                        'p',
-                        { className: 'text-gray-600 text-md' },
-                        '(Feature under development, stay tuned!)'
-                    ),
-                    userId && React.createElement(
-                        'p',
-                        { className: 'text-gray-500 text-sm mt-6' },
-                        'Your User ID: ',
-                        React.createElement('span', { className: 'font-mono bg-gray-100 px-2 py-1 rounded-md text-xs break-all' }, userId)
-                    )
-                )
-            );
-        }
-
-        const groupCategoriesData = [
-            { value: 'primary_school', label: 'Primary School' },
-            { value: 'secondary_school', label: 'Middle School' },
-            { value: 'middle_school', label: 'Secondary School' },
-            { value: 'higher_secondary', label: 'Higher Secondary' },
-            { value: 'university', label: 'University' },
-            { value: 'language_study', label: 'Language study' },
-            { value: 'others', label: 'Others' },
-        ];
-
-        // CategorySelectionModal Component
-        function CategorySelectionModal({ onClose, onSelectCategory, selectedCategory }) {
-            return React.createElement(
-                'div',
-                { className: 'fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50' },
-                React.createElement(
-                    'div',
-                    { className: 'bg-white p-0 rounded-lg shadow-xl max-w-md w-full h-3/4 flex flex-col' },
-                    React.createElement(
-                        'div',
-                        { className: 'flex justify-between items-center p-4 border-b border-gray-200 shadow-sm' },
-                        React.createElement('svg', { onClick: onClose, className: 'w-6 h-6 text-gray-600 cursor-pointer', fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', xmlns: 'http://www.w3.org/2000/svg' }, React.createElement('path', { strokeLinecap: 'round', strokeLinejoin: 'round', strokeWidth: '2', d: 'M10 19l-7-7m0 0l7-7m-7 7h18' })),
-                        React.createElement('h3', { className: 'text-xl font-bold flex-grow text-center' }, 'Choose Category'),
-                        React.createElement(
-                            'button',
-                            {
-                                onClick: onClose,
-                                className: 'text-blue-600 font-semibold text-lg hover:text-blue-800 transition duration-200'
-                            },
-                            'Done'
-                        )
-                    ),
-                    React.createElement(
-                        'div',
-                        { className: 'flex-grow overflow-y-auto' },
-                        groupCategoriesData.map((category) =>
-                            React.createElement(
-                                'div',
-                                {
-                                    key: category.value,
-                                    className: 'flex justify-between items-center p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50',
-                                    onClick: () => {
-                                        onSelectCategory(category.value);
-                                        onClose();
-                                    }
-                                },
-                                React.createElement('span', { className: 'text-gray-800 text-lg' }, category.label),
-                                selectedCategory === category.value && React.createElement(
-                                    'svg',
-                                    { className: 'w-6 h-6 text-blue-600', fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', xmlns: 'http://www.w3.org/2000/svg' },
-                                    React.createElement('path', { strokeLinecap: 'round', strokeLinejoin: 'round', strokeWidth: '2', d: 'M5 13l4 4L19 7' })
-                                )
-                            )
-                        )
-                    )
-                )
-            );
-        }
-
-        // DailyGoalSelectionModal Component
-        function DailyGoalSelectionModal({ onClose, onSelectGoal, selectedGoal }) {
-            const timeOptions = [];
-            for (let i = 1; i <= 18; i++) {
-                timeOptions.push(`${i} hours per day`);
-            }
-
-            return React.createElement(
-                'div',
-                { className: 'fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50' },
-                React.createElement(
-                    'div',
-                    { className: 'bg-white p-0 rounded-lg shadow-xl max-w-md w-full h-3/4 flex flex-col' },
-                    React.createElement(
-                        'div',
-                        { className: 'flex justify-between items-center p-4 border-b border-gray-200 shadow-sm' },
-                        React.createElement('svg', { onClick: onClose, className: 'w-6 h-6 text-gray-600 cursor-pointer', fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', xmlns: 'http://www.w3.org/2000/svg' }, React.createElement('path', { strokeLinecap: 'round', strokeLinejoin: 'round', strokeWidth: '2', d: 'M10 19l-7-7m0 0l7-7m-7 7h18' })),
-                        React.createElement('h3', { className: 'text-xl font-bold flex-grow text-center' }, 'Select Goal Time'),
-                        React.createElement(
-                            'button',
-                            {
-                                onClick: onClose,
-                                className: 'text-blue-600 font-semibold text-lg hover:text-blue-800 transition duration-200'
-                            },
-                            'Done'
-                        )
-                    ),
-                    React.createElement(
-                        'div',
-                        { className: 'flex-grow overflow-y-auto' },
-                        timeOptions.map((option) =>
-                            React.createElement(
-                                'div',
-                                {
-                                    key: option,
-                                    className: 'flex justify-between items-center p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50',
-                                    onClick: () => {
-                                        onSelectGoal(option);
-                                        onClose();
-                                    }
-                                },
-                                React.createElement('span', { className: 'text-gray-800 text-lg' }, option),
-                                selectedGoal === option && React.createElement(
-                                    'svg',
-                                    { className: 'w-6 h-6 text-blue-600', fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', xmlns: 'http://www.w3.org/2000/svg' },
-                                    React.createElement('path', { strokeLinecap: 'round', strokeLinejoin: 'round', strokeWidth: '2', d: 'M5 13l4 4L19 7' })
-                                )
-                            )
-                        )
-                    )
-                )
-            );
-        }
-
-        // CapacitySelectionModal Component
-        function CapacitySelectionModal({ onClose, onSelectCapacity, selectedCapacity }) {
-            const capacityOptions = [];
-            for (let i = 2; i <= 100; i++) {
-                capacityOptions.push(i);
-            }
-
-            return React.createElement(
-                'div',
-                { className: 'fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50' },
-                React.createElement(
-                    'div',
-                    { className: 'bg-white p-0 rounded-lg shadow-xl max-w-md w-full h-3/4 flex flex-col' },
-                    React.createElement(
-                        'div',
-                        { className: 'flex justify-between items-center p-4 border-b border-gray-200 shadow-sm' },
-                        React.createElement('svg', { onClick: onClose, className: 'w-6 h-6 text-gray-600 cursor-pointer', fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', xmlns: 'http://www.w3.org/2000/svg' }, React.createElement('path', { strokeLinecap: 'round', strokeLinejoin: 'round', strokeWidth: '2', d: 'M10 19l-7-7m0 0l7-7m-7 7h18' })),
-                        React.createElement('h3', { className: 'text-xl font-bold flex-grow text-center' }, 'Select Capacity'),
-                        React.createElement(
-                            'button',
-                            {
-                                onClick: onClose,
-                                className: 'text-blue-600 font-semibold text-lg hover:text-blue-800 transition duration-200'
-                            },
-                            'Done'
-                        )
-                    ),
-                    React.createElement(
-                        'div',
-                        { className: 'flex-grow overflow-y-auto' },
-                        capacityOptions.map((option) =>
-                            React.createElement(
-                                'div',
-                                {
-                                    key: option,
-                                    className: 'flex justify-between items-center p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50',
-                                    onClick: () => {
-                                        onSelectCapacity(option);
-                                        onClose();
-                                    }
-                                },
-                                React.createElement('span', { className: 'text-gray-800 text-lg' }, `${option} people`),
-                                selectedCapacity === option && React.createElement(
-                                    'svg',
-                                    { className: 'w-6 h-6 text-blue-600', fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', xmlns: 'http://www.w3.org/2000/svg' },
-                                    React.createElement('path', { strokeLinecap: 'round', strokeLinejoin: 'round', strokeWidth: '2', d: 'M5 13l4 4L19 7' })
-                                )
-                            )
-                        )
-                    )
-                )
-            );
-        }
-
-        // CreateGroupPage Component
-        function CreateGroupPage({ onBack, onGroupCreated }) {
-            const { db, userId, loadingAuth } = useContext(FirebaseContext);
-            const [newGroupName, setNewGroupName] = useState('');
-            const [newGroupPassword, setNewGroupPassword] = useState('');
-            const [newGroupDailyGoal, setNewGroupDailyGoal] = useState('0h 0m');
-            const [newGroupCapacity, setNewGroupCapacity] = useState(0);
-            const [newGroupDescription, setNewGroupDescription] = useState('');
-            const [newGroupCategory, setNewGroupCategory] = useState('others');
-            const [showCategorySelectionModal, setShowCategorySelectionModal] = useState(false);
-            const [showDailyGoalSelectionModal, setShowDailyGoalSelectionModal] = useState(false);
-            const [showCapacitySelectionModal, setShowCapacitySelectionModal] = useState(false);
-            const [message, setMessage] = useState('');
-            const [showConfirmation, setShowConfirmation] = useState(false);
-
-            const handleCreateGroup = async () => {
-                if (newGroupName.trim() === '') {
-                    setMessage("Group name cannot be empty.");
-                    setShowConfirmation(true);
-                    return;
-                }
-                const groupNameLength = newGroupName.trim().length;
-                if (groupNameLength < 5 || groupNameLength > 30) {
-                    setMessage("Group name must be between 5 and 30 characters long.");
-                    setShowConfirmation(true);
-                    return;
-                }
-                if (!userId) {
-                    setMessage("Authentication not ready. Please wait.");
-                    setShowConfirmation(true);
-                    return;
-                }
-                if (newGroupCapacity < 2 || newGroupCapacity > 100) {
-                    setMessage("Capacity must be between 2 and 100 people.");
-                    setShowConfirmation(true);
-                    return;
-                }
-                if (newGroupCategory === 'others' || newGroupCategory === '') {
-                    setMessage("Please select a group category.");
-                    setShowConfirmation(true);
-                    return;
-                }
-                if (newGroupDailyGoal === '0h 0m' || newGroupDailyGoal === '') {
-                    setMessage("Please select a daily time goal.");
-                    setShowConfirmation(true);
-                    return;
-                }
-                if (newGroupDescription.length > 250) {
-                    setMessage("Group description cannot exceed 250 characters.");
-                    setShowConfirmation(true);
-                    return;
-                }
-
-                try {
-                    const groupsRef = collection(db, `artifacts/${appId}/public/data/studyGroups`);
-                    await addDoc(groupsRef, {
-                        name: newGroupName.trim(),
-                        password: newGroupPassword.trim(),
-                        description: newGroupDescription.trim(),
-                        members: [userId],
-                        maxMembers: newGroupCapacity,
-                        category: newGroupCategory,
-                        dailyGoal: newGroupDailyDailyGoal, // Corrected from newGroupDailyGoal
-                        createdAt: new Date(),
-                        attendance: '0',
-                        studyTime: '0h 0m',
-                        leaderId: userId
-                    });
-                    setMessage("Study group created successfully!");
-                    setShowConfirmation(true);
-                    setNewGroupName('');
-                    setNewGroupPassword('');
-                    setNewGroupDailyGoal('0h 0m');
-                    setNewGroupCapacity(0);
-                    setNewGroupDescription('');
-                    setNewGroupCategory('others');
-                    onGroupCreated();
-                    onBack();
-                } catch (error) {
-                    console.error("Error creating group:", error);
-                    setMessage("Failed to create study group. Please try again.");
-                    setShowConfirmation(true);
-                }
-            };
-
-            const groupNameLength = newGroupName.trim().length;
-            const isGroupNameInvalid = groupNameLength < 5 || groupNameLength > 30;
-
-            return React.createElement(
-                'div',
-                { className: 'min-h-screen bg-gray-100 flex flex-col font-sans' },
-                React.createElement(
-                    'div',
-                    { className: 'bg-white text-gray-800 p-4 flex justify-between items-center shadow-md' },
-                    React.createElement('svg', { onClick: onBack, className: 'w-6 h-6 text-gray-600 cursor-pointer', fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', xmlns: 'http://www.w3.org/2000/svg' }, React.createElement('path', { strokeLinecap: 'round', strokeLinejoin: 'round', strokeWidth: '2', d: 'M10 19l-7-7m0 0l7-7m-7 7h18' })),
-                    React.createElement('h3', { className: 'text-xl font-bold flex-grow text-center' }, 'Create Group'),
-                    React.createElement(
-                        'button',
-                        {
-                            onClick: handleCreateGroup,
-                            className: 'text-blue-600 font-semibold text-lg hover:text-blue-800 transition duration-200'
-                        },
-                        'Done'
-                    )
-                ),
-                React.createElement(
-                    'div',
-                    { className: 'flex-grow bg-gray-100 p-4 overflow-y-auto' },
-                    React.createElement(
-                        'div',
-                        { className: 'bg-white p-6 rounded-lg shadow-xl w-full max-w-md mx-auto' },
-                        React.createElement(
-                            'div',
-                            { className: 'mb-4' },
-                            React.createElement('input', {
-                                type: 'text',
-                                id: 'groupName',
-                                className: 'w-full p-3 border border-gray-300 rounded-lg text-lg text-gray-700 focus:ring-blue-500 focus:border-blue-500 transition duration-200 shadow-sm',
-                                value: newGroupName,
-                                onChange: (e) => setNewGroupName(e.target.value),
-                                placeholder: 'Enter Group Name'
-                            }),
-                            React.createElement(
-                                'span',
-                                { className: `text-xs mt-1 ${isGroupNameInvalid ? 'text-red-500' : 'text-gray-500'}` },
-                                groupNameLength,
-                                ' / 30 characters'
-                            )
-                        ),
-                        React.createElement(
-                            'div',
-                            { className: 'mb-6' },
-                            React.createElement('input', {
-                                type: 'password',
-                                id: 'groupPassword',
-                                className: 'w-full p-3 border border-gray-300 rounded-lg text-lg text-gray-700 focus:ring-blue-500 focus:border-blue-500 transition duration-200 shadow-sm',
-                                value: newGroupPassword,
-                                onChange: (e) => setNewGroupPassword(e.target.value),
-                                placeholder: 'Password (Optional)'
-                            })
-                        ),
-                        React.createElement(
-                            'div',
-                            { className: 'bg-gray-50 rounded-lg shadow-sm mb-6' },
-                            React.createElement(
-                                'div',
-                                {
-                                    className: 'flex justify-between items-center p-4 border-b border-gray-200 cursor-pointer',
-                                    onClick: () => setShowCategorySelectionModal(true)
-                                },
-                                React.createElement('span', { className: 'text-gray-700 font-medium' }, 'Category'),
-                                React.createElement(
-                                    'span',
-                                    { className: 'text-gray-500 flex items-center' },
-                                    groupCategoriesData.find(cat => cat.value === newGroupCategory)?.label || 'Choose Category',
-                                    React.createElement('svg', { className: 'w-5 h-5 ml-2 text-gray-400', fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', xmlns: 'http://www.w3.org/2000/svg' }, React.createElement('path', { strokeLinecap: 'round', strokeLinejoin: 'round', strokeWidth: '2', d: 'M9 5l7 7-7 7' }))
-                                )
-                            ),
-                            React.createElement(
-                                'div',
-                                {
-                                    className: 'flex justify-between items-center p-4 border-b border-gray-200 cursor-pointer',
-                                    onClick: () => setShowDailyGoalSelectionModal(true)
-                                },
-                                React.createElement('span', { className: 'text-gray-700 font-medium' }, 'Daily Time Goal'),
-                                React.createElement(
-                                    'span',
-                                    { className: 'text-gray-500 flex items-center' },
-                                    newGroupDailyGoal,
-                                    React.createElement('svg', { className: 'w-5 h-5 ml-2 text-gray-400', fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', xmlns: 'http://www.w3.org/2000/svg' }, React.createElement('path', { strokeLinecap: 'round', strokeLinejoin: 'round', strokeWidth: '2', d: 'M9 5l7 7-7 7' }))
-                                )
-                            ),
-                            React.createElement(
-                                'div',
-                                {
-                                    className: 'flex justify-between items-center p-4 cursor-pointer',
-                                    onClick: () => setShowCapacitySelectionModal(true)
-                                },
-                                React.createElement('span', { className: 'text-gray-700 font-medium' }, 'Capacity'),
-                                React.createElement(
-                                    'span',
-                                    { className: 'text-gray-500 flex items-center' },
-                                    newGroupCapacity === 0 ? '0 people' : `${newGroupCapacity} people`,
-                                    React.createElement('svg', { className: 'w-5 h-5 ml-2 text-gray-400', fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', xmlns: 'http://www.w3.org/2000/svg' }, React.createElement('path', { strokeLinecap: 'round', strokeLinejoin: 'round', strokeWidth: '2', d: 'M9 5l7 7-7 7' }))
-                                )
-                            )
-                        ),
-                        React.createElement(
-                            'div',
-                            { className: 'mb-6' },
-                            React.createElement('textarea', {
-                                id: 'groupDescription',
-                                className: 'w-full p-3 border border-gray-300 rounded-lg text-lg text-gray-700 focus:ring-blue-500 focus:border-blue-500 transition duration-200 shadow-sm h-32',
-                                value: newGroupDescription,
-                                onChange: (e) => setNewGroupDescription(e.target.value),
-                                placeholder: 'Describe your group. Include any joining criteria or motivational messages to welcome new members.',
-                                maxLength: '250'
-                            }),
-                            React.createElement(
-                                'span',
-                                { className: 'text-xs mt-1 text-gray-500' },
-                                newGroupDescription.length,
-                                ' / 250 characters'
-                            )
-                        )
-                    )
-                ),
-                showCategorySelectionModal && React.createElement(CategorySelectionModal, {
-                    onClose: () => setShowCategorySelectionModal(false),
-                    onSelectCategory: setNewGroupCategory,
-                    selectedCategory: newGroupCategory
-                }),
-                showDailyGoalSelectionModal && React.createElement(DailyGoalSelectionModal, {
-                    onClose: () => setShowDailyGoalSelectionModal(false),
-                    onSelectGoal: setNewGroupDailyGoal,
-                    selectedGoal: newGroupDailyGoal
-                }),
-                showCapacitySelectionModal && React.createElement(CapacitySelectionModal, {
-                    onClose: () => setShowCapacitySelectionModal(false),
-                    onSelectCapacity: setNewGroupCapacity,
-                    selectedCapacity: newGroupCapacity
-                }),
-                showConfirmation && React.createElement(ConfirmationModal, { message: message, onClose: () => setShowConfirmation(false) })
-            );
-        }
-
-        // AvailableGroupsView Component
-        function AvailableGroupsView({ onBack, onGroupCreated }) {
-            const { db, userId, loadingAuth } = useContext(FirebaseContext);
-            const [groups, setGroups] = useState([]);
-            const [joinedGroupIds, setJoinedGroupIds] = useState(new Set());
-            const [showCreateGroupPage, setShowCreateGroupPage] = useState(false);
-            const [message, setMessage] = useState('');
-            const [showConfirmation, setShowConfirmation] = useState(false);
-
-            const [filterNewGroups, setFilterNewGroups] = useState(true);
-            const [filterAvailableGroups, setFilterAvailableGroups] = useState(false);
-            const [filterPublicGroups, setFilterPublicGroups] = useState(false);
-
-            useEffect(() => {
-                if (!db || !userId || loadingAuth) return;
-
-                const groupsRef = collection(db, `artifacts/${appId}/public/data/studyGroups`);
-
-                const unsubscribe = onSnapshot(groupsRef, (snapshot) => {
-                    let fetchedGroups = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-                    if (filterNewGroups) {
-                        fetchedGroups.sort((a, b) => b.createdAt.toDate() - a.createdAt.toDate());
-                    }
-                    if (filterAvailableGroups) {
-                        fetchedGroups = fetchedGroups.filter(group => (group.members?.length || 0) < (group.maxMembers || Infinity));
-                    }
-
-                    setGroups(fetchedGroups);
-
-                    const userJoined = new Set();
-                    fetchedGroups.forEach(group => {
-                        if (group.members && group.members.includes(userId)) {
-                            userJoined.add(group.id);
-                        }
-                    });
-                    setJoinedGroupIds(userJoined);
-
-                }, (error) => {
-                    console.error("Error fetching study groups:", error);
-                    setMessage("Error loading study groups. Please try again.");
-                    setShowConfirmation(true);
-                });
-
-                return () => unsubscribe();
-            }, [db, userId, loadingAuth, filterNewGroups, filterAvailableGroups, filterPublicGroups]);
-
-            const handleJoinGroup = async (groupId, currentMembers, maxMembers) => {
-                if (!userId) {
-                    setMessage("Authentication not ready. Please wait.");
-                    setShowConfirmation(true);
-                    return;
-                }
-                if (currentMembers >= maxMembers) {
-                    setMessage("This group has reached its maximum member limit.");
-                    setShowConfirmation(true);
-                    return;
-                }
-                try {
-                    const groupDocRef = doc(db, `artifacts/${appId}/public/data/studyGroups`, groupId);
-                    await updateDoc(groupDocRef, {
-                        members: arrayUnion(userId)
-                    });
-                    setMessage("Joined group successfully!");
-                    setShowConfirmation(true);
-                } catch (error) {
-                    console.error("Error joining group:", error);
-                    setMessage("Failed to join group. Please try again.");
-                    setShowConfirmation(true);
-                }
-            };
-
-            const handleLeaveGroup = async (groupId) => {
-                if (!userId) {
-                    setMessage("Authentication not ready. Please wait.");
-                    setShowConfirmation(true);
-                    return;
-                }
-                try {
-                    const groupDocRef = doc(db, `artifacts/${appId}/public/data/studyGroups`, groupId);
-                    await updateDoc(groupDocRef, {
-                        members: arrayRemove(userId)
-                    });
-                    setMessage("Left group successfully!");
-                    setShowConfirmation(true);
-                } catch (error) {
-                    console.error("Error leaving group:", error);
-                    setMessage("Failed to leave group. Please try again.");
-                    setShowConfirmation(true);
-                }
-            };
-
-            if (loadingAuth) {
-                return React.createElement(
-                    'div',
-                    { className: 'flex items-center justify-center min-h-screen bg-gray-100 text-gray-700' },
-                    React.createElement('p', null, 'Loading authentication...')
-                );
-            }
-
-            if (showCreateGroupPage) {
-                return React.createElement(CreateGroupPage, { onBack: () => setShowCreateGroupPage(false), onGroupCreated: onGroupCreated });
-            }
-
-            return React.createElement(
-                'div',
-                { className: 'min-h-screen bg-gray-100 flex flex-col font-sans' },
-                React.createElement(
-                    'div',
-                    { className: 'bg-white text-gray-800 p-4 flex justify-between items-center shadow-md' },
-                    React.createElement('svg', { onClick: onBack, className: 'w-6 h-6 text-gray-600 cursor-pointer', fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', xmlns: 'http://www.w3.org/2000/svg' }, React.createElement('path', { strokeLinecap: 'round', strokeLinejoin: 'round', strokeWidth: '2', d: 'M10 19l-7-7m0 0l7-7m-7 7h18' })),
-                    React.createElement(
-                        'div',
-                        { className: 'flex-grow text-center' },
-                        React.createElement('h2', { className: 'text-xl font-bold' }, 'Study Group')
-                    ),
-                    React.createElement('svg', { className: 'w-6 h-6 text-gray-600', fill: 'currentColor', viewBox: '0 0 20 20', xmlns: 'http://www.w3.org/2000/svg' }, React.createElement('path', { fillRule: 'evenodd', d: 'M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z', clipRule: 'evenodd' }))
-                ),
-                React.createElement(
-                    'div',
-                    { className: 'bg-white shadow-md flex justify-around p-3 text-gray-600 font-medium text-lg border-b border-gray-200' },
-                    React.createElement('div', { className: 'flex-1 text-center border-b-2 border-blue-600 pb-2 text-blue-600' }, 'New'),
-                    React.createElement('div', { className: 'flex-1 text-center pb-2' }, 'Attendance'),
-                    React.createElement('div', { className: 'flex-1 text-center pb-2' }, 'Studytime'),
-                    React.createElement('div', { className: 'flex-1 text-center pb-2' }, 'Mission'),
-                    React.createElement('div', { className: 'flex-1 text-center pb-2' }, 'Leader')
-                ),
-                React.createElement(
-                    'div',
-                    { className: 'bg-white p-3 flex justify-end items-center text-gray-700 text-sm border-b border-gray-200' },
-                    React.createElement('span', { className: 'mr-4' }, '* The groups will be listed according to the order in which they were created.'),
-                    React.createElement(
-                        'label',
-                        { className: 'inline-flex items-center mr-4' },
-                        React.createElement('input', {
-                            type: 'checkbox',
-                            className: 'form-checkbox h-4 w-4 text-blue-600 rounded',
-                            checked: filterAvailableGroups,
-                            onChange: () => setFilterAvailableGroups(!filterAvailableGroups)
-                        }),
-                        React.createElement('span', { className: 'ml-2' }, 'Available')
-                    ),
-                    React.createElement(
-                        'label',
-                        { className: 'inline-flex items-center' },
-                        React.createElement('input', {
-                            type: 'checkbox',
-                            className: 'form-checkbox h-4 w-4 text-blue-600 rounded',
-                            checked: filterPublicGroups,
-                            onChange: () => setFilterPublicGroups(!filterPublicGroups)
-                        }),
-                        React.createElement('span', { className: 'ml-2' }, 'Public')
-                    )
-                ),
-                React.createElement(
-                    'div',
-                    { className: 'flex-grow bg-gray-100 p-4 flex flex-col items-center' },
-                    groups.length === 0 ? (
-                        React.createElement(
-                            'div',
-                            { className: 'flex-grow flex items-center justify-center text-center text-gray-600 text-lg' },
-                            React.createElement('p', null, 'There are no available study groups.')
-                        )
-                    ) : (
-                        React.createElement(
-                            'div',
-                            { className: 'w-full max-w-4xl' },
-                            groups.map(group =>
-                                React.createElement(
-                                    'div',
-                                    {
-                                        key: group.id,
-                                        className: `bg-white p-4 rounded-lg shadow-md mb-4 border ${joinedGroupIds.has(group.id) ? 'border-blue-500' : 'border-gray-200'} hover:shadow-lg transition duration-200 cursor-pointer`
-                                    },
-                                    React.createElement(
-                                        'div',
-                                        { className: 'flex justify-between items-start mb-2' },
-                                        React.createElement('h4', { className: 'font-bold text-lg text-gray-900' }, group.name),
-                                        React.createElement(
-                                            'span',
-                                            { className: 'text-sm text-gray-500' },
-                                            group.createdAt ? `${Math.round((new Date() - group.createdAt.toDate()) / (1000 * 60))}m ago` : ''
-                                        )
-                                    ),
-                                    React.createElement('p', { className: 'text-sm text-gray-600 mb-2' }, group.description),
-                                    React.createElement(
-                                        'div',
-                                        { className: 'text-xs text-gray-500 mb-2' },
-                                        React.createElement('p', null, 'Goal: ', group.goal || 'N/A'),
-                                        React.createElement('p', null, 'Members: ', group.members ? group.members.length : 0, group.maxMembers ? `/${group.maxMembers} person` : ''),
-                                        React.createElement('p', null, 'Attendance: ', group.attendance || 'N/A', '%'),
-                                        React.createElement('p', null, 'Time: ', group.studyTime || 'N/A'),
-                                        React.createElement('p', null, 'Started on: ', group.createdAt ? group.createdAt.toDate().toLocaleDateString() : 'N/A'),
-                                        React.createElement('p', null, 'Leader: ', group.leaderId || 'N/A')
-                                    ),
-                                    React.createElement(
-                                        'div',
-                                        { className: 'mt-3 flex justify-end' },
-                                        joinedGroupIds.has(group.id) ? (
-                                            React.createElement(
-                                                'button',
-                                                {
-                                                    onClick: (e) => { e.stopPropagation(); handleLeaveGroup(group.id); },
-                                                    className: 'px-4 py-1 bg-red-500 text-white rounded-md text-sm hover:bg-red-600 transition'
-                                                },
-                                                'Leave'
-                                            )
-                                        ) : (
-                                            React.createElement(
-                                                'button',
-                                                {
-                                                    onClick: (e) => { e.stopPropagation(); handleJoinGroup(group.id, group.members?.length || 0, group.maxMembers || Infinity); },
-                                                    className: 'px-4 py-1 bg-green-500 text-white rounded-md text-sm hover:bg-green-600 transition',
-                                                    disabled: (group.members?.length || 0) >= (group.maxMembers || Infinity)
-                                                },
-                                                'Join'
-                                            )
-                                        )
-                                    )
-                                )
-                            )
-                        )
-                    )
-                ),
-                React.createElement(
-                    'button',
-                    {
-                        onClick: () => setShowCreateGroupPage(true),
-                        className: 'fixed bottom-20 right-6 bg-orange-500 text-white p-4 rounded-full shadow-lg hover:bg-orange-600 transition duration-300 transform hover:scale-110 z-20',
-                        'aria-label': 'Add new study group'
-                    },
-                    React.createElement('svg', { className: 'w-8 h-8', fill: 'currentColor', viewBox: '0 0 20 20', xmlns: 'http://www.w3.org/2000/svg' }, React.createElement('path', { fillRule: 'evenodd', d: 'M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z', clipRule: 'evenodd' }))
-                ),
-                showConfirmation && React.createElement(ConfirmationModal, { message: message, onClose: () => setShowConfirmation(false) })
-            );
-        }
-
-        // GroupChat Component
-        function GroupChat({ groupId, groupName, onBack }) {
-            const { db, userId, user, loadingAuth } = useContext(FirebaseContext);
-            const [messages, setMessages] = useState([]);
-            const [newMessage, setNewMessage] = useState('');
-            const [message, setMessage] = useState('');
-            const [showConfirmation, setShowConfirmation] = useState(false);
-            const messagesEndRef = useRef(null);
-
-            useEffect(() => {
-                if (!db || !groupId || loadingAuth) return;
-
-                const messagesRef = collection(db, `artifacts/${appId}/public/data/groupChats/${groupId}/messages`);
-                const q = query(messagesRef, orderBy('timestamp'));
-
-                const unsubscribe = onSnapshot(q, (snapshot) => {
-                    const fetchedMessages = snapshot.docs.map(doc => ({
-                        id: doc.id,
-                        ...doc.data()
-                    }));
-                    setMessages(fetchedMessages);
-                }, (error) => {
-                    console.error("Error fetching messages:", error);
-                    setMessage("Error loading chat messages. Please try again.");
-                    setShowConfirmation(true);
-                });
-
-                return () => unsubscribe();
-            }, [db, groupId, loadingAuth]);
-
-            useEffect(() => {
-                if (messagesEndRef.current) {
-                    messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-                }
-            }, [messages]);
-
-            const handleSendMessage = async () => {
-                if (newMessage.trim() === '') {
-                    setMessage("Message cannot be empty.");
-                    setShowConfirmation(true);
-                    return;
-                }
-                if (!db || !userId) {
-                    setMessage("Authentication not ready. Cannot send message.");
-                    setShowConfirmation(true);
-                    return;
-                }
-
-                try {
-                    const messagesRef = collection(db, `artifacts/${appId}/public/data/groupChats/${groupId}/messages`);
-                    await addDoc(messagesRef, {
-                        senderId: userId,
-                        senderName: user?.displayName || `User-${userId.substring(0, 4)}`,
-                        text: newMessage.trim(),
-                        timestamp: serverTimestamp(),
-                    });
-                    setNewMessage('');
-                } catch (error) {
-                    console.error("Error sending message:", error);
-                    setMessage("Failed to send message. Please try again.");
-                    setShowConfirmation(true);
-                }
-            };
-
-            if (loadingAuth) {
-                return React.createElement(
-                    'div',
-                    { className: 'flex items-center justify-center min-h-screen bg-gray-100 text-gray-700' },
-                    React.createElement('p', null, 'Loading authentication...')
-                );
-            }
-
-            return React.createElement(
-                'div',
-                { className: 'min-h-screen bg-gray-100 flex flex-col font-sans' },
-                React.createElement(
-                    'div',
-                    { className: 'bg-white text-gray-800 p-4 flex justify-between items-center shadow-md' },
-                    React.createElement('svg', { onClick: onBack, className: 'w-6 h-6 text-gray-600 cursor-pointer', fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', xmlns: 'http://www.w3.org/2000/svg' }, React.createElement('path', { strokeLinecap: 'round', strokeLinejoin: 'round', strokeWidth: '2', d: 'M10 19l-7-7m0 0l7-7m-7 7h18' })),
-                    React.createElement('h2', { className: 'text-xl font-bold flex-grow text-center' }, 'Group Chat'),
-                    React.createElement(
-                        'div',
-                        { className: 'flex items-center space-x-4' },
-                        React.createElement('svg', { className: 'w-6 h-6 text-gray-600 cursor-pointer', fill: 'currentColor', viewBox: '0 0 20 20', xmlns: 'http://www.w3.org/2000/svg' }, React.createElement('path', { d: 'M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 110-6 3 3 0 010 6z' })),
-                        React.createElement('svg', { className: 'w-6 h-6 text-gray-600 cursor-pointer', fill: 'currentColor', viewBox: '0 0 20 20', xmlns: 'http://www.w3.org/2000/svg' }, React.createElement('path', { fillRule: 'evenodd', d: 'M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2h.01a1 1 0 000-2H9zm1 3a1 1 0 100 2h.01a1 1 0 100-2H10z', clipRule: 'evenodd' }))
-                    )
-                ),
-                React.createElement(
-                    'div',
-                    { className: 'flex-grow overflow-y-auto p-4 space-y-3 pb-20' },
-                    messages.length === 0 ? (
-                        React.createElement(
-                            'div',
-                            { className: 'text-center text-gray-500 mt-8' },
-                            'The first message'
-                        )
-                    ) : (
-                        messages.map((msg, index) =>
-                            React.createElement(
-                                'div',
-                                {
-                                    key: msg.id || index,
-                                    className: `flex ${msg.senderId === userId ? 'justify-end' : 'justify-start'}`
-                                },
-                                React.createElement(
-                                    'div',
-                                    {
-                                        className: `max-w-[70%] p-3 rounded-lg shadow-sm ${msg.senderId === userId ? 'bg-blue-500 text-white rounded-br-none' : 'bg-white text-gray-800 rounded-bl-none'}`
-                                    },
-                                    React.createElement(
-                                        'p',
-                                        { className: 'text-sm font-semibold mb-1' },
-                                        msg.senderId === userId ? 'You' : msg.senderName
-                                    ),
-                                    React.createElement('p', { className: 'text-base' }, msg.text),
-                                    msg.timestamp && React.createElement(
-                                        'span',
-                                        { className: 'text-xs opacity-75 mt-1 block' },
-                                        new Date(msg.timestamp.toDate()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                                    )
-                                )
-                            )
-                        )
-                    ),
-                    React.createElement('div', { ref: messagesEndRef })
-                ),
-                React.createElement(
-                    'div',
-                    { className: 'fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 p-3 flex items-center shadow-lg z-10' },
-                    React.createElement('input', {
-                        type: 'text',
-                        value: newMessage,
-                        onChange: (e) => setNewMessage(e.target.value),
-                        onKeyPress: (e) => {
-                            if (e.key === 'Enter') {
-                                handleSendMessage();
-                            }
-                        },
-                        placeholder: 'Message...',
-                        className: 'flex-grow p-3 rounded-full bg-gray-100 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800'
-                    }),
-                    React.createElement(
-                        'button',
-                        {
-                            onClick: handleSendMessage,
-                            className: 'ml-3 p-3 bg-blue-600 text-white rounded-full shadow-md hover:bg-blue-700 transition duration-200 flex items-center justify-center'
-                        },
-                        React.createElement('svg', { className: 'w-6 h-6 transform rotate-45', fill: 'currentColor', viewBox: '0 0 20 20', xmlns: 'http://www.w3.org/2000/svg' }, React.createElement('path', { d: 'M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l.445-.445.42.42a1 1 0 001.414 0l1.414-1.414.42.42a1 1 0 001.414 0l1.414-1.414.42.42a1 1 0 001.414 0l.445-.445A1 1 0 0018.894 2.553z' }))
-                    )
-                ),
-                showConfirmation && React.createElement(ConfirmationModal, { message: message, onClose: () => setShowConfirmation(false) })
-            );
-        }
-
-        // GroupDetailView Component
-        function GroupDetailView({ group, onBack }) {
-            const { userId, user, loadingAuth } = useContext(FirebaseContext);
-            const [activeSubTab, setActiveSubTab] = useState('home');
-            const [message, setMessage] = useState('');
-            const [showConfirmation, setShowConfirmation] = useState(false);
-
-            const members = group.members || [];
-
-            const getMemberDetails = (memberId, currentUser) => {
-                const mockDetails = {
-                    '1': { name: 'Francis', studyTime: '05:11:17', icon: '🎧' },
-                    '2': { name: 'Tylg07', studyTime: '02:32:17', icon: '🧑‍💻' },
-                    '3': { name: 'Amite', studyTime: '01:33:39', icon: '💻' },
-                    '4': { name: 'Markgeoli', studyTime: '01:21:56', icon: '💡' },
-                    '5': { name: 'Salma', studyTime: '01:04:03', icon: '⭐' },
-                    '6': { name: 'clarisyy', studyTime: '00:54:57', icon: '📚' },
-                    '7': { name: 'Elexvg', studyTime: '00:36:28', icon: '⏰' },
-                    '8': { name: 'spherical.rat', studyTime: '00:31:35', icon: '🐀' },
-                    '9': { name: 'bbyyunseul', studyTime: '00:21:47', icon: '📱' },
-                    [userId]: { name: currentUser?.displayName || `You (${memberId.substring(0, 4)})`, studyTime: '00:00:00', icon: '👑' },
-                    '11': { name: 'Flamme.A.W.', studyTime: '00:00:00', icon: '🔥' },
-                    '12': { name: 'high achiever', studyTime: '00:00:00', icon: '🤩' },
-                    '13': { name: 'z_m759', studyTime: '00:00:00', icon: '💤' },
-                    '14': { name: '+Tylg', studyTime: '00:00:00', icon: '💖' },
-                    '15': { name: 'JakubW', studyTime: '00:00:00', icon: '💡' },
-                    '16': { name: 'kasper', studyTime: '00:00:00', icon: '👻' },
-                    '17': { name: 'henriz', studyTime: '00:00:00', icon: '📖' },
-                    '18': { name: 'zuzup', studyTime: '00:00:00', icon: '✍️' },
-                    '19': { name: 'Chléaaa♡D♡', studyTime: '00:00:00', icon: '🌸' },
-                    '20': { name: 'Aminacore', studyTime: '00:00:00', icon: '✨' },
-                };
-                return mockDetails[memberId] || { name: `User-${memberId.substring(0, 4)}`, studyTime: '00:00:00', icon: '👤' };
-            };
-
-            if (loadingAuth) {
-                return React.createElement(
-                    'div',
-                    { className: 'flex items-center justify-center min-h-screen bg-gray-100 text-gray-700' },
-                    React.createElement('p', null, 'Loading authentication...')
-                );
-            }
-
-            const handleSubTabClick = (tabName) => {
-                setActiveSubTab(tabName);
-            };
-
-            const renderGroupContent = () => {
-                switch (activeSubTab) {
-                    case 'home':
-                        return React.createElement(
-                            React.Fragment,
-                            null,
-                            React.createElement(
-                                'div',
-                                { className: 'bg-white p-4 mx-4 mt-4 rounded-lg shadow-md flex justify-between items-center text-gray-700 cursor-pointer' },
-                                React.createElement('span', null, 'Group Introduction/Rules'),
-                                React.createElement('svg', { className: 'w-5 h-5 text-gray-400', fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', xmlns: 'http://www.w3.org/2000/svg' }, React.createElement('path', { strokeLinecap: 'round', strokeLinejoin: 'round', strokeWidth: '2', d: 'M9 5l7 7-7 7' }))
-                            ),
-                            React.createElement(
-                                'div',
-                                { className: 'flex-grow bg-gray-100 p-4 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4 overflow-y-auto pb-16' },
-                                members.map(memberId => {
-                                    const memberDetails = getMemberDetails(memberId, user);
-                                    return React.createElement(
-                                        'div',
-                                        {
-                                            key: memberId,
-                                            className: `flex flex-col items-center justify-center p-3 rounded-lg shadow-sm text-center ${memberId === userId ? 'bg-orange-100 border-2 border-orange-400' : 'bg-white border border-gray-200'}`
-                                        },
-                                        React.createElement(
-                                            'div',
-                                            { className: 'w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center text-2xl mb-2' },
-                                            memberDetails.icon
-                                        ),
-                                        React.createElement('p', { className: 'text-sm font-medium text-gray-800 truncate w-full' }, memberDetails.name),
-                                        React.createElement('p', { className: 'text-xs text-gray-500' }, memberDetails.studyTime)
-                                    );
-                                })
-                            )
-                        );
-                    case 'attendance':
-                    case 'rankings':
-                    case 'invite':
-                        return React.createElement(
-                            'div',
-                            { className: 'flex-grow flex items-center justify-center text-center text-gray-600 text-lg' },
-                            React.createElement('p', null, activeSubTab, ' functionality to be implemented.')
-                        );
-                    case 'chat':
-                        return React.createElement(GroupChat, { groupId: group.id, groupName: group.name, onBack: onBack });
-                    default:
-                        return null;
-                }
-            };
-
-            return React.createElement(
-                'div',
-                { className: 'min-h-screen bg-gray-100 flex flex-col font-sans' },
-                React.createElement(
-                    'div',
-                    { className: 'bg-white text-gray-800 p-4 flex justify-between items-center shadow-md' },
-                    React.createElement('svg', { onClick: onBack, className: 'w-6 h-6 text-gray-600 cursor-pointer', fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', xmlns: 'http://www.w3.org/2000/svg' }, React.createElement('path', { strokeLinecap: 'round', strokeLinejoin: 'round', strokeWidth: '2', d: 'M10 19l-7-7m0 0l7-7m-7 7h18' })),
-                    React.createElement('h2', { className: 'text-xl font-bold flex-grow text-center' }, group.name),
-                    React.createElement('svg', { className: 'w-6 h-6 text-gray-600 cursor-pointer', fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', xmlns: 'http://www.w3.org/2000/svg' }, React.createElement('path', { strokeLinecap: 'round', strokeLinejoin: 'round', strokeWidth: '2', d: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.942 3.33.83 2.864 2.334l-.067.223a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.942 1.543-.83 3.33-2.334 2.864l-.223-.067a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.942.83-3.33 2.334-2.864l.223.067a1.724 1.724 0 002.573-1.066z' }), React.createElement('path', { strokeLinecap: 'round', strokeLinejoin: 'round', strokeWidth: '2', d: 'M15 12a3 3 0 11-6 0 3 3 0 016 0z' }))
-                ),
-                renderGroupContent(),
-                activeSubTab !== 'chat' && React.createElement(
-                    'div',
-                    { className: 'bg-white border-t border-gray-200 p-3 flex justify-around items-center shadow-lg fixed bottom-0 left-0 w-full z-10' },
-                    React.createElement(
-                        'div',
-                        {
-                            className: `flex flex-col items-center cursor-pointer p-2 rounded-md transition-colors duration-200 ${activeSubTab === 'home' ? 'text-blue-600' : 'text-gray-500'}`,
-                            onClick: () => handleSubTabClick('home')
-                        },
-                        React.createElement('svg', { className: 'w-6 h-6', fill: 'currentColor', viewBox: '0 0 24 24', xmlns: 'http://www.w3.org/2000/svg' }, React.createElement('path', { d: 'M3 12l9-9 9 9H3zm.75 1.5h16.5V21H3.75v-7.5z' })),
-                        React.createElement('span', { className: 'text-xs mt-1' }, 'Home')
-                    ),
-                    React.createElement(
-                        'div',
-                        {
-                            className: `flex flex-col items-center cursor-pointer p-2 rounded-md transition-colors duration-200 ${activeSubTab === 'attendance' ? 'text-blue-600' : 'text-gray-500'}`,
-                            onClick: () => handleSubTabClick('attendance')
-                        },
-                        React.createElement('svg', { className: 'w-6 h-6', fill: 'currentColor', viewBox: '0 0 24 24', xmlns: 'http://www.w3.org/2000/svg' }, React.createElement('path', { d: 'M19 4h-2V2h-2v2H9V2H7v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM5 7V6h14v1H5z' })),
-                        React.createElement('span', { className: 'text-xs mt-1' }, 'Attendance')
-                    ),
-                    React.createElement(
-                        'div',
-                        {
-                            className: `flex flex-col items-center cursor-pointer p-2 rounded-md transition-colors duration-200 ${activeSubTab === 'rankings' ? 'text-blue-600' : 'text-gray-500'}`,
-                            onClick: () => handleSubTabClick('rankings')
-                        },
-                        React.createElement('svg', { className: 'w-6 h-6', fill: 'currentColor', viewBox: '0 0 24 24', xmlns: 'http://www.w3.org/2000/svg' }, React.createElement('path', { d: 'M4 22H2V2h2v20zM8 10h2V2h-2v8zm4 8h2V2h-2v16zm4-4h2V2h-2v12zm4-4h2V2h-2v8z' })),
-                        React.createElement('span', { className: 'text-xs mt-1' }, 'Rankings')
-                    ),
-                    React.createElement(
-                        'div',
-                        {
-                            className: `flex flex-col items-center cursor-pointer p-2 rounded-md transition-colors duration-200 ${activeSubTab === 'invite' ? 'text-blue-600' : 'text-gray-500'}`,
-                            onClick: () => handleSubTabClick('invite')
-                        },
-                        React.createElement('svg', { className: 'w-6 h-6', fill: 'currentColor', viewBox: '0 0 24 24', xmlns: 'http://www.w3.org/2000/svg' }, React.createElement('path', { d: 'M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z' })),
-                        React.createElement('span', { className: 'text-xs mt-1' }, 'Invite')
-                    ),
-                    React.createElement(
-                        'div',
-                        {
-                            className: `flex flex-col items-center cursor-pointer p-2 rounded-md transition-colors duration-200 ${activeSubTab === 'chat' ? 'text-blue-600' : 'text-gray-500'}`,
-                            onClick: () => handleSubTabClick('chat')
-                        },
-                        React.createElement('svg', { className: 'w-6 h-6', fill: 'currentColor', viewBox: '0 0 24 24', xmlns: 'http://www.w3.org/2000/svg' }, React.createElement('path', { d: 'M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z' })),
-                        React.createElement('span', { className: 'text-xs mt-1' }, 'Chat')
-                    )
-                ),
-                showConfirmation && React.createElement(ConfirmationModal, { message: message, onClose: () => setShowConfirmation(false) })
-            );
-        }
-
-        // SetProfilePage Component
-        function SetProfilePage({ onProfileSetupComplete }) {
-            const { auth, user, db, userId, setUser } = useContext(FirebaseContext);
-            const [displayName, setDisplayName] = useState('');
-            const [message, setMessage] = useState('');
-            const [showConfirmation, setShowConfirmation] = useState(false);
-
-            useEffect(() => {
-                if (user?.displayName) {
-                    setDisplayName(user.displayName);
-                }
-            }, [user]);
-
-            const handleSaveProfile = async () => {
-                if (displayName.trim() === '') {
-                    setMessage('Display name cannot be empty.');
-                    setShowConfirmation(true);
-                    return;
-                }
-
-                if (!user) {
-                    setMessage('No user authenticated.');
-                    setShowConfirmation(true);
-                    return;
-                }
-
-                try {
-                    await updateProfile(user, { displayName: displayName.trim() });
-
-                    if (db && userId) {
-                        const userDocRef = doc(db, `artifacts/${appId}/users/${userId}/profile`, 'public');
-                        await setDoc(userDocRef, {
-                            displayName: displayName.trim(),
-                            uid: userId,
-                        }, { merge: true });
-                    }
-
-                    setMessage('Profile updated successfully!');
-                    setShowConfirmation(true);
-
-                    setUser({ ...user, displayName: displayName.trim() });
-
-                    setTimeout(() => {
-                        onProfileSetupComplete();
-                    }, 1500);
-
-                } catch (error) {
-                    console.error("Error updating profile:", error);
-                    setMessage(`Failed to update profile: ${error.message}`);
-                    setShowConfirmation(true);
-                }
-            };
-
-            return React.createElement(
-                'div',
-                { className: 'min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4 font-sans' },
-                React.createElement(
-                    'div',
-                    { className: 'bg-white p-8 rounded-lg shadow-xl w-full max-w-md text-center' },
-                    React.createElement('h2', { className: 'text-2xl font-bold text-gray-800 mb-6' }, 'Set Up Your Profile'),
-                    React.createElement(
-                        'div',
-                        { className: 'w-24 h-24 bg-blue-200 rounded-full flex items-center justify-center text-5xl text-blue-800 mx-auto mb-6' },
-                        displayName ? displayName.charAt(0).toUpperCase() : '👤'
-                    ),
-                    React.createElement(
-                        'div',
-                        { className: 'mb-6' },
-                        React.createElement(
-                            'label',
-                            { htmlFor: 'displayName', className: 'block text-gray-700 text-left text-sm font-medium mb-2' },
-                            'Display Name'
-                        ),
-                        React.createElement('input', {
-                            type: 'text',
-                            id: 'displayName',
-                            placeholder: 'Enter your display name',
-                            value: displayName,
-                            onChange: (e) => setDisplayName(e.target.value),
-                            className: 'w-full py-3 px-4 border border-gray-300 rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-blue-400',
-                            maxLength: '20'
-                        }),
-                        React.createElement(
-                            'span',
-                            { className: 'text-xs text-gray-500 mt-1 block text-right' },
-                            displayName.length,
-                            ' / 20'
-                        )
-                    ),
-                    React.createElement(
-                        'button',
-                        {
-                            onClick: handleSaveProfile,
-                            className: 'w-full py-3 bg-blue-600 text-white font-bold rounded-lg shadow-md hover:bg-blue-700 transition duration-200 text-lg'
-                        },
-                        'Save Profile'
-                    )
-                ),
-                showConfirmation && React.createElement(ConfirmationModal, { message: message, onClose: () => setShowConfirmation(false) })
-            );
-        }
-
-        // MorePage Component
-        function MorePage({ setActiveTab }) {
-            const { userId, user } = useContext(FirebaseContext);
-            const [message, setMessage] = useState('');
-            const [showConfirmation, setShowConfirmation] = useState(false);
-
-            const handleFeatureClick = (featureName) => {
-                setMessage(`${featureName} functionality to be implemented.`);
-                setShowConfirmation(true);
-            };
-
-            return React.createElement(
-                'div',
-                { className: 'min-h-screen bg-gray-100 flex flex-col font-sans' },
-                React.createElement(
-                    'div',
-                    { className: 'bg-white text-gray-800 p-4 flex justify-between items-center shadow-md' },
-                    React.createElement('h2', { className: 'text-xl font-bold flex-grow text-center' }, 'More'),
-                    React.createElement('svg', { className: 'w-6 h-6 text-gray-600 cursor-pointer', fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', xmlns: 'http://www.w3.org/2000/svg' }, React.createElement('path', { strokeLinecap: 'round', strokeLinejoin: 'round', strokeWidth: '2', d: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.942 3.33.83 2.864 2.334l-.067.223a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.942 1.543-.83 3.33-2.334 2.864l-.223-.067a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.942.83-3.33 2.334-2.864l.223.067a1.724 1.724 0 002.573-1.066z' }), React.createElement('path', { strokeLinecap: 'round', strokeLinejoin: 'round', strokeWidth: '2', d: 'M15 12a3 3 0 11-6 0 3 3 0 016 0z' }))
-                ),
-                React.createElement(
-                    'div',
-                    { className: 'bg-white p-4 rounded-lg shadow-md mx-4 mt-4 flex items-center' },
-                    React.createElement(
-                        'div',
-                        { className: 'w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center mr-4' },
-                        React.createElement(
-                            'span',
-                            { className: 'text-xl text-gray-600' },
-                            user?.displayName ? user.displayName.charAt(0).toUpperCase() : '👤'
-                        )
-                    ),
-                    React.createElement(
-                        'div',
-                        null,
-                        React.createElement('p', { className: 'font-semibold text-lg text-gray-800' }, user?.displayName || 'Guest User'),
-                        React.createElement('p', { className: 'text-sm text-gray-500' }, 'No Status Message.')
-                    ),
-                    React.createElement(
-                        'div',
-                        { className: 'ml-auto' },
-                        React.createElement('svg', { className: 'w-8 h-8 text-orange-500', fill: 'currentColor', viewBox: '0 0 24 24', xmlns: 'http://www.w3.org/2000/svg' }, React.createElement('path', { d: 'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z' }))
-                    )
-                ),
-                React.createElement(
-                    'div',
-                    { className: 'text-center text-xs text-gray-400 mt-2 mb-4' },
-                    'AD'
-                ),
-                React.createElement(
-                    'div',
-                    { className: 'bg-white rounded-lg shadow-md mx-4 mb-4 overflow-hidden' },
-                    React.createElement(
-                        'div',
-                        { className: 'border-b border-gray-200' },
-                        React.createElement(
-                            'button',
-                            {
-                                onClick: () => setActiveTab('leaderboard'),
-                                className: 'flex items-center w-full p-4 text-lg text-gray-800 hover:bg-gray-50 transition duration-150'
-                            },
-                            React.createElement('svg', { className: 'w-6 h-6 mr-3 text-gray-500', fill: 'currentColor', viewBox: '0 0 20 20', xmlns: 'http://www.w3.org/2000/svg' }, React.createElement('path', { fillRule: 'evenodd', d: 'M10 2a8 8 0 100 16 8 8 0 000-16zM6.5 9a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm7 0a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm-3.5 6a1.5 1.5 0 100-3 1.5 1.5 0 000 3z', clipRule: 'evenodd' })),
-                            'Rankings'
-                        )
-                    ),
-                    React.createElement(
-                        'div',
-                        { className: 'border-b border-gray-200' },
-                        React.createElement(
-                            'button',
-                            {
-                                onClick: () => handleFeatureClick('Calendar'),
-                                className: 'flex items-center w-full p-4 text-lg text-gray-800 hover:bg-gray-50 transition duration-150'
-                            },
-                            React.createElement('svg', { className: 'w-6 h-6 mr-3 text-gray-500', fill: 'currentColor', viewBox: '0 0 20 20', xmlns: 'http://www.w3.org/2000/svg' }, React.createElement('path', { fillRule: 'evenodd', d: 'M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z', clipRule: 'evenodd' })),
-                            'Calendar'
-                        )
-                    ),
-                    React.createElement(
-                        'div',
-                        { className: 'border-b border-gray-200' },
-                        React.createElement(
-                            'button',
-                            {
-                                onClick: () => handleFeatureClick('YPT Store'),
-                                className: 'flex items-center w-full p-4 text-lg text-gray-800 hover:bg-gray-50 transition duration-150'
-                            },
-                            React.createElement('svg', { className: 'w-6 h-6 mr-3 text-orange-500', fill: 'currentColor', viewBox: '0 0 20 20', xmlns: 'http://www.w3.org/2000/svg' }, React.createElement('path', { fillRule: 'evenodd', d: 'M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10.586l2 2H14a2 2 0 00-2 2v4a2 2 0 002 2h2a2 2 0 002-2v-4a2 2 0 00-2-2h-1.414l-2-2H4z', clipRule: 'evenodd' })),
-                            'YPT Store'
-                        )
-                    ),
-                    React.createElement(
-                        'div',
-                        { className: 'border-b border-gray-200' },
-                        React.createElement(
-                            'button',
-                            {
-                                onClick: () => handleFeatureClick('Studicon Settings'),
-                                className: 'flex items-center w-full p-4 text-lg text-gray-800 hover:bg-gray-50 transition duration-150'
-                            },
-                            React.createElement('svg', { className: 'w-6 h-6 mr-3 text-gray-500', fill: 'currentColor', viewBox: '0 0 20 20', xmlns: 'http://www.w3.org/2000/svg' }, React.createElement('path', { fillRule: 'evenodd', d: 'M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 102 0V6zm-1 6a1 1 0 100 2h.01a1 1 0 100-2H10z', clipRule: 'evenodd' })),
-                            'Studicon Settings'
-                        )
-                    ),
-                    React.createElement(
-                        'div',
-                        { className: 'border-b border-gray-200' },
-                        React.createElement(
-                            'button',
-                            {
-                                onClick: () => handleFeatureClick('Invite Friends'),
-                                className: 'flex items-center w-full p-4 text-lg text-gray-800 hover:bg-gray-50 transition duration-150'
-                            },
-                            React.createElement('svg', { className: 'w-6 h-6 mr-3 text-gray-500', fill: 'currentColor', viewBox: '0 0 20 20', xmlns: 'http://www.w3.org/2000/svg' }, React.createElement('path', { d: 'M13 6a3 3 0 11-6 0 3 3 0 016 0zm-6 9a3 3 0 100-6 3 3 0 000 6zm7 0a3 3 0 100-6 3 3 0 000 6z' })),
-                            'Invite Friends'
-                        )
-                    ),
-                    React.createElement(
-                        'div',
-                        null,
-                        React.createElement(
-                            'button',
-                            {
-                                onClick: () => handleFeatureClick('Help'),
-                                className: 'flex items-center w-full p-4 text-lg text-gray-800 hover:bg-gray-50 transition duration-150'
-                            },
-                            React.createElement('svg', { className: 'w-6 h-6 mr-3 text-gray-500', fill: 'currentColor', viewBox: '0 0 20 20', xmlns: 'http://www.w3.org/2000/svg' }, React.createElement('path', { fillRule: 'evenodd', d: 'M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.442C7.26 8.21 6 10.112 6 12a2 2 0 002 2h2a2 2 0 002-2c0-1.888-1.26-3.79-3.133-4.558A1 1 0 0010 7z', clipRule: 'evenodd' })),
-                            'Help'
-                        )
-                    )
-                ),
-                showConfirmation && React.createElement(ConfirmationModal, { message: message, onClose: () => setShowConfirmation(false) })
-            );
-        }
-
-        // App Component (Main)
-        function App() {
-            const [activeTab, setActiveTab] = useState('timer');
-            const [selectedGroupInStudyGroup, setSelectedGroupInStudyGroup] = useState(null);
-            const firebaseData = useFirebase();
-            const { user, loadingAuth } = firebaseData;
-
-            const renderContent = () => {
-                if (loadingAuth) {
-                    return React.createElement(
-                        'div',
-                        { className: 'flex items-center justify-center min-h-screen bg-gray-100 text-gray-700' },
-                        React.createElement('p', null, 'Loading authentication...')
-                    );
-                }
-
-                if (!user) {
-                    return React.createElement(WelcomeScreen, { onAuthSuccess: () => { /* Handled by useFirebase's onAuthStateChanged */ } });
-                }
-
+        async function checkAndCreateUserProfile(user, onComplete) {
+            try {
                 if (!user.displayName) {
-                    return React.createElement(SetProfilePage, { onProfileSetupComplete: () => { } });
+                    showModal('add-name-modal');
+                    return; // Stop execution until name is set
                 }
-
-                switch (activeTab) {
-                    case 'timer':
-                        return React.createElement(Timer, null);
-                    case 'stats':
-                        return React.createElement(Stats, null);
-                    case 'leaderboard':
-                        return React.createElement(Leaderboard, null);
-                    case 'study-group':
-                        return React.createElement(StudyGroup, { setSelectedGroupInStudyGroup: setSelectedGroupInStudyGroup });
-                    case 'more':
-                        return React.createElement(MorePage, { setActiveTab: setActiveTab });
-                    default:
-                        return React.createElement(Timer, null);
+                const profileRef = doc(db, `artifacts/${appId}/public/data/user_profiles`, user.uid);
+                const profileSnap = await getDoc(profileRef);
+                if (!profileSnap.exists()) {
+                    await setDoc(profileRef, {
+                        displayName: user.displayName,
+                        totalStudyTime: 0,
+                        createdAt: serverTimestamp()
+                    });
                 }
-            };
-
-            return React.createElement(
-                FirebaseContext.Provider,
-                { value: firebaseData },
-                React.createElement(
-                    'div',
-                    { className: 'min-h-screen bg-gray-100 font-sans text-gray-900 flex flex-col' },
-                    React.createElement(
-                        'main',
-                        { className: 'flex-grow' },
-                        renderContent()
-                    ),
-                    user && user.displayName && (activeTab !== 'study-group' || !selectedGroupInStudyGroup) ? (
-                        React.createElement(Navbar, { setActiveTab: setActiveTab, activeTab: activeTab })
-                    ) : null
-                )
-            );
+                onComplete();
+            } catch (error) {
+                handleError(error, 'User Profile Check');
+                signOut(auth);
+            }
         }
 
-        // Render the React App component into the root div
-        const container = document.getElementById('root');
-        const root = ReactDOM.createRoot(container);
-        root.render(React.createElement(App, null));
+        async function handleAddName(e) {
+            e.preventDefault();
+            const nameInput = document.getElementById('display-name-input');
+            const newName = nameInput.value.trim();
+            if (newName && auth.currentUser) {
+                try {
+                    await updateProfile(auth.currentUser, { displayName: newName });
+                    const profileRef = doc(db, `artifacts/${appId}/public/data/user_profiles`, auth.currentUser.uid);
+                    await setDoc(profileRef, { displayName: newName }, { merge: true });
+                    
+                    hideModals();
+                    ui.userDisplayName.textContent = newName;
+                    ui.userInfo.classList.remove('hidden');
+                    ui.authScreen.classList.remove('active');
+                    ui.appContainer.classList.add('active', 'flex');
+                    initializeAppData();
+                } catch (error) {
+                    handleError(error, 'Updating Name');
+                }
+            }
+        }
+
+        // --- FIREBASE & DATA LOGIC ---
+        function initializeAppData() {
+            listenForSubjects();
+            listenForLiveSessions();
+            listenForTodos();
+            calculateAndRenderTodayTotal();
+
+            // Start the ranking refresh interval
+            if (rankingInterval) clearInterval(rankingInterval);
+            rankingInterval = setInterval(() => {
+                if (document.getElementById('page-ranking').classList.contains('active')) {
+                    renderRankings();
+                }
+            }, 60000); // 60000ms = 1 minute
+        }
+
+        const createListener = (q, callback) => {
+            const unsub = onSnapshot(q, callback, (error) => handleError(error, 'Data listener'));
+            unsubscribers.push(unsub);
+        };
+
+        const listenForSubjects = () => createListener(collection(db, `artifacts/${appId}/users/${userId}/subjects`), s => { subjects = s.docs.map(d => ({ id: d.id, ...d.data() })); renderModalSubjectsList(); });
+        const listenForTodos = () => createListener(collection(db, `artifacts/${appId}/users/${userId}/todos`), s => { todos = s.docs.map(d => ({ id: d.id, ...d.data() })); renderTodos(); });
+        const listenForLiveSessions = () => createListener(collection(db, `artifacts/${appId}/public/data/live_sessions`), s => renderLiveSessions(s.docs.map(d => ({ id: d.id, ...d.data() }))));
+        
+        const addNewSubject = async (name, color) => { try { await addDoc(collection(db, `artifacts/${appId}/users/${userId}/subjects`), { name, color, createdAt: serverTimestamp() }); } catch (e) { handleError(e, 'Add Subject'); } };
+        const addNewTodo = async text => { try { await addDoc(collection(db, `artifacts/${appId}/users/${userId}/todos`), { text, completed: false, createdAt: serverTimestamp() }); } catch (e) { handleError(e, 'Add Todo'); } };
+        const toggleTodo = async (id, completed) => { try { await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/todos`, id), { completed }); } catch (e) { handleError(e, 'Update Todo'); } };
+        const deleteTodo = async id => { try { await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/todos`, id)); } catch (e) { handleError(e, 'Delete Todo'); } };
+
+        async function logStudySession(subjectId, duration) {
+            if (!userId || !subjectId || duration < 1) return;
+            const subject = subjects.find(s => s.id === subjectId);
+            if (!subject) return;
+
+            try {
+                const batch = writeBatch(db);
+                const logRef = doc(collection(db, `artifacts/${appId}/users/${userId}/study_logs`));
+                batch.set(logRef, { subjectId, subjectName: subject.name, duration, endTime: serverTimestamp() });
+                
+                const profileRef = doc(db, `artifacts/${appId}/public/data/user_profiles`, userId);
+                const profileSnap = await getDoc(profileRef);
+                const currentTotal = profileSnap.exists() ? profileSnap.data().totalStudyTime : 0;
+                const displayName = auth.currentUser.displayName || auth.currentUser.email;
+                batch.set(profileRef, { totalStudyTime: currentTotal + duration, lastStudied: serverTimestamp(), displayName }, { merge: true });
+
+                await batch.commit();
+            } catch (error) {
+                handleError(error, 'Log Session');
+            }
+        }
+
+        async function setPublicStatus(isStudying, subjectName = '') {
+            try {
+                const sessionRef = doc(db, `artifacts/${appId}/public/data/live_sessions`, userId);
+                if (isStudying) await setDoc(sessionRef, { subjectName, startTime: serverTimestamp() });
+                else await deleteDoc(sessionRef);
+            } catch (error) {
+                handleError(error, 'Update Status');
+            }
+        }
+
+        // --- TIMER LOGIC ---
+        function startTimer(subjectId) {
+            const subject = subjects.find(s => s.id === subjectId);
+            if (!subject) return;
+            
+            hideModals();
+            activeSubjectId = subjectId;
+            sessionStartTime = Date.now();
+            setPublicStatus(true, subject.name);
+
+            ui.activeSubjectDisplay.textContent = subject.name;
+            ui.startStudyingBtn.classList.add('hidden');
+            ui.stopStudyingBtn.classList.remove('hidden');
+
+            activeTimerInterval = setInterval(() => {
+                const elapsedSeconds = (Date.now() - sessionStartTime) / 1000;
+                ui.sessionTimer.textContent = formatTime(elapsedSeconds);
+            }, 1000);
+        }
+
+        function stopTimer() {
+            if (!activeTimerInterval || !activeSubjectId) return;
+            const elapsedSeconds = Math.round((Date.now() - sessionStartTime) / 1000);
+            
+            clearInterval(activeTimerInterval);
+            logStudySession(activeSubjectId, elapsedSeconds);
+            
+            setPublicStatus(false);
+            activeTimerInterval = null;
+            activeSubjectId = null;
+            sessionStartTime = 0;
+
+            ui.sessionTimer.textContent = "00:00:00";
+            ui.activeSubjectDisplay.textContent = "";
+            ui.startStudyingBtn.classList.remove('hidden');
+            ui.stopStudyingBtn.classList.add('hidden');
+            calculateAndRenderTodayTotal();
+        }
+
+        // --- RENDERING ---
+        const renderLiveSessions = sessions => { ui.liveSessionsGrid.innerHTML = sessions.map(s => `<div class="bg-gray-800/70 rounded-lg animate-pulse aspect-square"></div>`).join(''); };
+        const renderModalSubjectsList = () => {
+            ui.modalSubjectsList.innerHTML = subjects.length > 0 
+                ? subjects.map(s => `<button data-id="${s.id}" class="subject-select-btn w-full text-left p-4 bg-gray-700 hover:bg-blue-600 rounded-lg flex items-center space-x-4 transition-colors"><div class="w-4 h-4 rounded-full" style="background-color: ${subjectColors.find(c=>c.name===s.color)?.hex || '#fff'};"></div><span class="font-semibold">${s.name}</span></button>`).join('')
+                : `<p class="text-center text-gray-400">No subjects yet. Add one from the navigation bar!</p>`;
+        };
+        const renderTodos = () => {
+            ui.todoList.innerHTML = todos.map(todo => `<div class="flex items-center p-3 bg-gray-700/50 rounded-lg"><input type="checkbox" data-id="${todo.id}" class="todo-checkbox h-5 w-5 rounded bg-gray-600 border-gray-500 text-blue-500 focus:ring-blue-600" ${todo.completed ? 'checked' : ''}><span class="ml-3 flex-grow ${todo.completed ? 'line-through text-gray-500' : 'text-gray-200'}">${todo.text}</span><button data-id="${todo.id}" class="delete-todo-btn text-gray-500 hover:text-red-400 transition-colors"><svg class="h-5 w-5 pointer-events-none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></button></div>`).join('');
+        };
+        const renderColorPicker = () => {
+            ui.colorPicker.innerHTML = subjectColors.map(c => `<button data-color="${c.name}" class="w-8 h-8 rounded-full border-2 border-transparent focus:border-white transition-all" style="background-color: ${c.hex};"></button>`).join('');
+            selectedColor = subjectColors[0].name;
+            ui.colorPicker.querySelector(`[data-color="${selectedColor}"]`).classList.add('ring-2', 'ring-offset-2', 'ring-offset-gray-800', 'ring-white');
+        };
+        async function renderRankings() {
+            try {
+                ui.rankingList.innerHTML = `<div class="text-center p-8">Loading rankings...</div>`;
+                const profilesRef = collection(db, `artifacts/${appId}/public/data/user_profiles`);
+                const q = query(profilesRef);
+                const querySnapshot = await getDocs(q);
+                const rankings = querySnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                rankings.sort((a, b) => (b.totalStudyTime || 0) - (a.totalStudyTime || 0));
+                
+                ui.rankingList.innerHTML = rankings.map((p, i) => `<div class="flex items-center p-3 rounded-lg ${p.id === userId ? 'bg-blue-600/30' : 'bg-gray-700/50'}"><span class="font-bold text-lg w-10">${i+1}</span><div class="flex-grow">
+                    <p class="font-semibold">${p.displayName || `User ${p.id.substring(0,8)}...`}</p>
+                    <p class="text-sm text-gray-400">${formatTime(p.totalStudyTime || 0)}</p>
+                </div></div>`).join('');
+            } catch (error) {
+                handleError(error, 'Fetch Rankings');
+            }
+        }
+
+        // --- CALCULATIONS & STATS ---
+        async function calculateAndRenderTodayTotal() {
+            if (!userId) return;
+            try {
+                const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+                const logsRef = collection(db, `artifacts/${appId}/users/${userId}/study_logs`);
+                const q = query(logsRef, where("endTime", ">=", Timestamp.fromDate(todayStart)));
+                const querySnapshot = await getDocs(q);
+                let totalSecondsToday = querySnapshot.docs.reduce((sum, doc) => sum + doc.data().duration, 0);
+                ui.totalTimeDisplay.textContent = `Total Today: ${formatTime(totalSecondsToday)}`;
+            } catch (error) {
+                handleError(error, 'Calculate Today\'s Total');
+            }
+        }
+
+        async function renderStatsChart(period) {
+            if (!userId) return;
+            try {
+                const now = new Date();
+                let startDate;
+                if (period === 'today') startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                else if (period === '7days') startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6);
+                else startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29);
+                
+                const logsRef = collection(db, `artifacts/${appId}/users/${userId}/study_logs`);
+                const q = query(logsRef, where("endTime", ">=", Timestamp.fromDate(startDate)));
+                const querySnapshot = await getDocs(q);
+                
+                const dataBySubject = {};
+                querySnapshot.forEach(doc => {
+                    const log = doc.data();
+                    dataBySubject[log.subjectName] = (dataBySubject[log.subjectName] || 0) + log.duration;
+                });
+
+                const labels = Object.keys(dataBySubject);
+                const data = Object.values(dataBySubject).map(s => s / 3600); // show in hours
+
+                if (statsChart) statsChart.destroy();
+                const ctx = document.getElementById('stats-chart').getContext('2d');
+                statsChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: { labels, datasets: [{ label: 'Hours Studied', data, backgroundColor: labels.map(label => (subjects.find(s => s.name === label) ? (subjectColors.find(c => c.name === subjects.find(s => s.name === label).color)?.hex || '#3B82F6') : '#3B82F6')), borderRadius: 4, }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#9CA3AF' } }, x: { grid: { display: false }, ticks: { color: '#9CA3AF' } } } }
+                });
+            } catch (error) {
+                handleError(error, 'Render Stats');
+            }
+        }
+
+        // --- EVENT LISTENERS ---
+        function setupEventListeners() {
+            // Auth listeners
+            ui.googleSigninBtn.addEventListener('click', handleGoogleSignIn);
+            ui.loginForm.addEventListener('submit', handleEmailLogin);
+            ui.signupForm.addEventListener('submit', handleEmailSignUp);
+            ui.addNameForm.addEventListener('submit', handleAddName);
+            ui.signOutBtn.addEventListener('click', () => signOut(auth));
+            ui.authToggleBtn.addEventListener('click', () => {
+                const isLoginVisible = !ui.loginForm.classList.contains('hidden');
+                ui.loginForm.classList.toggle('hidden', isLoginVisible);
+                ui.signupForm.classList.toggle('hidden', !isLoginVisible);
+                ui.authToggleBtn.textContent = isLoginVisible ? 'Sign In' : 'Sign Up';
+                ui.loginToggleText.textContent = isLoginVisible ? 'Already have an account?' : "Don't have an account?";
+                ui.authError.textContent = '';
+            });
+
+            // App listeners
+            ui.navItems.forEach(item => item.addEventListener('click', () => showPage(item.dataset.page)));
+            ui.addSubjectBtn.addEventListener('click', () => showModal('add-subject-modal'));
+            ui.startStudyingBtn.addEventListener('click', () => showModal('select-subject-modal'));
+            ui.stopStudyingBtn.addEventListener('click', stopTimer);
+            
+            document.getElementById('cancel-select-subject-btn').addEventListener('click', hideModals);
+            document.getElementById('cancel-add-btn').addEventListener('click', hideModals);
+            document.getElementById('confirm-add-btn').addEventListener('click', () => {
+                const name = document.getElementById('subject-name-input').value.trim();
+                if (name) { addNewSubject(name, selectedColor); hideModals(); document.getElementById('subject-name-input').value = ''; }
+            });
+            
+            ui.modalSubjectsList.addEventListener('click', e => { if (e.target.closest('.subject-select-btn')) startTimer(e.target.closest('.subject-select-btn').dataset.id); });
+            ui.colorPicker.addEventListener('click', e => {
+                if (e.target.dataset.color) {
+                    selectedColor = e.target.dataset.color;
+                    ui.colorPicker.querySelectorAll('button').forEach(b => b.classList.remove('ring-2', 'ring-offset-2', 'ring-offset-gray-800', 'ring-white'));
+                    e.target.classList.add('ring-2', 'ring-offset-2', 'ring-offset-gray-800', 'ring-white');
+                }
+            });
+
+            ui.addTodoBtn.addEventListener('click', () => { if (ui.todoInput.value.trim()) { addNewTodo(ui.todoInput.value.trim()); ui.todoInput.value = ''; } });
+            ui.todoList.addEventListener('click', e => {
+                if (e.target.matches('.todo-checkbox')) toggleTodo(e.target.dataset.id, e.target.checked);
+                if (e.target.closest('.delete-todo-btn')) deleteTodo(e.target.closest('.delete-todo-btn').dataset.id);
+            });
+            
+            ui.statPeriodBtns.forEach(btn => btn.addEventListener('click', () => {
+                ui.statPeriodBtns.forEach(b => b.classList.remove('active', 'bg-blue-600'));
+                btn.classList.add('active', 'bg-blue-600');
+                renderStatsChart(btn.dataset.period);
+            }));
+        }
+
+        // --- APP START ---
+        document.addEventListener('DOMContentLoaded', () => {
+            renderColorPicker();
+            setupEventListeners();
+            // onAuthStateChanged will handle the initial view
+        });
     </script>
 </body>
 </html>
