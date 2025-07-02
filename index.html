@@ -1,2827 +1,406 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Focus Clock</title>
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-  <!-- Add Firestore SDK -->
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-  <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #f5f5f5;
-      margin: 0;
-      padding: 0;
-    }
-    .container {
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 20px;
-      text-align: center;
-      background-color: white;
-      border-radius: 20px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-      margin-top: 40px;
-    }
-    h1 {
-      font-size: 2.5rem;
-    }
-    #datetime {
-      font-size: 1.2rem;
-      margin: 10px 0;
-    }
-    #session-info {
-      font-size: 1.5rem;
-      font-weight: bold;
-      margin-top: 20px;
-    }
-    #timer {
-      font-size: 3rem;
-      margin: 20px 0;
-    }
-    .circle-container {
-      position: relative;
-      width: 250px;
-      height: 250px;
-      margin: 0 auto 20px;
-    }
-    svg circle {
-      fill: none;
-      stroke: #ddd;
-      stroke-width: 12;
-    }
-    svg circle:nth-child(2) {
-      stroke: #00bfff;
-      stroke-linecap: round;
-      stroke-dasharray: 754;
-      stroke-dashoffset: 754;
-      transition: stroke-dashoffset 1s linear;
-    }
-    .schedule {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      list-style: none;
-      padding: 0;
-      margin: 20px 0;
-    }
-    .schedule li {
-      background-color: #eee;
-      padding: 8px 12px;
-      border-radius: 10px;
-      margin: 5px;
-      font-weight: bold;
-      font-size: 1rem;
-    }
-    .schedule li.active {
-      background-color: #00bfff;
-      color: white;
-    }
-    #darkModeToggle, #muteToggle, #authButton {
-      position: fixed;
-      padding: 8px 12px;
-      font-weight: bold;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-      background-color: deeppink;
-      color: white;
-    }
-    #darkModeToggle {
-      top: 20px;
-      right: 20px;
-    }
-    #muteToggle {
-      top: 20px;
-      right: 120px;
-    }
-    #authButton {
-      top: 20px;
-      right: 220px;
-    }
-    .auth-container {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.5);
-      align-items: center;
-      justify-content: center;
-      z-index: 100;
-    }
-    .auth-box {
-      background-color: white;
-      padding: 30px;
-      border-radius: 15px;
-      width: 300px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-    }
-    .auth-box input {
-      width: 100%;
-      padding: 10px;
-      margin: 10px 0;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-    }
-    .auth-box button {
-      width: 100%;
-      padding: 10px;
-      margin: 10px 0;
-      border: none;
-      border-radius: 5px;
-      background-color: #00bfff;
-      color: white;
-      cursor: pointer;
-    }
-    .google-btn {
-      background-color: white;
-      color: #333;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: 1px solid #ddd;
-    }
-    .google-btn img {
-      width: 20px;
-      height: 20px;
-      margin-right: 10px;
-    }
-    .user-info {
-      display: none;
-      font-size: 0.9rem;
-      margin-top: 15px;
-    }
-    
-    .login-time {
-      margin-top: 10px;
-      padding: 8px;
-      background-color: #f0f8ff;
-      border-radius: 5px;
-      font-size: 0.85rem;
-    }
-    
-    .login-time span {
-      font-weight: bold;
-      color: #00bfff;
-    }
-    
-    /* User menubar styles */
-    .user-menubar {
-      position: fixed;
-      top: 60px;
-      right: 0;
-      background-color: white;
-      padding: 15px;
-      border-radius: 10px 0 0 10px;
-      box-shadow: -2px 2px 10px rgba(0, 0, 0, 0.1);
-      transform: translateX(0);
-      transition: transform 0.3s ease;
-      z-index: 90;
-    }
-    
-    .user-menubar.hidden {
-      transform: translateX(100%);
-    }
-    
-    .user-menubar-toggle {
-      position: fixed;
-      top: 60px;
-      right: 0;
-      background-color: #00bfff;
-      color: white;
-      padding: 8px;
-      border-radius: 10px 0 0 10px;
-      cursor: pointer;
-      z-index: 91;
-    }
-    
-    .user-menubar-toggle:hover {
-      background-color: deeppink;
-    }
-    
-    .nickname-input {
-      display: flex;
-      align-items: center;
-      margin-top: 10px;
-    }
-    
-    .nickname-input input {
-      padding: 5px;
-      border-radius: 5px;
-      border: 1px solid #ddd;
-      margin-right: 5px;
-    }
-    
-    .nickname-input button {
-      background-color: #00bfff;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      padding: 5px 8px;
-      cursor: pointer;
-    }
-    
-    /* Reports menubar styles */
-    .reports-menubar {
-      position: fixed;
-      top: 110px;
-      right: 0;
-      background-color: white;
-      padding: 15px;
-      border-radius: 10px 0 0 10px;
-      box-shadow: -2px 2px 10px rgba(0, 0, 0, 0.1);
-      transform: translateX(0);
-      transition: transform 0.3s ease;
-      z-index: 89;
-      min-width: 300px;
-      max-height: calc(100vh - 130px);
-      overflow-y: auto;
-    }
-
-    .reports-tab-container {
-      position: sticky;
-      top: 0;
-      background-color: white;
-      padding-bottom: 10px;
-      z-index: 2;
-    }
-
-    .reports-content {
-      display: none;
-      padding-bottom: 20px;
-    }
-
-    .reports-content.active {
-      display: block;
-    }
-
-    /* Make sure dark mode affects scrollable content */
-    .reports-menubar::-webkit-scrollbar {
-      width: 8px;
-    }
-
-    .reports-menubar::-webkit-scrollbar-track {
-      background: #f1f1f1;
-      border-radius: 4px;
-    }
-
-    .reports-menubar::-webkit-scrollbar-thumb {
-      background: #888;
-      border-radius: 4px;
-    }
-
-    .reports-menubar::-webkit-scrollbar-thumb:hover {
-      background: #555;
-    }
-
-    /* Update dark mode styles for reports */
-    body.dark-mode .reports-menubar {
-      background-color: #333;
-      color: #fff;
-    }
-
-    body.dark-mode .reports-tab-container {
-      background-color: #333;
-    }
-
-    body.dark-mode .reports-menubar::-webkit-scrollbar-track {
-      background: #444;
-    }
-
-    body.dark-mode .reports-menubar::-webkit-scrollbar-thumb {
-      background: #666;
-    }
-
-    body.dark-mode .reports-menubar::-webkit-scrollbar-thumb:hover {
-      background: #888;
-    }
-    
-    .reports-menubar.hidden {
-      transform: translateX(100%);
-    }
-    
-    .reports-menubar-toggle {
-      position: fixed;
-      top: 110px;
-      right: 0;
-      background-color: #00bfff;
-      color: white;
-      padding: 8px;
-      border-radius: 10px 0 0 10px;
-      cursor: pointer;
-      z-index: 90;
-    }
-    
-    .reports-menubar-toggle:hover {
-      background-color: deeppink;
-    }
-    
-    .reports-tab {
-      padding: 8px 15px;
-      cursor: pointer;
-      background-color: #f5f5f5;
-      border-radius: 5px 5px 0 0;
-      margin-right: 5px;
-    }
-    
-    .reports-tab.active {
-      background-color: #00bfff;
-      color: white;
-    }
-    
-    .study-summary {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 15px;
-      padding: 10px;
-      background-color: #f9f9f9;
-      border-radius: 8px;
-    }
-    
-    .progress-bar-container {
-      width: 100%;
-      height: 20px;
-      background-color: #eee;
-      border-radius: 10px;
-      margin: 10px 0;
-      overflow: hidden;
-    }
-    
-    .progress-bar {
-      height: 100%;
-      background-color: #00bfff;
-      border-radius: 10px;
-      transition: width 0.5s ease;
-    }
-    
-    .chart-container {
-      height: 150px;
-      margin: 15px 0;
-      position: relative;
-    }
-    
-    .chart-bar {
-      position: absolute;
-      bottom: 0;
-      width: 20px;
-      background-color: #00bfff;
-      border-radius: 4px 4px 0 0;
-      transition: height 0.5s ease;
-    }
-    
-    .chart-label {
-      position: absolute;
-      bottom: -20px;
-      font-size: 0.7rem;
-      transform: translateX(-50%);
-    }
-    
-    .average-line {
-      position: absolute;
-      width: 100%;
-      height: 2px;
-      background-color: #ff6b6b;
-      z-index: 1;
-    }
-    
-    .goal-line {
-      position: absolute;
-      width: 100%;
-      height: 2px;
-      background-color: #32cd32;
-      z-index: 1;
-    }
-    
-    .goal-settings {
-      margin-top: 15px;
-      padding: 10px;
-      background-color: #f9f9f9;
-      border-radius: 8px;
-    }
-    
-    .goal-input {
-      display: flex;
-      align-items: center;
-      margin: 5px 0;
-      gap: 10px;
-    }
-    
-    .goal-input input {
-      width: 60px;
-      padding: 5px;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-    }
-    
-    .goal-input button {
-      background-color: #00bfff;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      padding: 5px 8px;
-      cursor: pointer;
-    }
-    
-    .average-display {
-      margin: 15px 0;
-      padding: 10px;
-      background-color: #f0f8ff;
-      border-radius: 8px;
-      border-left: 4px solid #00bfff;
-    }
-    
-    .average-display h4 {
-      margin: 0 0 10px 0;
-      color: #333;
-    }
-    
-    .average-stat {
-      display: flex;
-      justify-content: space-between;
-      margin: 5px 0;
-      font-size: 0.9rem;
-    }
-
-    /* New styles for the start/stop button */
-    .study-control-btn {
-      background-color: #00bfff;
-      color: white;
-      border: none;
-      border-radius: 10px;
-      padding: 10px 20px;
-      margin: 10px;
-      cursor: pointer;
-      font-size: 1rem;
-      font-weight: bold;
-      transition: background-color 0.3s;
-    }
-
-    .study-control-btn:hover {
-      background-color: deeppink;
-    }
-
-    /* Session Editor styles */
-    .session-editor-menubar {
-      position: fixed;
-      top: 60px;
-      left: 0;
-      background-color: white;
-      padding: 15px;
-      border-radius: 0 10px 10px 0;
-      box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
-      transform: translateX(0);
-      transition: transform 0.3s ease;
-      z-index: 90;
-      width: 300px;
-      height: calc(100vh - 80px);
-      overflow-y: auto;
-    }
-
-    .session-editor-menubar.hidden {
-      transform: translateX(-100%);
-    }
-
-    .session-editor-toggle {
-      position: fixed;
-      top: 60px;
-      left: 0;
-      background-color: #00bfff;
-      color: white;
-      padding: 8px;
-      border-radius: 0 10px 10px 0;
-      cursor: pointer;
-      z-index: 91;
-    }
-
-    .session-editor-toggle:hover {
-      background-color: deeppink;
-    }
-
-    .session-item {
-      display: flex;
-      align-items: center;
-      margin: 10px 0;
-      padding: 8px;
-      background-color: #f5f5f5;
-      border-radius: 5px;
-      gap: 10px;
-    }
-
-    .session-item input {
-      width: 50px;
-      padding: 4px;
-      border: 1px solid #ddd;
-      border-radius: 3px;
-    }
-
-    .session-item input[type="time"] {
-      width: 85px;
-    }
-
-    .session-controls {
-      margin-left: auto;
-      display: flex;
-      gap: 5px;
-    }
-
-    .session-controls button {
-      padding: 4px 8px;
-      border: none;
-      border-radius: 3px;
-      cursor: pointer;
-      font-size: 12px;
-    }
-
-    .edit-btn {
-      background-color: #ffd700;
-      color: black;
-    }
-
-    .delete-btn {
-      background-color: #ff4444;
-      color: white;
-    }
-
-    .add-session-btn {
-      width: 100%;
-      padding: 8px;
-      margin-top: 10px;
-      background-color: #00bfff;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-
-    .add-session-btn:hover {
-      background-color: deeppink;
-    }
-
-    .save-sessions-btn {
-      width: 100%;
-      padding: 8px;
-      margin-top: 10px;
-      background-color: #32cd32;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-
-    .save-sessions-btn:hover {
-      background-color: #228b22;
-    }
-
-    /* Sound settings styles */
-    .sound-settings-menubar {
-      position: fixed;
-      top: 160px;
-      right: 0;
-      background-color: white;
-      padding: 20px;
-      border-radius: 10px 0 0 10px;
-      box-shadow: -2px 2px 10px rgba(0, 0, 0, 0.1);
-      transform: translateX(100%);
-      transition: transform 0.3s ease;
-      z-index: 88;
-      width: 320px;
-      max-height: calc(100vh - 180px);
-      overflow-y: auto;
-    }
-
-    .sound-settings-menubar.visible {
-      transform: translateX(0);
-    }
-
-    .sound-settings-toggle {
-      position: fixed;
-      top: 160px;
-      right: 0;
-      background-color: #00bfff;
-      color: white;
-      padding: 8px;
-      border-radius: 10px 0 0 10px;
-      cursor: pointer;
-      z-index: 89;
-    }
-
-    .sound-settings-toggle:hover {
-      background-color: deeppink;
-    }
-
-    .sound-section {
-      background-color: #f8f9fa;
-      padding: 15px;
-      border-radius: 8px;
-      margin: 15px 0;
-      border: 1px solid #e9ecef;
-    }
-
-    .sound-section h4 {
-      margin: 0 0 15px 0;
-      color: #495057;
-    }
-
-    select {
-      width: 100%;
-      padding: 8px;
-      margin: 8px 0;
-      border: 1px solid #ced4da;
-      border-radius: 5px;
-      background-color: white;
-      font-size: 0.9em;
-    }
-
-    select optgroup {
-      font-weight: bold;
-      color: #495057;
-    }
-
-    select option {
-      padding: 5px;
-      color: #212529;
-    }
-
-    .volume-control {
-      margin: 15px 0;
-    }
-
-    .volume-control label {
-      display: block;
-      margin-bottom: 5px;
-      color: #6c757d;
-      font-size: 0.9em;
-    }
-
-    input[type="range"] {
-      width: 100%;
-      margin: 8px 0;
-    }
-
-    .sound-control-buttons {
-      display: flex;
-      gap: 8px;
-      margin-top: 10px;
-    }
-
-    .test-sound-btn, .stop-sound-btn {
-      flex: 1;
-      padding: 8px 12px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 0.9em;
-      transition: all 0.2s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 5px;
-    }
-
-    .test-sound-btn {
-      background-color: #00bfff;
-      color: white;
-    }
-
-    .stop-sound-btn {
-      background-color: #dc3545;
-      color: white;
-    }
-
-    .test-sound-btn:hover {
-      background-color: #0099cc;
-    }
-
-    .stop-sound-btn:hover {
-      background-color: #c82333;
-    }
-
-    .sound-settings-footer {
-      margin-top: 20px;
-      text-align: center;
-    }
-
-    .reset-sounds-btn {
-      background-color: #6c757d;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      padding: 8px 16px;
-      cursor: pointer;
-      font-size: 0.9em;
-      transition: background-color 0.2s;
-    }
-
-    .reset-sounds-btn:hover {
-      background-color: #5a6268;
-    }
-
-    /* Dark mode styles */
-    body.dark-mode .sound-settings-menubar {
-      background-color: #333;
-      color: #fff;
-    }
-
-    body.dark-mode .sound-section {
-      background-color: #444;
-      border-color: #555;
-    }
-
-    body.dark-mode .sound-section h4 {
-      color: #fff;
-    }
-
-    body.dark-mode select {
-      background-color: #444;
-      border-color: #555;
-      color: #fff;
-    }
-
-    body.dark-mode select optgroup {
-      background-color: #333;
-      color: #fff;
-    }
-
-    body.dark-mode select option {
-      background-color: #444;
-      color: #fff;
-    }
-
-    body.dark-mode .volume-control label {
-      color: #adb5bd;
-    }
-
-    /* Add these styles for the playing state */
-    .test-sound-btn.playing {
-      background-color: #28a745;
-      animation: pulse 1.5s infinite;
-    }
-
-    @keyframes pulse {
-      0% { opacity: 1; }
-      50% { opacity: 0.6; }
-      100% { opacity: 1; }
-    }
-
-    /* Update the existing sound control buttons style */
-    .sound-control-buttons {
-      display: flex;
-      gap: 8px;
-      margin-top: 10px;
-    }
-
-    .test-sound-btn, .stop-sound-btn {
-      flex: 1;
-      padding: 8px 12px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 0.9em;
-      transition: all 0.2s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 5px;
-    }
-
-    .break-indicator {
-      background-color: #f0f0f0 !important;
-      border: 1px dashed #999 !important;
-    }
-    .break-indicator.active {
-      background-color: #e0e0e0 !important;
-      border-color: #666 !important;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Awesome App</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles for the Inter font */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
 </head>
-<body>
-  <div class="container">
-    <h1>Focus Clock</h1>
-    <div id="datetime"></div>
-    <div class="circle-container">
-      <svg width="250" height="250">
-        <circle cx="125" cy="125" r="120"></circle>
-        <circle cx="125" cy="125" r="120" id="progressCircle"></circle>
-      </svg>
-    </div>
-    <div id="session-info"></div>
-    <div id="timer">00:00:00</div>
-    <ul class="schedule">
-      <li>01</li><li>02</li><li>03</li><li>B</li><li>04</li><li>05</li>
-      <li>06</li><li>L</li><li>07</li><li>08</li><li>09</li>
-    </ul>
-    <div class="user-info" id="userInfo">
-      Logged in as: <span id="userEmail"></span>
-      <div class="login-time">
-        Login time: <span id="loginTime">--:--</span><br>
-        Session duration: <span id="sessionDuration">0m</span>
-      </div>
-    </div>
-  </div>
-  
-  <!-- User Menubar -->
-  <div class="user-menubar-toggle" id="userMenubarToggle">👤</div>
-  <div class="user-menubar" id="userMenubar">
-    <h3>User Information</h3>
-    <div id="userMenuInfo">
-      <div>Status: <span id="userStatus">Not logged in</span></div>
-      <div id="userEmailInfo" style="display: none;">Email: <span id="userEmailDisplay"></span></div>
-      <div id="nicknameDisplay" style="display: none;">Nickname: <span id="userNickname"></span></div>
-      <div class="nickname-input" id="nicknameInputContainer" style="display: none;">
-        <input type="text" id="nicknameInput" placeholder="Enter nickname">
-        <button id="saveNickname">Save</button>
-      </div>
-    </div>
-  </div>
-  
-  <!-- Reports Menubar -->
-  <div class="reports-menubar-toggle" id="reportsMenubarToggle">📊</div>
-  <div class="reports-menubar" id="reportsMenubar">
-    <h3>Study Reports</h3>
-    <div class="reports-tab-container">
-      <div class="reports-tab active" data-tab="daily">Daily</div>
-      <div class="reports-tab" data-tab="weekly">Weekly</div>
-      <div class="reports-tab" data-tab="monthly">Monthly</div>
-    </div>
-    
-    <!-- Daily Report Content -->
-    <div class="reports-content active" id="dailyReports">
-      <div class="study-summary">
-        <div>
-          <div>Today's study time</div>
-          <div><span id="todayStudyHours">4</span> hours <span id="todayStudyMinutes">30</span> minutes</div>
-        </div>
-        <div>
-          <div>Goal</div>
-          <div><span id="dailyGoalHours">8</span> hours</div>
-        </div>
-      </div>
-      
-      <div class="goal-settings">
-        <h4>Set Daily Goal</h4>
-        <div class="goal-input">
-          <input type="number" id="dailyGoalInput" min="1" max="24" value="8"> hours
-          <button onclick="setGoal('daily')">Set Goal</button>
-        </div>
-      </div>
-      
-      <div class="average-display">
-        <h4>Daily Averages</h4>
-        <div class="average-stat">
-          <span>Last 7 days:</span>
-          <span><span id="weeklyAvgHours">4</span>h <span id="weeklyAvgMinutes">15</span>m</span>
-        </div>
-        <div class="average-stat">
-          <span>This month:</span>
-          <span><span id="monthlyAvgHours">3</span>h <span id="monthlyAvgMinutes">45</span>m</span>
-        </div>
-        <div class="average-stat">
-          <span>All time:</span>
-          <span><span id="allTimeAvgHours">4</span>h <span id="allTimeAvgMinutes">0</span>m</span>
-        </div>
-      </div>
-      
-      <div>Progress toward daily goal</div>
-      <div class="progress-bar-container">
-        <div class="progress-bar" id="dailyProgressBar" style="width: 56%;"></div>
-      </div>
-      
-      <div>Today's sessions</div>
-      <div class="chart-container" id="dailySessionsChart">
-        <!-- Chart will be dynamically created -->
-        <div class="average-line" style="bottom: 60px;"></div>
-        <div class="goal-line" style="bottom: 120px;"></div>
-      </div>
-    </div>
-    
-    <!-- Weekly Report Content -->
-    <div class="reports-content" id="weeklyReports">
-      <div class="study-summary">
-        <div>
-          <div>This week's study time</div>
-          <div><span id="weeklyStudyHours">28</span> hours <span id="weeklyStudyMinutes">45</span> minutes</div>
-        </div>
-        <div>
-          <div>Goal</div>
-          <div><span id="weeklyGoalHours">40</span> hours</div>
-        </div>
-      </div>
-      
-      <div class="goal-settings">
-        <h4>Set Weekly Goal</h4>
-        <div class="goal-input">
-          <input type="number" id="weeklyGoalInput" min="1" max="168" value="40"> hours
-          <button onclick="setGoal('weekly')">Set Goal</button>
-        </div>
-      </div>
-      
-      <div>Progress toward weekly goal</div>
-      <div class="progress-bar-container">
-        <div class="progress-bar" id="weeklyProgressBar" style="width: 72%;"></div>
-      </div>
-      
-      <div>This week's daily study</div>
-      <div class="chart-container" id="weeklyStudyChart">
-        <!-- Chart will be dynamically created -->
-        <div class="average-line" style="bottom: 70px;"></div>
-        <div class="goal-line" style="bottom: 100px;"></div>
-      </div>
-    </div>
-    
-    <!-- Monthly Report Content -->
-    <div class="reports-content" id="monthlyReports">
-      <div class="study-summary">
-        <div>
-          <div>This month's study time</div>
-          <div><span id="monthlyStudyHours">112</span> hours <span id="monthlyStudyMinutes">15</span> minutes</div>
-        </div>
-        <div>
-          <div>Goal</div>
-          <div><span id="monthlyGoalHours">160</span> hours</div>
-        </div>
-      </div>
-      
-      <div class="goal-settings">
-        <h4>Set Monthly Goal</h4>
-        <div class="goal-input">
-          <input type="number" id="monthlyGoalInput" min="1" max="744" value="160"> hours
-          <button onclick="setGoal('monthly')">Set Goal</button>
-        </div>
-      </div>
-      
-      <div>Progress toward monthly goal</div>
-      <div class="progress-bar-container">
-        <div class="progress-bar" id="monthlyProgressBar" style="width: 70%;"></div>
-      </div>
-      
-      <div>Daily average: <span id="dailyAvgHours">4</span> hours <span id="dailyAvgMinutes">30</span> minutes</div>
-      
-      <div>This month's weekly study</div>
-      <div class="chart-container" id="monthlyStudyChart">
-        <!-- Chart will be dynamically created -->
-        <div class="average-line" style="bottom: 80px;"></div>
-        <div class="goal-line" style="bottom: 120px;"></div>
-      </div>
-    </div>
-  </div>
-  
-  <button id="darkModeToggle">🌓 Dark Mode</button>
-  <button id="muteToggle">🔊 Sound</button>
-  <button id="authButton">👤 Sign In</button>
-
-  <!-- Sound Settings Menubar -->
-  <div class="sound-settings-toggle" id="soundSettingsToggle">🔔</div>
-  <div class="sound-settings-menubar hidden" id="soundSettingsMenubar">
-    <h3>Sound Settings</h3>
-    <div class="sound-control">
-      <label>Master Volume</label>
-      <input type="range" id="masterVolume" min="0" max="100" value="100">
-      <span id="masterVolumeValue">100%</span>
-    </div>
-    
-    <div class="sound-section">
-      <h4>Focus Time Alarm</h4>
-      <select id="focusAlarmSound">
-        <optgroup label="Classic Alarms">
-          <option value="alarm_clock">Classic Alarm Clock</option>
-          <option value="digital">Digital Alarm</option>
-          <option value="mechanical">Mechanical Alarm</option>
-          <option value="electronic">Electronic Beep</option>
-        </optgroup>
-        <optgroup label="Nature">
-          <option value="morning_birds">Morning Birds</option>
-          <option value="ocean_wave">Ocean Wave</option>
-          <option value="forest_morning">Forest Morning</option>
-          <option value="gentle_stream">Gentle Stream</option>
-        </optgroup>
-        <optgroup label="Musical">
-          <option value="marimba">Marimba</option>
-          <option value="xylophone">Xylophone</option>
-          <option value="bell_chime">Bell Chime</option>
-          <option value="music_box">Music Box</option>
-        </optgroup>
-        <optgroup label="Gentle">
-          <option value="soft_chime">Soft Chime</option>
-          <option value="wind_chimes">Wind Chimes</option>
-          <option value="crystal">Crystal</option>
-          <option value="peaceful">Peaceful Wake</option>
-        </optgroup>
-      </select>
-      <div class="volume-control">
-        <label>Volume</label>
-        <input type="range" id="focusAlarmVolume" min="0" max="100" value="100">
-        <span id="focusAlarmVolumeValue">100%</span>
-      </div>
-      <div class="sound-control-buttons">
-        <button type="button" class="test-sound-btn" id="testFocusSound">Test Sound</button>
-        <button type="button" class="stop-sound-btn" id="stopFocusSound">Stop</button>
-      </div>
-    </div>
-
-    <div class="sound-section">
-      <h4>Break Time Alarm</h4>
-      <select id="breakAlarmSound">
-        <optgroup label="Notification">
-          <option value="notification_simple">Simple Notification</option>
-          <option value="notification_gentle">Gentle Alert</option>
-          <option value="notification_soft">Soft Alert</option>
-          <option value="notification_chime">Chime Alert</option>
-        </optgroup>
-        <optgroup label="Nature">
-          <option value="bird_chirp">Bird Chirp</option>
-          <option value="water_drop">Water Drop</option>
-          <option value="leaves_rustle">Leaves Rustle</option>
-          <option value="light_rain">Light Rain</option>
-        </optgroup>
-        <optgroup label="Musical">
-          <option value="small_bell">Small Bell</option>
-          <option value="triangle">Triangle</option>
-          <option value="wind_bell">Wind Bell</option>
-          <option value="tiny_music_box">Tiny Music Box</option>
-        </optgroup>
-        <optgroup label="Minimal">
-          <option value="beep_short">Short Beep</option>
-          <option value="pop">Pop Sound</option>
-          <option value="click">Click</option>
-          <option value="tap">Tap</option>
-        </optgroup>
-      </select>
-      <div class="volume-control">
-        <label>Volume</label>
-        <input type="range" id="breakAlarmVolume" min="0" max="100" value="100">
-        <span id="breakAlarmVolumeValue">100%</span>
-      </div>
-      <div class="sound-control-buttons">
-        <button type="button" class="test-sound-btn" id="testBreakSound">Test Sound</button>
-        <button type="button" class="stop-sound-btn" id="stopBreakSound">Stop</button>
-      </div>
-    </div>
-
-    <div class="sound-settings-footer">
-      <button type="button" class="reset-sounds-btn" id="resetSounds">Reset to Default</button>
-    </div>
-  </div>
-
-  <!-- Session Editor Menubar -->
-  <div class="session-editor-toggle" id="sessionEditorToggle">📝</div>
-  <div class="session-editor-menubar hidden" id="sessionEditorMenubar">
-    <h3>Session Editor</h3>
-    <div id="sessionList">
-      <!-- Session items will be dynamically added here -->
-    </div>
-    <button class="add-session-btn" id="addSessionBtn">➕ Add Session</button>
-    <button class="save-sessions-btn" id="saveSessionsBtn">💾 Save Changes</button>
-  </div>
-
-  <div class="auth-container" id="authContainer">
-    <div class="auth-box">
-      <h2 id="authTitle">Sign In</h2>
-      <input type="email" id="emailInput" placeholder="Email" />
-      <input type="password" id="passwordInput" placeholder="Password" />
-      <button id="signInButton">Sign In</button>
-      <button id="registerButton">Register</button>
-      <button id="googleSignInButton" class="google-btn">
-        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google logo">
-        Sign in with Google
-      </button>
-      <button id="cancelButton">Cancel</button>
-    </div>
-  </div>
-
-  <!-- Remove the default audio elements since we'll create them dynamically -->
-  <audio id="studyAlarm"></audio>
-  <audio id="breakAlarm"></audio>
-  
-  <!-- Additional alarm sounds -->
-  <audio id="bell_alarm" src="https://actions.google.com/sounds/v1/alarms/mechanical_clock_ring.ogg"></audio>
-  <audio id="digital_alarm" src="https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg"></audio>
-  <audio id="gentle_alarm" src="https://actions.google.com/sounds/v1/alarms/peaceful_morning_wake.ogg"></audio>
-  <audio id="chime_alarm" src="https://actions.google.com/sounds/v1/alarms/small_bell_chime.ogg"></audio>
-  <audio id="notification_alarm" src="https://actions.google.com/sounds/v1/alarms/notification_simple_01.ogg"></audio>
-  <audio id="soft_alarm" src="https://actions.google.com/sounds/v1/alarms/gentle_notification.ogg"></audio>
-
-  <script>
-    // Firebase configuration
-    const firebaseConfig = {
-      // TODO: Replace with your Firebase project configuration
-      apiKey: "AIzaSyDkMo36N0iQ5StqhHDBOE-xN3H02ukZqU0",
-      authDomain: "YOUR_AUTH_DOMAIN",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_STORAGE_BUCKET",
-      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-      appId: "YOUR_APP_ID",
-      measurementId: "YOUR_MEASUREMENT_ID"
-    };
-    
-    // Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore(); // Initialize Firestore
-
-    // Auth elements
-    const authButton = document.getElementById("authButton");
-    const authContainer = document.getElementById("authContainer");
-    const signInButton = document.getElementById("signInButton");
-    const registerButton = document.getElementById("registerButton");
-    const googleSignInButton = document.getElementById("googleSignInButton");
-    const cancelButton = document.getElementById("cancelButton");
-    const emailInput = document.getElementById("emailInput");
-    const passwordInput = document.getElementById("passwordInput");
-    const userInfo = document.getElementById("userInfo");
-    const userEmail = document.getElementById("userEmail");
-
-    // Clock elements
-    const datetime = document.getElementById("datetime");
-    const timer = document.getElementById("timer");
-    const sessionInfo = document.getElementById("session-info");
-    const circle = document.getElementById("progressCircle");
-
-    // User menubar elements
-    const userMenubarToggle = document.getElementById("userMenubarToggle");
-    const userMenubar = document.getElementById("userMenubar");
-    const userStatus = document.getElementById("userStatus");
-    const userEmailDisplay = document.getElementById("userEmailDisplay");
-    const userEmailInfo = document.getElementById("userEmailInfo");
-    const nicknameDisplay = document.getElementById("nicknameDisplay");
-    const userNickname = document.getElementById("userNickname");
-    const nicknameInputContainer = document.getElementById("nicknameInputContainer");
-    const nicknameInput = document.getElementById("nicknameInput");
-    const saveNickname = document.getElementById("saveNickname");
-    
-    // Reports menubar elements
-    const reportsMenubarToggle = document.getElementById("reportsMenubarToggle");
-    const reportsMenubar = document.getElementById("reportsMenubar");
-    const reportsTabs = document.querySelectorAll(".reports-tab");
-    const reportsContents = document.querySelectorAll(".reports-content");
-
-    let isMuted = false;
-    let isDarkMode = false;
-    let userNicknameValue = '';
-    
-    // Study tracking data (mock data - would be stored in Firebase in real app)
-    let studyData = {
-      daily: {
-        goal: 8 * 60, // 8 hours in minutes
-        current: 0,
-        sessions: [],
-        activeSession: null,
-        realTimeStart: null, // Add tracking for real-time study
-        isStudying: false   // Track if user is actually studying
-      },
-      weekly: {
-        goal: 40 * 60, // 40 hours in minutes
-        current: 0, // Will be set from actual tracked data
-        days: Array(7).fill(0) // minutes per day
-      },
-      monthly: {
-        goal: 160 * 60, // 160 hours in minutes
-        current: 0, // Will be set from actual tracked data
-        weeks: Array(4).fill(0) // minutes per week
-      },
-      averages: {
-        weekly: 0,
-        monthly: 0,
-        allTime: 0
-      }
-    };
-
-    const sessionSchedule = [
-      { label: '01', start: '06:00', end: '07:30', duration: 90 },
-      { label: '02', start: '07:45', end: '09:15', duration: 90 },
-      { label: '03', start: '09:30', end: '11:00', duration: 90 },
-      { label: 'B', start: '11:00', end: '11:50', duration: 50 },
-      { label: '04', start: '12:00', end: '13:30', duration: 90 },
-      { label: '05', start: '13:45', end: '15:15', duration: 90 },
-      { label: '06', start: '15:30', end: '17:00', duration: 90 },
-      { label: 'L', start: '17:00', end: '17:50', duration: 50 },
-      { label: '07', start: '18:00', end: '19:30', duration: 90 },
-      { label: '08', start: '19:45', end: '21:15', duration: 90 },
-      { label: '09', start: '21:30', end: '23:00', duration: 90 }
-    ];
-
-    // Login time tracking
-    let loginTimestamp = null;
-    let loginTimeInterval = null;
-
-    // Format time for display
-    function formatTime(date) {
-      return date.toLocaleTimeString('en-US', { 
-        hour: '2-digit', 
-        minute: '2-digit',
-        hour12: false 
-      });
-    }
-
-    // Format duration for display
-    function formatDuration(minutes) {
-      if (minutes < 60) {
-        return `${minutes}m`;
-      }
-      const hours = Math.floor(minutes / 60);
-      const remainingMinutes = minutes % 60;
-      return `${hours}h ${remainingMinutes}m`;
-    }
-
-    // Update session duration display
-    function updateSessionDuration() {
-      if (loginTimestamp) {
-        const now = new Date();
-        const durationMinutes = Math.floor((now - loginTimestamp) / 60000);
-        document.getElementById('sessionDuration').textContent = formatDuration(durationMinutes);
-      }
-    }
-
-    // Save login session to cloud
-    async function saveLoginSession(userId, loginTime, logoutTime = null) {
-      try {
-        const userRef = db.collection('users').doc(userId);
-        const sessionsRef = userRef.collection('loginSessions');
-        
-        await sessionsRef.add({
-          loginTime: loginTime.toISOString(),
-          logoutTime: logoutTime ? logoutTime.toISOString() : null,
-          duration: logoutTime ? Math.floor((logoutTime - loginTime) / 60000) : null
-        });
-      } catch (error) {
-        console.error('Error saving login session:', error);
-      }
-    }
-
-    // Load today's login sessions
-    async function loadTodayLoginSessions(userId) {
-      try {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        
-        const userRef = db.collection('users').doc(userId);
-        const sessionsRef = userRef.collection('loginSessions');
-        const snapshot = await sessionsRef
-          .where('loginTime', '>=', today.toISOString())
-          .orderBy('loginTime', 'desc')
-          .get();
-
-        let totalDuration = 0;
-        snapshot.forEach(doc => {
-          const data = doc.data();
-          if (data.duration) {
-            totalDuration += data.duration;
-          }
-        });
-
-        // Store total login time for today
-        localStorage.setItem('todayLoginMinutes', totalDuration.toString());
-      } catch (error) {
-        console.error('Error loading login sessions:', error);
-      }
-    }
-
-    // Auth event listeners
-    authButton.addEventListener('click', () => {
-      authContainer.style.display = 'flex';
-    });
-
-    cancelButton.addEventListener('click', () => {
-      authContainer.style.display = 'none';
-    });
-
-    signInButton.addEventListener('click', () => {
-      const email = emailInput.value;
-      const password = passwordInput.value;
-      
-      auth.signInWithEmailAndPassword(email, password)
-        .then((userCredential) => {
-          authContainer.style.display = 'none';
-          emailInput.value = '';
-          passwordInput.value = '';
-        })
-        .catch((error) => {
-          alert(`Error signing in: ${error.message}`);
-        });
-    });
-
-    registerButton.addEventListener('click', () => {
-      const email = emailInput.value;
-      const password = passwordInput.value;
-      
-      auth.createUserWithEmailAndPassword(email, password)
-        .then((userCredential) => {
-          authContainer.style.display = 'none';
-          emailInput.value = '';
-          passwordInput.value = '';
-        })
-        .catch((error) => {
-          alert(`Error registering: ${error.message}`);
-        });
-    });
-
-    // Google Sign In
-    googleSignInButton.addEventListener('click', () => {
-      const provider = new firebase.auth.GoogleAuthProvider();
-      
-      auth.signInWithPopup(provider)
-        .then((result) => {
-          // Google Sign In successful
-          authContainer.style.display = 'none';
-        })
-        .catch((error) => {
-          alert(`Error signing in with Google: ${error.message}`);
-        });
-    });
-
-    // Function to save study data to cloud
-    async function saveToCloud(userId) {
-      try {
-        await db.collection('users').doc(userId).set({
-          studyData: studyData,
-          lastUpdated: new Date().toISOString()
-        }, { merge: true });
-      } catch (error) {
-        console.error('Error saving to cloud:', error);
-      }
-    }
-
-    // Function to load study data from cloud
-    async function loadFromCloud(userId) {
-      try {
-        // First, recalculate all data from actual sessions
-        await recalculateStudyData(userId);
-        
-        // Then load any additional settings like goals
-        const doc = await db.collection('users').doc(userId).get();
-        if (doc.exists) {
-          const cloudData = doc.data();
-          if (cloudData.studyData && cloudData.studyData.daily && cloudData.studyData.daily.goal) {
-            // Only load goal settings, not the accumulated times
-            studyData.daily.goal = cloudData.studyData.daily.goal;
-            studyData.weekly.goal = cloudData.studyData.weekly.goal;
-            studyData.monthly.goal = cloudData.studyData.monthly.goal;
-            
-            // Update goal displays
-            document.getElementById('dailyGoalHours').textContent = studyData.daily.goal / 60;
-            document.getElementById('weeklyGoalHours').textContent = studyData.weekly.goal / 60;
-            document.getElementById('monthlyGoalHours').textContent = studyData.monthly.goal / 60;
-            
-            // Update input fields
-            document.getElementById('dailyGoalInput').value = studyData.daily.goal / 60;
-            document.getElementById('weeklyGoalInput').value = studyData.weekly.goal / 60;
-            document.getElementById('monthlyGoalInput').value = studyData.monthly.goal / 60;
-          }
-        }
-      } catch (error) {
-        console.error('Error loading from cloud:', error);
-      }
-    }
-
-    // Function to sync completed session to cloud
-    async function syncSessionToCloud(sessionData, userId) {
-      try {
-        const userRef = db.collection('users').doc(userId);
-        const sessionRef = userRef.collection('sessions');
-        
-        // Add session to cloud
-        await sessionRef.add({
-          ...sessionData,
-          synced: true
-        });
-
-        // Update weekly and monthly totals
-        const date = new Date(sessionData.timestamp);
-        const weekDay = date.getDay();
-        const monthWeek = Math.floor((date.getDate() - 1) / 7);
-
-        // Update weekly data
-        studyData.weekly.days[weekDay] += sessionData.duration;
-        studyData.weekly.current = studyData.weekly.days.reduce((a, b) => a + b, 0);
-
-        // Update monthly data
-        studyData.monthly.weeks[monthWeek] += sessionData.duration;
-        studyData.monthly.current = studyData.monthly.weeks.reduce((a, b) => a + b, 0);
-
-        // Save updated totals
-        await saveToCloud(userId);
-      } catch (error) {
-        console.error('Error syncing session:', error);
-      }
-    }
-
-    // Modify trackSessionTime to exclude break sessions from being saved
-    function trackSessionTime() {
-      const now = new Date();
-      const currentTime = now.getHours().toString().padStart(2, '0') + ':' + 
-                         now.getMinutes().toString().padStart(2, '0');
-      
-      const currentSession = sessionSchedule.find(session => {
-        return currentTime >= session.start && currentTime < session.end;
-      });
-
-      if (currentSession?.label !== studyData.daily.activeSession) {
-        if (studyData.daily.activeSession) {
-          const prevSession = sessionSchedule.find(s => s.label === studyData.daily.activeSession);
-          // Only save session if it wasn't a break
-          if (prevSession && !['B', 'L'].includes(prevSession.label)) {
-            const sessionData = {
-              label: prevSession.label,
-              duration: prevSession.duration,
-              timestamp: new Date().toISOString()
-            };
-            
-            // Save locally
-            const savedSessions = JSON.parse(localStorage.getItem('todaySessions') || '[]');
-            savedSessions.push(sessionData);
-            localStorage.setItem('todaySessions', JSON.stringify(savedSessions));
-            
-            // Update today's totals immediately
-            studyData.daily.current += sessionData.duration;
-            studyData.daily.sessions.push(sessionData.duration);
-            
-            // Sync to cloud if user is logged in
-            const user = auth.currentUser;
-            if (user) {
-              syncSessionToCloud(sessionData, user.uid)
-                .then(() => recalculateStudyData(user.uid));
-            }
-          }
-        }
-        
-        // Update active session
-        studyData.daily.activeSession = currentSession?.label || null;
-        
-        // Update UI
-        document.querySelectorAll('.schedule li').forEach(li => {
-          li.classList.remove('active');
-          if (li.textContent === currentSession?.label) {
-            li.classList.add('active');
-          }
-        });
-
-        // Update session info display with break indication
-        if (currentSession) {
-          if (['B', 'L'].includes(currentSession.label)) {
-            sessionInfo.innerText = `Break Time (${currentSession.label})`;
-          } else {
-            sessionInfo.innerText = `Session ${currentSession.label}`;
-          }
-        } else {
-          sessionInfo.innerText = 'No active session';
-        }
-      }
-    }
-
-    // Modify auth state observer to handle cloud sync and login time tracking
-    auth.onAuthStateChanged((user) => {
-      if (user) {
-        // User is signed in
-        authButton.innerText = '👤 Sign Out';
-        userInfo.style.display = 'block';
-        userEmail.innerText = user.email;
-        
-        // Start login time tracking
-        loginTimestamp = new Date();
-        document.getElementById('loginTime').textContent = formatTime(loginTimestamp);
-        
-        // Start session duration updates
-        loginTimeInterval = setInterval(updateSessionDuration, 60000); // Update every minute
-        
-        // Load today's previous sessions
-        loadTodayLoginSessions(user.uid);
-        
-        // Update user menubar
-        userStatus.innerText = "Logged in";
-        userEmailInfo.style.display = "block";
-        userEmailDisplay.innerText = user.email;
-        nicknameInputContainer.style.display = "flex";
-        
-        // Load cloud data
-        loadFromCloud(user.uid);
-        
-        // Check if user has a nickname saved
-        const nickname = localStorage.getItem(`nickname_${user.uid}`);
-        if (nickname) {
-          userNicknameValue = nickname;
-          userNickname.innerText = nickname;
-          nicknameDisplay.style.display = "block";
-        }
-        
-        authButton.removeEventListener('click', showAuthBox);
-        authButton.addEventListener('click', signOut);
-      } else {
-        // User is signed out
-        if (loginTimestamp) {
-          // Save the completed session if there was one
-          const user = auth.currentUser;
-          if (user) {
-            saveLoginSession(user.uid, loginTimestamp, new Date());
-          }
-          
-          // Clear login tracking
-          loginTimestamp = null;
-          if (loginTimeInterval) {
-            clearInterval(loginTimeInterval);
-            loginTimeInterval = null;
-          }
-        }
-        
-        authButton.innerText = '👤 Sign In';
-        userInfo.style.display = 'none';
-        
-        // Update user menubar
-        userStatus.innerText = "Not logged in";
-        userEmailInfo.style.display = "none";
-        nicknameDisplay.style.display = "none";
-        nicknameInputContainer.style.display = "none";
-        
-        authButton.removeEventListener('click', signOut);
-        authButton.addEventListener('click', showAuthBox);
-      }
-    });
-
-    function showAuthBox() {
-      authContainer.style.display = 'flex';
-    }
-
-    // Modify signOut function to handle login time tracking
-    async function signOut() {
-      if (loginTimestamp) {
-        const user = auth.currentUser;
-        if (user) {
-          await saveLoginSession(user.uid, loginTimestamp, new Date());
-        }
-      }
-      auth.signOut().catch((error) => {
-        console.error('Error signing out:', error);
-      });
-    }
-
-    function parseTimeToMs(time) {
-      const [h, m] = time.split(':').map(Number);
-      const now = new Date();
-      now.setHours(h, m, 0, 0);
-      return now.getTime();
-    }
-
-    // Remove the default audio elements since we'll create them dynamically
-    const studyAlarm = document.getElementById("studyAlarm");
-    const breakAlarm = document.getElementById("breakAlarm");
-    if (studyAlarm) studyAlarm.remove();
-    if (breakAlarm) breakAlarm.remove();
-
-    function updateClock() {
-      const now = new Date();
-      const formatted = `[${String(now.getMonth() + 1).padStart(2, '0')}.${String(now.getDate()).padStart(2, '0')} ${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][now.getDay()]}]\n${now.toLocaleTimeString('en-GB')}`;
-      datetime.innerText = formatted;
-
-      const nowMs = now.getTime();
-      let found = false;
-
-      document.querySelectorAll(".schedule li").forEach(li => li.classList.remove("active"));
-
-      // First check for scheduled sessions
-      for (let i = 0; i < sessionSchedule.length; i++) {
-        const session = sessionSchedule[i];
-        const start = parseTimeToMs(session.start);
-        const end = parseTimeToMs(session.end);
-        const isBreakSession = ['B', 'L'].includes(session.label);
-        const sessionDuration = (end - start);
-
-        if (nowMs >= start && nowMs < end) {
-          const elapsed = nowMs - start;
-          const remaining = sessionDuration - elapsed;
-          updateTimer(remaining);
-          sessionInfo.innerText = isBreakSession ? `Break Time (${session.label})` : `Session ${session.label}`;
-          document.querySelectorAll(".schedule li")[i].classList.add("active");
-
-          // Play sound at the start of session (within first second)
-          if (elapsed < 1000 && !isMuted) {
-            playSessionSound(isBreakSession);
-          }
-
-          updateProgressCircle(elapsed / sessionDuration);
-          found = true;
-          break;
-        }
-
-        // Check for break time between sessions
-        if (i < sessionSchedule.length - 1) {
-          const nextSession = sessionSchedule[i + 1];
-          const breakStart = end;
-          const breakEnd = parseTimeToMs(nextSession.start);
-
-          // Only if there's actually a break (time gap between sessions)
-          if (breakEnd > breakStart && nowMs >= breakStart && nowMs < breakEnd) {
-            const breakDuration = breakEnd - breakStart;
-            const elapsed = nowMs - breakStart;
-            const remaining = breakDuration - elapsed;
-            
-            // Update UI for break time
-            updateTimer(remaining);
-            sessionInfo.innerText = `Break between ${session.label} and ${nextSession.label}`;
-            updateProgressCircle(elapsed / breakDuration);
-
-            // Play break sound at the start of break
-            if (elapsed < 1000 && !isMuted) {
-              playSessionSound(true); // true for break sound
-            }
-
-            // Also play a reminder sound when 1 minute is left in the break
-            if (remaining <= 61000 && remaining > 60000 && !isMuted) {
-              playBreakEndReminder();
-            }
-
-            found = true;
-            break;
-          }
-        }
-      }
-
-      if (!found) {
-        updateTimer(0);
-        sessionInfo.innerText = 'No active session';
-        updateProgressCircle(0);
-      }
-    }
-
-    // Function to play break end reminder sound
-    function playBreakEndReminder() {
-      try {
-        // Create a new audio element for the reminder
-        const audio = new Audio();
-        
-        // Use a gentle notification sound for the reminder
-        const reminderSound = 'notification_gentle'; // You can change this to any preferred sound
-        const soundUrl = getAlarmSource(reminderSound);
-        
-        if (!soundUrl) {
-          console.error('Could not get sound URL for reminder');
-          return;
-        }
-        
-        // Configure the audio with slightly lower volume for the reminder
-        audio.src = soundUrl;
-        audio.volume = (soundSettings.breakAlarm.volume / 100) * (soundSettings.masterVolume / 100) * 0.7; // 70% of normal volume
-        
-        // Add event listeners for error handling
-        audio.addEventListener('error', (e) => {
-          console.error('Error playing reminder sound:', e);
-        });
-        
-        // Play the reminder sound
-        audio.play().catch(error => {
-          console.error('Error playing reminder sound:', error);
-        });
-        
-        // Clean up after playing
-        audio.addEventListener('ended', () => {
-          audio.remove();
-        });
-      } catch (error) {
-        console.error('Error in playBreakEndReminder:', error);
-      }
-    }
-
-    // Update the session display to show break times
-    function updateScheduleDisplay() {
-      const scheduleUl = document.querySelector('.schedule');
-      scheduleUl.innerHTML = '';
-      
-      sessionSchedule.forEach((session, index) => {
-        // Add the session
-        const sessionLi = document.createElement('li');
-        sessionLi.textContent = session.label;
-        scheduleUl.appendChild(sessionLi);
-
-        // Add break indicator if there's a next session with a break
-        if (index < sessionSchedule.length - 1) {
-          const nextSession = sessionSchedule[index + 1];
-          const breakStart = parseTimeToMs(session.end);
-          const breakEnd = parseTimeToMs(nextSession.start);
-          
-          if (breakEnd > breakStart) {
-            const breakDuration = Math.round((breakEnd - breakStart) / 60000); // Convert to minutes
-            if (breakDuration > 0) {
-              const breakLi = document.createElement('li');
-              breakLi.textContent = `${breakDuration}m`;
-              breakLi.classList.add('break-indicator');
-              breakLi.style.fontSize = '0.8em';
-              breakLi.style.color = '#666';
-              scheduleUl.appendChild(breakLi);
-            }
-          }
-        }
-      });
-    }
-
-    // Function to play the appropriate session sound
-    function playSessionSound(isBreak) {
-      try {
-        // Get the appropriate sound settings
-        const settings = isBreak ? soundSettings.breakAlarm : soundSettings.focusAlarm;
-        const soundType = isBreak ? soundSettings.breakAlarm.sound : soundSettings.focusAlarm.sound;
-        
-        // Create a new audio element
-        const audio = new Audio();
-        
-        // Get the sound URL
-        const soundUrl = getAlarmSource(soundType);
-        if (!soundUrl) {
-          console.error('Could not get sound URL for type:', soundType);
-          return;
-        }
-        
-        // Configure the audio
-        audio.src = soundUrl;
-        audio.volume = (settings.volume / 100) * (soundSettings.masterVolume / 100);
-        
-        // Add event listeners for error handling
-        audio.addEventListener('error', (e) => {
-          console.error('Error playing sound:', e);
-        });
-        
-        // Play the sound
-        audio.play().catch(error => {
-          console.error('Error playing sound:', error);
-        });
-        
-        // Clean up after playing
-        audio.addEventListener('ended', () => {
-          audio.remove();
-        });
-      } catch (error) {
-        console.error('Error in playSessionSound:', error);
-      }
-    }
-
-    function updateTimer(ms) {
-      const h = String(Math.floor(ms / (1000 * 60 * 60))).padStart(2, '0');
-      const m = String(Math.floor((ms / (1000 * 60)) % 60)).padStart(2, '0');
-      const s = String(Math.floor((ms / 1000) % 60)).padStart(2, '0');
-      timer.innerText = `${h}:${m}:${s}`;
-    }
-
-    function updateProgressCircle(progress) {
-      const offset = 754 * (1 - progress);
-      circle.style.strokeDashoffset = offset;
-    }
-
-    setInterval(updateClock, 1000);
-
-    darkModeToggle.addEventListener('click', () => {
-      isDarkMode = !isDarkMode;
-      document.body.classList.toggle('dark-mode');
-      
-      if (isDarkMode) {
-        document.body.style.background = '#1e1e1e';
-        document.querySelector('.container').style.background = '#333';
-        document.querySelector('.container').style.color = '#fff';
-        document.querySelector('.auth-box').style.backgroundColor = '#333';
-        document.querySelector('.auth-box').style.color = '#fff';
-        userMenubar.style.backgroundColor = '#333';
-        userMenubar.style.color = '#fff';
-        reportsMenubar.style.backgroundColor = '#333';
-        reportsMenubar.style.color = '#fff';
-        soundSettingsMenubar.style.backgroundColor = '#333';
-        soundSettingsMenubar.style.color = '#fff';
-      } else {
-        document.body.style.background = '#f5f5f5';
-        document.querySelector('.container').style.background = 'white';
-        document.querySelector('.container').style.color = '#000';
-        document.querySelector('.auth-box').style.backgroundColor = 'white';
-        document.querySelector('.auth-box').style.color = '#000';
-        userMenubar.style.backgroundColor = 'white';
-        userMenubar.style.color = '#000';
-        reportsMenubar.style.backgroundColor = 'white';
-        reportsMenubar.style.color = '#000';
-        soundSettingsMenubar.style.backgroundColor = 'white';
-        soundSettingsMenubar.style.color = '#000';
-      }
-    });
-
-    muteToggle.addEventListener('click', () => {
-      isMuted = !isMuted;
-      muteToggle.innerText = isMuted ? '🔈 Unmute' : '🔊 Sound';
-    });
-
-    // User menubar toggle
-    userMenubarToggle.addEventListener('click', () => {
-      userMenubar.classList.toggle('hidden');
-    });
-    
-    // Save nickname
-    saveNickname.addEventListener('click', () => {
-      const newNickname = nicknameInput.value.trim();
-      if (newNickname) {
-        const user = auth.currentUser;
-        if (user) {
-          localStorage.setItem(`nickname_${user.uid}`, newNickname);
-          userNicknameValue = newNickname;
-          userNickname.innerText = newNickname;
-          nicknameDisplay.style.display = "block";
-          nicknameInput.value = "";
-        }
-      }
-    });
-    
-    // Reports menubar toggle
-    reportsMenubarToggle.addEventListener('click', () => {
-      reportsMenubar.classList.toggle('hidden');
-    });
-    
-    // Reports tab switching
-    reportsTabs.forEach(tab => {
-      tab.addEventListener('click', () => {
-        // Deactivate all tabs
-        reportsTabs.forEach(t => t.classList.remove('active'));
-        reportsContents.forEach(c => c.classList.remove('active'));
-        
-        // Activate selected tab
-        tab.classList.add('active');
-        const tabName = tab.getAttribute('data-tab');
-        document.getElementById(`${tabName}Reports`).classList.add('active');
-      });
-    });
-    
-    // Create and update charts
-    function createStudyCharts() {
-      // Update daily stats
-      document.getElementById('todayStudyHours').textContent = Math.floor(studyData.daily.current / 60);
-      document.getElementById('todayStudyMinutes').textContent = studyData.daily.current % 60;
-      document.getElementById('dailyGoalHours').textContent = studyData.daily.goal / 60;
-      document.getElementById('dailyProgressBar').style.width = `${(studyData.daily.current / studyData.daily.goal) * 100}%`;
-      
-      // Update weekly stats
-      document.getElementById('weeklyStudyHours').textContent = Math.floor(studyData.weekly.current / 60);
-      document.getElementById('weeklyStudyMinutes').textContent = studyData.weekly.current % 60;
-      document.getElementById('weeklyGoalHours').textContent = studyData.weekly.goal / 60;
-      document.getElementById('weeklyProgressBar').style.width = `${(studyData.weekly.current / studyData.weekly.goal) * 100}%`;
-      
-      // Update monthly stats
-      document.getElementById('monthlyStudyHours').textContent = Math.floor(studyData.monthly.current / 60);
-      document.getElementById('monthlyStudyMinutes').textContent = studyData.monthly.current % 60;
-      document.getElementById('monthlyGoalHours').textContent = studyData.monthly.goal / 60;
-      document.getElementById('monthlyProgressBar').style.width = `${(studyData.monthly.current / studyData.monthly.goal) * 100}%`;
-      
-      // Calculate daily average
-      const daysElapsed = new Date().getDate();
-      const dailyAvg = studyData.monthly.current / daysElapsed;
-      document.getElementById('dailyAvgHours').textContent = Math.floor(dailyAvg / 60);
-      document.getElementById('dailyAvgMinutes').textContent = Math.round(dailyAvg % 60);
-      
-      // Create daily sessions chart
-      const dailySessionsChart = document.getElementById('dailySessionsChart');
-      dailySessionsChart.innerHTML = ''; // Clear previous chart
-      
-      // Add average and goal lines
-      const dailyAvgLine = document.createElement('div');
-      dailyAvgLine.className = 'average-line';
-      dailyAvgLine.style.bottom = `${(dailyAvg / (studyData.daily.goal / 60)) * 150}px`;
-      dailySessionsChart.appendChild(dailyAvgLine);
-      
-      const dailyGoalLine = document.createElement('div');
-      dailyGoalLine.className = 'goal-line';
-      dailyGoalLine.style.bottom = `${(studyData.daily.goal / 60 / (studyData.daily.goal / 60)) * 150}px`;
-      dailySessionsChart.appendChild(dailyGoalLine);
-      
-      // Create bars for each session
-      const maxBarHeight = 150; // Max height of chart in px
-      const maxMinutes = studyData.daily.goal; // Max minutes in a day (goal)
-      
-      studyData.daily.sessions.forEach((session, index) => {
-        const barHeight = (session / maxMinutes) * maxBarHeight;
-        const barLeft = (index / (studyData.daily.sessions.length - 1)) * 100;
-        
-        const bar = document.createElement('div');
-        bar.className = 'chart-bar';
-        bar.style.height = `${barHeight}px`;
-        bar.style.left = `${barLeft}%`;
-        
-        const label = document.createElement('div');
-        label.className = 'chart-label';
-        label.textContent = `#${index + 1}`;
-        label.style.left = `${barLeft}%`;
-        
-        dailySessionsChart.appendChild(bar);
-        dailySessionsChart.appendChild(label);
-      });
-      
-      // Create weekly study chart
-      const weeklyStudyChart = document.getElementById('weeklyStudyChart');
-      weeklyStudyChart.innerHTML = ''; // Clear previous chart
-      
-      // Add average and goal lines
-      const weeklyAvgLine = document.createElement('div');
-      weeklyAvgLine.className = 'average-line';
-      weeklyAvgLine.style.bottom = `${(studyData.weekly.current / 7 / (studyData.daily.goal)) * 150}px`;
-      weeklyStudyChart.appendChild(weeklyAvgLine);
-      
-      const weeklyGoalLine = document.createElement('div');
-      weeklyGoalLine.className = 'goal-line';
-      weeklyGoalLine.style.bottom = `${(studyData.daily.goal / (studyData.daily.goal)) * 150}px`;
-      weeklyStudyChart.appendChild(weeklyGoalLine);
-      
-      // Create bars for each day
-      const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-      
-      studyData.weekly.days.forEach((day, index) => {
-        const barHeight = (day / maxMinutes) * maxBarHeight;
-        const barLeft = (index / 6) * 100; // 6 is the number of gaps between 7 days
-        
-        const bar = document.createElement('div');
-        bar.className = 'chart-bar';
-        bar.style.height = `${barHeight}px`;
-        bar.style.left = `${barLeft}%`;
-        
-        const label = document.createElement('div');
-        label.className = 'chart-label';
-        label.textContent = daysOfWeek[index];
-        label.style.left = `${barLeft}%`;
-        
-        weeklyStudyChart.appendChild(bar);
-        weeklyStudyChart.appendChild(label);
-      });
-      
-      // Create monthly study chart
-      const monthlyStudyChart = document.getElementById('monthlyStudyChart');
-      monthlyStudyChart.innerHTML = ''; // Clear previous chart
-      
-      // Add average and goal lines
-      const monthlyAvgLine = document.createElement('div');
-      monthlyAvgLine.className = 'average-line';
-      monthlyAvgLine.style.bottom = `${(studyData.monthly.current / 4 / (studyData.weekly.goal)) * 150}px`;
-      monthlyStudyChart.appendChild(monthlyAvgLine);
-      
-      const monthlyGoalLine = document.createElement('div');
-      monthlyGoalLine.className = 'goal-line';
-      monthlyGoalLine.style.bottom = `${(studyData.weekly.goal / (studyData.weekly.goal)) * 150}px`;
-      monthlyStudyChart.appendChild(monthlyGoalLine);
-      
-      // Create bars for each week
-      studyData.monthly.weeks.forEach((week, index) => {
-        const barHeight = (week / studyData.weekly.goal) * maxBarHeight;
-        const barLeft = (index / 3) * 100; // 3 is the number of gaps between 4 weeks
-        
-        const bar = document.createElement('div');
-        bar.className = 'chart-bar';
-        bar.style.height = `${barHeight}px`;
-        bar.style.left = `${barLeft}%`;
-        
-        const label = document.createElement('div');
-        label.className = 'chart-label';
-        label.textContent = `W${index + 1}`;
-        label.style.left = `${barLeft}%`;
-        
-        monthlyStudyChart.appendChild(bar);
-        monthlyStudyChart.appendChild(label);
-      });
-    }
-    
-    // Function to set goals
-    function setGoal(period) {
-      const input = document.getElementById(`${period}GoalInput`);
-      const value = parseInt(input.value);
-      
-      if (value > 0) {
-        // Convert hours to minutes
-        studyData[period].goal = value * 60;
-        
-        // Update display
-        document.getElementById(`${period}GoalHours`).textContent = value;
-        
-        // Save to localStorage
-        localStorage.setItem(`${period}Goal`, value);
-        
-        // Save to cloud if user is logged in
-        const user = auth.currentUser;
-        if (user) {
-          saveToCloud(user.uid);
-        }
-        
-        // Update progress bars and charts
-        createStudyCharts();
-      }
-    }
-    
-    // Load saved goals
-    function loadSavedGoals() {
-      ['daily', 'weekly', 'monthly'].forEach(period => {
-        const savedGoal = localStorage.getItem(`${period}Goal`);
-        if (savedGoal) {
-          const value = parseInt(savedGoal);
-          document.getElementById(`${period}GoalInput`).value = value;
-          document.getElementById(`${period}GoalHours`).textContent = value;
-          studyData[period].goal = value * 60;
-        }
-      });
-    }
-    
-    // Update averages display
-    function updateAverages() {
-      // Weekly average
-      document.getElementById('weeklyAvgHours').textContent = Math.floor(studyData.averages.weekly / 60);
-      document.getElementById('weeklyAvgMinutes').textContent = studyData.averages.weekly % 60;
-      
-      // Monthly average
-      document.getElementById('monthlyAvgHours').textContent = Math.floor(studyData.averages.monthly / 60);
-      document.getElementById('monthlyAvgMinutes').textContent = studyData.averages.monthly % 60;
-      
-      // All time average
-      document.getElementById('allTimeAvgHours').textContent = Math.floor(studyData.averages.allTime / 60);
-      document.getElementById('allTimeAvgMinutes').textContent = studyData.averages.allTime % 60;
-    }
-
-    // Load today's completed sessions
-    function loadTodaySessions() {
-      const savedSessions = JSON.parse(localStorage.getItem('todaySessions') || '[]');
-      const today = new Date().toDateString();
-      
-      // Filter sessions from today only
-      const todaySessions = savedSessions.filter(session => {
-        const sessionDate = new Date(session.timestamp).toDateString();
-        return sessionDate === today;
-      });
-
-      // Reset current values before adding today's sessions
-      studyData.daily.current = 0;
-      studyData.daily.sessions = [];
-
-      // Add today's sessions
-      if (todaySessions.length > 0) {
-        todaySessions.forEach(session => {
-          studyData.daily.current += session.duration;
-          studyData.daily.sessions.push(session.duration);
-        });
-
-        // Update the UI for today's study time
-        document.getElementById('todayStudyHours').textContent = Math.floor(studyData.daily.current / 60);
-        document.getElementById('todayStudyMinutes').textContent = studyData.daily.current % 60;
-        
-        // Update progress bar
-        const dailyProgress = (studyData.daily.current / studyData.daily.goal) * 100;
-        document.getElementById('dailyProgressBar').style.width = `${Math.min(dailyProgress, 100)}%`;
-      } else {
-        // Reset display to zero if no sessions
-        document.getElementById('todayStudyHours').textContent = '0';
-        document.getElementById('todayStudyMinutes').textContent = '0';
-        document.getElementById('dailyProgressBar').style.width = '0%';
-      }
-    }
-
-    // Recalculate weekly and monthly data from actual sessions
-    async function recalculateStudyData(userId) {
-      try {
-        // Reset values
-        studyData.weekly.days = Array(7).fill(0);
-        studyData.monthly.weeks = Array(4).fill(0);
-        studyData.weekly.current = 0;
-        studyData.monthly.current = 0;
-        
-        if (!userId) return;
-        
-        // Get date boundaries
-        const now = new Date();
-        const startOfWeek = new Date(now);
-        startOfWeek.setDate(now.getDate() - now.getDay()); // Start of week (Sunday)
-        startOfWeek.setHours(0, 0, 0, 0);
-        
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        startOfMonth.setHours(0, 0, 0, 0);
-        
-        // Query sessions from Firestore
-        const userRef = db.collection('users').doc(userId);
-        const sessionsRef = userRef.collection('sessions');
-        
-        // Get this week's sessions
-        const weekSessions = await sessionsRef
-          .where('timestamp', '>=', startOfWeek.toISOString())
-          .get();
-          
-        // Get this month's sessions
-        const monthSessions = await sessionsRef
-          .where('timestamp', '>=', startOfMonth.toISOString())
-          .get();
-        
-        // Process weekly data
-        weekSessions.forEach(doc => {
-          const session = doc.data();
-          const date = new Date(session.timestamp);
-          const dayOfWeek = date.getDay();
-          studyData.weekly.days[dayOfWeek] += session.duration;
-        });
-        
-        // Process monthly data
-        monthSessions.forEach(doc => {
-          const session = doc.data();
-          const date = new Date(session.timestamp);
-          const dayOfMonth = date.getDate() - 1;
-          const weekOfMonth = Math.floor(dayOfMonth / 7);
-          if (weekOfMonth < 4) {
-            studyData.monthly.weeks[weekOfMonth] += session.duration;
-          }
-        });
-        
-        // Update totals
-        studyData.weekly.current = studyData.weekly.days.reduce((a, b) => a + b, 0);
-        studyData.monthly.current = studyData.monthly.weeks.reduce((a, b) => a + b, 0);
-        
-        // Update displays
-        document.getElementById('weeklyStudyHours').textContent = Math.floor(studyData.weekly.current / 60);
-        document.getElementById('weeklyStudyMinutes').textContent = studyData.weekly.current % 60;
-        document.getElementById('weeklyProgressBar').style.width = `${(studyData.weekly.current / studyData.weekly.goal) * 100}%`;
-        
-        document.getElementById('monthlyStudyHours').textContent = Math.floor(studyData.monthly.current / 60);
-        document.getElementById('monthlyStudyMinutes').textContent = studyData.monthly.current % 60;
-        document.getElementById('monthlyProgressBar').style.width = `${(studyData.monthly.current / studyData.monthly.goal) * 100}%`;
-        
-        // Update averages
-        studyData.averages.weekly = studyData.weekly.current / 7;
-        studyData.averages.monthly = studyData.monthly.current / new Date().getDate();
-        studyData.averages.allTime = studyData.monthly.current / new Date().getDate(); // simplified
-        
-        updateAverages();
-        createStudyCharts();
-      } catch (error) {
-        console.error('Error recalculating study data:', error);
-      }
-    }
-
-    // Function to toggle real-time study tracking
-    function toggleStudyTracking() {
-      if (!studyData.daily.isStudying) {
-        // Start studying
-        studyData.daily.isStudying = true;
-        studyData.daily.realTimeStart = new Date();
-        startStopButton.textContent = '⏸ Pause Studying';
-        startStopButton.style.backgroundColor = '#ff4444';
-      } else {
-        // Stop studying
-        studyData.daily.isStudying = false;
-        if (studyData.daily.realTimeStart) {
-          // Calculate and save the study period
-          const now = new Date();
-          const duration = Math.floor((now - studyData.daily.realTimeStart) / 60000); // Convert to minutes
-          
-          if (duration > 0) {
-            const sessionData = {
-              label: 'RT', // RT for Real Time
-              duration: duration,
-              timestamp: studyData.daily.realTimeStart.toISOString()
-            };
-            
-            // Save locally
-            const savedSessions = JSON.parse(localStorage.getItem('todaySessions') || '[]');
-            savedSessions.push(sessionData);
-            localStorage.setItem('todaySessions', JSON.stringify(savedSessions));
-            
-            // Update study data
-            studyData.daily.current += duration;
-            studyData.daily.sessions.push(duration);
-            
-            // Sync to cloud if user is logged in
-            const user = auth.currentUser;
-            if (user) {
-              syncSessionToCloud(sessionData, user.uid)
-                .then(() => recalculateStudyData(user.uid));
-            }
-          }
-        }
-        studyData.daily.realTimeStart = null;
-        startStopButton.textContent = '▶️ Start Studying';
-        startStopButton.style.backgroundColor = '#00bfff';
-      }
-    }
-
-    // Add real-time study controls
-    const startStopButton = document.createElement('button');
-    startStopButton.id = 'startStopStudy';
-    startStopButton.className = 'study-control-btn';
-    startStopButton.textContent = '▶️ Start Studying';
-    document.querySelector('.container').insertBefore(startStopButton, document.querySelector('.circle-container'));
-
-    startStopButton.addEventListener('click', toggleStudyTracking);
-
-    // Update the updateAllReports function to exclude break times
-    function updateAllReports() {
-      let totalToday = studyData.daily.current;
-      
-      // Add time from current real-time session if active
-      if (studyData.daily.isStudying && studyData.daily.realTimeStart) {
-        const now = new Date();
-        const currentSessionMinutes = Math.floor((now - studyData.daily.realTimeStart) / 60000);
-        totalToday += currentSessionMinutes;
-      }
-      
-      // Add time from current mock session if active and within a defined session period
-      if (studyData.daily.activeSession) {
-        const currentSession = sessionSchedule.find(s => s.label === studyData.daily.activeSession);
-        if (currentSession) {
-          const now = new Date();
-          const currentTimeStr = now.getHours().toString().padStart(2, '0') + ':' + 
-                               now.getMinutes().toString().padStart(2, '0');
-          
-          // Only count time if we're within the session's start and end time
-          if (currentTimeStr >= currentSession.start && currentTimeStr < currentSession.end) {
-            const sessionStart = parseTimeToMs(currentSession.start);
-            const currentTime = parseTimeToMs(currentTimeStr);
-            const elapsedMinutes = Math.floor((currentTime - sessionStart) / 60000);
-            const sessionElapsed = Math.min(elapsedMinutes, currentSession.duration);
-            totalToday += sessionElapsed;
-          }
-        }
-      }
-      
-      // Update displays
-      document.getElementById('todayStudyHours').textContent = Math.floor(totalToday / 60);
-      document.getElementById('todayStudyMinutes').textContent = totalToday % 60;
-      
-      // Update progress bar
-      const dailyProgress = (totalToday / studyData.daily.goal) * 100;
-      document.getElementById('dailyProgressBar').style.width = `${Math.min(dailyProgress, 100)}%`;
-      
-      // Update weekly and monthly reports for logged in users
-      const user = auth.currentUser;
-      if (user) {
-        recalculateStudyData(user.uid);
-      }
-      
-      // Update charts
-      createStudyCharts();
-    }
-
-    // Initialize tracking with more frequent updates
-    window.addEventListener('load', () => {
-      loadSavedGoals();
-      loadTodaySessions();
-      createStudyCharts();
-      updateAverages();
-      initializeSessionEditor();
-      
-      // Start session tracking
-      trackSessionTime();
-      
-      // Set up updates
-      setInterval(() => {
-        trackSessionTime();
-        updateAllReports();
-      }, 1000); // Update every second for smoother display
-      
-      // Initial update
-      updateAllReports();
-    });
-
-    // Session Editor functionality
-    const sessionEditorToggle = document.getElementById('sessionEditorToggle');
-    const sessionEditorMenubar = document.getElementById('sessionEditorMenubar');
-    const sessionList = document.getElementById('sessionList');
-    const addSessionBtn = document.getElementById('addSessionBtn');
-    const saveSessionsBtn = document.getElementById('saveSessionsBtn');
-
-    // Toggle session editor menubar
-    sessionEditorToggle.addEventListener('click', () => {
-      sessionEditorMenubar.classList.toggle('hidden');
-    });
-
-    function createSessionItem(session, index) {
-      const div = document.createElement('div');
-      div.className = 'session-item';
-      div.innerHTML = `
-        <input type="text" class="session-label" value="${session.label}" maxlength="2">
-        <input type="time" class="session-start" value="${session.start}" onchange="updateSessionDuration(this)">
-        <input type="time" class="session-end" value="${session.end}" onchange="updateSessionDuration(this)">
-        <span class="session-duration">${session.duration} min</span>
-        <div class="session-controls">
-          <button class="delete-btn" onclick="deleteSession(${index})">🗑️</button>
-        </div>
-      `;
-      return div;
-    }
-
-    function initializeSessionEditor() {
-      // Load sessions from localStorage or use default
-      const savedSessions = localStorage.getItem('customSessions');
-      if (savedSessions) {
-        sessionSchedule.length = 0;
-        sessionSchedule.push(...JSON.parse(savedSessions));
-      }
-      
-      // Render session list
-      renderSessionList();
-    }
-
-    function renderSessionList() {
-      sessionList.innerHTML = '';
-      sessionSchedule.forEach((session, index) => {
-        sessionList.appendChild(createSessionItem(session, index));
-      });
-      
-      // Update schedule display
-      updateScheduleDisplay();
-    }
-
-    function deleteSession(index) {
-      if (confirm('Are you sure you want to delete this session?')) {
-        sessionSchedule.splice(index, 1);
-        renderSessionList();
-      }
-    }
-
-    function validateSessions(sessions) {
-      // Sort sessions by start time before validation
-      sessions.sort((a, b) => {
-        const aMinutes = convertTimeToMinutes(a.start);
-        const bMinutes = convertTimeToMinutes(b.start);
-        return aMinutes - bMinutes;
-      });
-
-      // Check for overlapping times
-      for (let i = 0; i < sessions.length - 1; i++) {
-        const current = sessions[i];
-        const next = sessions[i + 1];
-        
-        // Convert times to minutes since midnight for easier comparison
-        let currentEndMinutes = convertTimeToMinutes(current.end);
-        let nextStartMinutes = convertTimeToMinutes(next.start);
-        
-        // Handle times across midnight
-        if (currentEndMinutes < convertTimeToMinutes(current.start)) {
-          currentEndMinutes += 24 * 60;
-        }
-        if (nextStartMinutes < currentEndMinutes) {
-          nextStartMinutes += 24 * 60;
-        }
-        
-        if (currentEndMinutes > nextStartMinutes) {
-          alert(`Session ${current.label} overlaps with session ${next.label}`);
-          return false;
-        }
-      }
-
-      // Check for valid times
-      for (const session of sessions) {
-        // Validate time format
-        if (!/^\d{2}:\d{2}$/.test(session.start) || !/^\d{2}:\d{2}$/.test(session.end)) {
-          alert(`Session ${session.label} has invalid time format`);
-          return false;
-        }
-
-        // Convert times to minutes for comparison
-        let startMinutes = convertTimeToMinutes(session.start);
-        let endMinutes = convertTimeToMinutes(session.end);
-        
-        // Handle times across midnight
-        if (endMinutes < startMinutes) {
-          endMinutes += 24 * 60;
-        }
-        
-        // Validate end time is after start time
-        if (endMinutes <= startMinutes) {
-          alert(`Session ${session.label} end time must be after start time`);
-          return false;
-        }
-      }
-
-      return true;
-    }
-
-    function convertTimeToMinutes(timeStr) {
-      const [hours, minutes] = timeStr.split(':').map(Number);
-      return hours * 60 + minutes;
-    }
-
-    function convertMinutesToTime(minutes) {
-      // Handle minutes greater than 24 hours
-      minutes = minutes % (24 * 60);
-      const hours = Math.floor(minutes / 60);
-      const mins = minutes % 60;
-      return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
-    }
-
-    function updateSessionDuration(input) {
-      const sessionItem = input.closest('.session-item');
-      const startInput = sessionItem.querySelector('.session-start');
-      const endInput = sessionItem.querySelector('.session-end');
-      const durationSpan = sessionItem.querySelector('.session-duration');
-      
-      let startMinutes = convertTimeToMinutes(startInput.value);
-      let endMinutes = convertTimeToMinutes(endInput.value);
-      
-      // Handle times across midnight
-      if (endMinutes < startMinutes) {
-        endMinutes += 24 * 60;
-      }
-      
-      const durationMinutes = endMinutes - startMinutes;
-      if (durationMinutes > 0) {
-        durationSpan.textContent = `${durationMinutes} min`;
-      }
-    }
-
-    addSessionBtn.addEventListener('click', () => {
-      // Get the last session's end time if it exists
-      let defaultStart = '09:00';
-      let defaultEnd = '10:30';
-      
-      if (sessionSchedule.length > 0) {
-        const lastSession = sessionSchedule[sessionSchedule.length - 1];
-        defaultStart = lastSession.end;
-        
-        // Calculate default end time (90 minutes after start)
-        let startMinutes = convertTimeToMinutes(defaultStart);
-        let endMinutes = startMinutes + 90;
-        
-        // Convert back to time string using the helper function
-        defaultEnd = convertMinutesToTime(endMinutes);
-      }
-
-      const durationMinutes = 90; // Default duration
-
-      // Generate next session label
-      let nextNumber = sessionSchedule.length + 1;
-      let label;
-      if (nextNumber <= 9) {
-        label = `0${nextNumber}`;
-      } else {
-        label = nextNumber.toString();
-      }
-
-      const newSession = {
-        label: label,
-        start: defaultStart,
-        end: defaultEnd,
-        duration: durationMinutes
-      };
-
-      // Validate the new session before adding
-      const tempSessions = [...sessionSchedule, newSession];
-      if (validateSessions(tempSessions)) {
-        sessionSchedule.push(newSession);
-        renderSessionList();
-      }
-    });
-
-    saveSessionsBtn.addEventListener('click', () => {
-      // Gather all session data from inputs
-      const sessionItems = document.querySelectorAll('.session-item');
-      const updatedSessions = Array.from(sessionItems).map(item => {
-        const start = item.querySelector('.session-start').value;
-        const end = item.querySelector('.session-end').value;
-        
-        let startMinutes = convertTimeToMinutes(start);
-        let endMinutes = convertTimeToMinutes(end);
-        
-        // Handle times across midnight
-        if (endMinutes < startMinutes) {
-          endMinutes += 24 * 60;
-        }
-        
-        const calculatedDuration = endMinutes - startMinutes;
-        
-        return {
-          label: item.querySelector('.session-label').value,
-          start: start,
-          end: end,
-          duration: calculatedDuration
+<body class="bg-gray-100 dark:bg-gray-900">
+    <div id="root"></div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        // Firebase Core
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        // Firebase Auth
+        import {
+            getAuth,
+            GoogleAuthProvider,
+            signInWithPopup,
+            signOut,
+            onAuthStateChanged,
+            signInWithCustomToken,
+            signInAnonymously
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        // Firebase Firestore
+        import {
+            getFirestore,
+            collection,
+            doc,
+            addDoc,
+            deleteDoc,
+            onSnapshot,
+            query,
+            orderBy,
+            serverTimestamp
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // React and ReactDOM (from CDN)
+        import React, { useState, useEffect } from 'https://esm.sh/react@18.2.0';
+        import ReactDOM from 'https://esm.sh/react-dom@18.2.0/client';
+
+        // Define global variables provided by the Canvas environment
+        // These variables are expected to be injected into the environment by the platform.
+        // We'll use the provided firebaseConfig directly.
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id'; // This is for Firestore pathing in Canvas
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // Your Firebase configuration (updated with your provided details)
+        const firebaseConfig = {
+            apiKey: "AIzaSyDuBXHarpbukYh4EUAn235IIvA4B19jRMI",
+            authDomain: "nobeltime-98ea5.firebaseapp.com",
+            projectId: "nobeltime-98ea5",
+            appId: "1:902117809689:web:70a05ec306705de51e9488"
         };
-      });
 
-      // Validate sessions
-      if (validateSessions(updatedSessions)) {
-        // Update sessionSchedule
-        sessionSchedule.length = 0;
-        sessionSchedule.push(...updatedSessions);
-        
-        // Save to localStorage
-        localStorage.setItem('customSessions', JSON.stringify(sessionSchedule));
-        
-        // Update UI
-        renderSessionList();
-        alert('Sessions saved successfully!');
-      }
-    });
 
-    // Add these variables at the beginning of the script
-    const soundSettingsToggle = document.getElementById('soundSettingsToggle');
-    const soundSettingsMenubar = document.getElementById('soundSettingsMenubar');
-    const masterVolume = document.getElementById('masterVolume');
-    const focusAlarmVolume = document.getElementById('focusAlarmVolume');
-    const breakAlarmVolume = document.getElementById('breakAlarmVolume');
-    const focusAlarmSound = document.getElementById('focusAlarmSound');
-    const breakAlarmSound = document.getElementById('breakAlarmSound');
+        // Main App component (converted from original React code)
+        const App = () => {
+            const [user, setUser] = useState(null); // Stores the authenticated user object
+            const [loading, setLoading] = useState(true); // Manages loading state during auth checks
+            const [error, setError] = useState(''); // Stores any error messages
+            const [db, setDb] = useState(null); // Firestore instance
+            const [auth, setAuth] = useState(null); // Firebase Auth instance
+            const [userId, setUserId] = useState(null); // Current user's ID
+            const [notes, setNotes] = useState([]); // Stores user-specific notes
+            const [newNote, setNewNote] = useState(''); // Input field for new note
 
-    // Sound settings state
-    let soundSettings = {
-      masterVolume: 100,
-      focusAlarm: {
-        sound: 'alarm_clock',
-        volume: 100
-      },
-      breakAlarm: {
-        sound: 'notification_simple',
-        volume: 100
-      }
-    };
+            // Initialize Firebase and set up auth listener
+            useEffect(() => {
+                try {
+                    const app = initializeApp(firebaseConfig);
+                    const authInstance = getAuth(app);
+                    const dbInstance = getFirestore(app);
 
-    // Load saved sound settings
-    function loadSoundSettings() {
-      const saved = localStorage.getItem('soundSettings');
-      if (saved) {
-        soundSettings = JSON.parse(saved);
-        masterVolume.value = soundSettings.masterVolume;
-        focusAlarmVolume.value = soundSettings.focusAlarm.volume;
-        breakAlarmVolume.value = soundSettings.breakAlarm.volume;
-        focusAlarmSound.value = soundSettings.focusAlarm.sound;
-        breakAlarmSound.value = soundSettings.breakAlarm.sound;
-        updateVolumeDisplays();
-      }
-    }
+                    setAuth(authInstance);
+                    setDb(dbInstance);
 
-    // Save sound settings
-    function saveSoundSettings() {
-      localStorage.setItem('soundSettings', JSON.stringify(soundSettings));
-    }
+                    // Sign in with custom token if available, otherwise anonymously
+                    const signInUser = async () => {
+                        try {
+                            if (initialAuthToken) {
+                                await signInWithCustomToken(authInstance, initialAuthToken);
+                            } else {
+                                await signInAnonymously(authInstance);
+                            }
+                        } catch (e) {
+                            console.error("Error signing in:", e);
+                            setError("Failed to sign in automatically. Please try Google Sign-in.");
+                        } finally {
+                            setLoading(false);
+                        }
+                    };
 
-    // Update volume displays
-    function updateVolumeDisplays() {
-      document.getElementById('masterVolumeValue').textContent = `${masterVolume.value}%`;
-      document.getElementById('focusAlarmVolumeValue').textContent = `${focusAlarmVolume.value}%`;
-      document.getElementById('breakAlarmVolumeValue').textContent = `${breakAlarmVolume.value}%`;
-    }
+                    signInUser();
 
-    // Sound testing functionality
-    const soundTestingState = {
-      currentTestSound: null,
-      isPlaying: false,
-      playingType: null
-    };
+                    // Set up authentication state observer
+                    const unsubscribe = onAuthStateChanged(authInstance, (currentUser) => {
+                        setUser(currentUser);
+                        if (currentUser) {
+                            setUserId(currentUser.uid); // Set userId from authenticated user
+                        } else {
+                            setUserId(null); // Clear userId if no user
+                        }
+                        setLoading(false); // Authentication check is complete
+                    });
 
-    function testAlarmSound(type) {
-      try {
-        // Stop any currently playing sound first
-        stopTestSound();
+                    // Cleanup subscription on unmount
+                    return () => unsubscribe();
+                } catch (e) {
+                    console.error("Firebase initialization error:", e);
+                    setError("Failed to initialize Firebase. Check console for details.");
+                    setLoading(false);
+                }
+            }, []); // Empty dependency array means this runs once on component mount
 
-        const testButton = document.getElementById(`test${type.charAt(0).toUpperCase() + type.slice(1)}Sound`);
-        const stopButton = document.getElementById(`stop${type.charAt(0).toUpperCase() + type.slice(1)}Sound`);
-        
-        // Get the correct settings based on type
-        const settings = type === 'focus' ? soundSettings.focusAlarm : soundSettings.breakAlarm;
-        const soundSelect = type === 'focus' ? focusAlarmSound : breakAlarmSound;
-        const selectedSound = soundSelect.value;
-        
-        // Get the sound URL
-        const soundUrl = getAlarmSource(selectedSound);
-        if (!soundUrl) {
-          throw new Error('Invalid sound URL');
-        }
+            // Listen for notes when userId and db are available
+            useEffect(() => {
+                if (db && userId && user) { // Ensure db, userId, and user are ready
+                    // Define the collection path for private user data
+                    const notesCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/notes`);
+                    // Create a query to order notes by creation time (optional, but good for display)
+                    const q = query(notesCollectionRef, orderBy('createdAt', 'desc'));
 
-        // Create and configure the audio element
-        const audio = new Audio();
-        audio.src = soundUrl;
-        
-        // Update UI to show loading state
-        testButton.innerHTML = '⌛ Loading...';
-        testButton.disabled = true;
-        
-        // Set up event handlers
-        audio.addEventListener('canplaythrough', () => {
-          // Set volume after audio is loaded
-          audio.volume = (settings.volume / 100) * (soundSettings.masterVolume / 100);
-          
-          // Update UI to show playing state
-          testButton.classList.add('playing');
-          testButton.innerHTML = '⏸ Playing...';
-          testButton.disabled = false;
-          stopButton.style.display = 'block';
-          
-          // Store the current playing state
-          soundTestingState.currentTestSound = audio;
-          soundTestingState.isPlaying = true;
-          soundTestingState.playingType = type;
-          
-          // Play the sound
-          audio.play().catch(error => {
-            console.error('Error playing sound:', error);
-            stopTestSound();
-            alert('Error playing the selected sound. Please try another sound.');
-          });
-        }, { once: true });
+                    const unsubscribe = onSnapshot(q, (snapshot) => {
+                        const fetchedNotes = snapshot.docs.map(doc => ({
+                            id: doc.id,
+                            ...doc.data()
+                        }));
+                        setNotes(fetchedNotes);
+                    }, (err) => {
+                        console.error("Error fetching notes:", err);
+                        setError("Failed to load notes.");
+                    });
 
-        audio.addEventListener('ended', () => {
-          stopTestSound();
-        });
+                    // Cleanup listener on unmount or when userId/db changes
+                    return () => unsubscribe();
+                } else if (!user && !loading) {
+                    // If user logs out, clear notes
+                    setNotes([]);
+                }
+            }, [db, userId, user, loading]); // Re-run when db, userId, user, or loading state changes
 
-        audio.addEventListener('error', (e) => {
-          console.error('Error loading sound:', e);
-          stopTestSound();
-          alert('Error loading the selected sound. Please try another sound.');
-        });
+            // Function to handle Google Sign-in
+            const signInWithGoogle = async () => {
+                if (!auth) {
+                    setError("Firebase Auth not initialized.");
+                    return;
+                }
+                setLoading(true);
+                setError('');
+                try {
+                    const provider = new GoogleAuthProvider();
+                    await signInWithPopup(auth, provider);
+                } catch (e) {
+                    console.error("Google Sign-in error:", e);
+                    // Handle specific errors like popup closed by user
+                    if (e.code === 'auth/popup-closed-by-user') {
+                        setError("Sign-in process cancelled.");
+                    } else {
+                        setError(`Sign-in failed: ${e.message}`);
+                    }
+                } finally {
+                    setLoading(false);
+                }
+            };
 
-      } catch (error) {
-        console.error('Error in testAlarmSound:', error);
-        stopTestSound();
-        alert('Error playing the selected sound. Please try another sound.');
-      }
-    }
+            // Function to handle user sign-out
+            const signOutUser = async () => {
+                if (!auth) {
+                    setError("Firebase Auth not initialized.");
+                    return;
+                }
+                setLoading(true);
+                setError('');
+                try {
+                    await signOut(auth);
+                    setUser(null); // Clear user state
+                    setUserId(null); // Clear userId
+                    setNotes([]); // Clear notes on sign out
+                } catch (e) {
+                    console.error("Sign-out error:", e);
+                    setError(`Sign-out failed: ${e.message}`);
+                } finally {
+                    setLoading(false);
+                }
+            };
 
-    function stopTestSound() {
-      try {
-        if (soundTestingState.currentTestSound) {
-          soundTestingState.currentTestSound.pause();
-          soundTestingState.currentTestSound = null;
-        }
+            // Function to save a new note
+            const saveNote = async () => {
+                if (!db || !userId || !newNote.trim()) {
+                    setError("Please enter a note or ensure you are signed in.");
+                    return;
+                }
+                try {
+                    const notesCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/notes`);
+                    await addDoc(notesCollectionRef, {
+                        text: newNote.trim(),
+                        createdAt: serverTimestamp() // Use server timestamp for consistent ordering
+                    });
+                    setNewNote(''); // Clear input after saving
+                    setError(''); // Clear any previous error
+                } catch (e) {
+                    console.error("Error adding note:", e);
+                    setError(`Failed to save note: ${e.message}`);
+                }
+            };
 
-        // Reset UI for both focus and break buttons
-        ['focus', 'break'].forEach(type => {
-          const testButton = document.getElementById(`test${type.charAt(0).toUpperCase() + type.slice(1)}Sound`);
-          const stopButton = document.getElementById(`stop${type.charAt(0).toUpperCase() + type.slice(1)}Sound`);
-          
-          if (testButton) {
-            testButton.classList.remove('playing');
-            testButton.innerHTML = '▶ Test Sound';
-            testButton.disabled = false;
-          }
-          
-          if (stopButton) {
-            stopButton.style.display = 'block';
-          }
-        });
-        
-        // Reset playing state
-        soundTestingState.isPlaying = false;
-        soundTestingState.playingType = null;
-      } catch (error) {
-        console.error('Error in stopTestSound:', error);
-      }
-    }
+            // Function to delete a note
+            const deleteNote = async (noteId) => {
+                if (!db || !userId) {
+                    setError("Database not ready or user not signed in.");
+                    return;
+                }
+                try {
+                    const noteDocRef = doc(db, `artifacts/${appId}/users/${userId}/notes`, noteId);
+                    await deleteDoc(noteDocRef);
+                    setError(''); // Clear any previous error
+                } catch (e) {
+                    console.error("Error deleting note:", e);
+                    setError(`Failed to delete note: ${e.message}`);
+                }
+            };
 
-    // Update the getAlarmSource function with working sound URLs
-    function getAlarmSource(soundType) {
-      const soundMap = {
-        // Classic Alarms
-        alarm_clock: 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3',
-        digital: 'https://assets.mixkit.co/active_storage/sfx/2867/2867-preview.mp3',
-        mechanical: 'https://assets.mixkit.co/active_storage/sfx/2868/2868-preview.mp3',
-        electronic: 'https://assets.mixkit.co/active_storage/sfx/2866/2866-preview.mp3',
-        
-        // Nature
-        morning_birds: 'https://assets.mixkit.co/active_storage/sfx/2526/2526-preview.mp3',
-        ocean_wave: 'https://assets.mixkit.co/active_storage/sfx/2437/2437-preview.mp3',
-        forest_morning: 'https://assets.mixkit.co/active_storage/sfx/2527/2527-preview.mp3',
-        gentle_stream: 'https://assets.mixkit.co/active_storage/sfx/2438/2438-preview.mp3',
-        
-        // Musical
-        marimba: 'https://assets.mixkit.co/active_storage/sfx/2515/2515-preview.mp3',
-        xylophone: 'https://assets.mixkit.co/active_storage/sfx/2516/2516-preview.mp3',
-        bell_chime: 'https://assets.mixkit.co/active_storage/sfx/2517/2517-preview.mp3',
-        music_box: 'https://assets.mixkit.co/active_storage/sfx/2518/2518-preview.mp3',
-        
-        // Gentle
-        soft_chime: 'https://assets.mixkit.co/active_storage/sfx/2519/2519-preview.mp3',
-        wind_chimes: 'https://assets.mixkit.co/active_storage/sfx/2520/2520-preview.mp3',
-        crystal: 'https://assets.mixkit.co/active_storage/sfx/2521/2521-preview.mp3',
-        peaceful: 'https://assets.mixkit.co/active_storage/sfx/2522/2522-preview.mp3',
-        
-        // Notifications
-        notification_simple: 'https://assets.mixkit.co/active_storage/sfx/1629/1629-preview.mp3',
-        notification_gentle: 'https://assets.mixkit.co/active_storage/sfx/1630/1630-preview.mp3',
-        notification_soft: 'https://assets.mixkit.co/active_storage/sfx/1631/1631-preview.mp3',
-        notification_chime: 'https://assets.mixkit.co/active_storage/sfx/1632/1632-preview.mp3',
-        
-        // Nature (Break)
-        bird_chirp: 'https://assets.mixkit.co/active_storage/sfx/2523/2523-preview.mp3',
-        water_drop: 'https://assets.mixkit.co/active_storage/sfx/2439/2439-preview.mp3',
-        leaves_rustle: 'https://assets.mixkit.co/active_storage/sfx/2524/2524-preview.mp3',
-        light_rain: 'https://assets.mixkit.co/active_storage/sfx/2440/2440-preview.mp3',
-        
-        // Musical (Break)
-        small_bell: 'https://assets.mixkit.co/active_storage/sfx/2525/2525-preview.mp3',
-        triangle: 'https://assets.mixkit.co/active_storage/sfx/2526/2526-preview.mp3',
-        wind_bell: 'https://assets.mixkit.co/active_storage/sfx/2527/2527-preview.mp3',
-        tiny_music_box: 'https://assets.mixkit.co/active_storage/sfx/2528/2528-preview.mp3',
-        
-        // Minimal
-        beep_short: 'https://assets.mixkit.co/active_storage/sfx/1628/1628-preview.mp3',
-        pop: 'https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3',
-        click: 'https://assets.mixkit.co/active_storage/sfx/2355/2355-preview.mp3',
-        tap: 'https://assets.mixkit.co/active_storage/sfx/2356/2356-preview.mp3'
-      };
-      
-      // Fallback sounds in case the primary ones fail
-      const fallbackSounds = {
-        default: 'https://assets.mixkit.co/active_storage/sfx/1628/1628-preview.mp3',
-        alarm: 'https://assets.mixkit.co/active_storage/sfx/2866/2866-preview.mp3',
-        notification: 'https://assets.mixkit.co/active_storage/sfx/1629/1629-preview.mp3'
-      };
-      
-      const soundUrl = soundMap[soundType];
-      if (!soundUrl) {
-        console.warn('Sound type not found:', soundType, 'Using default sound');
-        return fallbackSounds.default;
-      }
-      
-      return soundUrl;
-    }
+            // Render loading state
+            if (loading) {
+                return React.createElement(
+                    'div',
+                    { className: 'flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100' },
+                    React.createElement('div', { className: 'text-xl font-semibold' }, 'Loading...')
+                );
+            }
 
-    // Initialize sound controls when DOM is loaded
-    window.addEventListener('DOMContentLoaded', function() {
-      // Initialize sound controls
-      loadSoundSettings();
-      updateVolumeDisplays();
-      
-      // Add event listeners for test sound buttons
-      document.getElementById('testFocusSound').addEventListener('click', () => testAlarmSound('focus'));
-      document.getElementById('testBreakSound').addEventListener('click', () => testAlarmSound('break'));
-      document.getElementById('stopFocusSound').addEventListener('click', stopTestSound);
-      document.getElementById('stopBreakSound').addEventListener('click', stopTestSound);
+            return React.createElement(
+                'div',
+                { className: 'min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4 font-sans text-gray-900 dark:text-gray-100' },
+                React.createElement(
+                    'div',
+                    { className: 'bg-white dark:bg-gray-800 p-8 rounded-xl shadow-2xl w-full max-w-md border border-gray-200 dark:border-gray-700' },
+                    React.createElement(
+                        'h1',
+                        { className: 'text-3xl font-extrabold text-center text-indigo-700 dark:text-indigo-400 mb-6' },
+                        'My Awesome App'
+                    ),
+                    error && React.createElement(
+                        'div',
+                        { className: 'bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-300 px-4 py-3 rounded-md relative mb-4', role: 'alert' },
+                        React.createElement('strong', { className: 'font-bold' }, 'Error!'),
+                        React.createElement('span', { className: 'block sm:inline ml-2' }, error)
+                    ),
+                    user ? (
+                        // User is signed in
+                        React.createElement(
+                            'div',
+                            { className: 'text-center' },
+                            React.createElement(
+                                'h2',
+                                { className: 'text-2xl font-bold text-gray-800 dark:text-gray-200 mb-4' },
+                                'Welcome!'
+                            ),
+                            user.photoURL && React.createElement('img', {
+                                src: user.photoURL,
+                                alt: 'Profile',
+                                className: 'w-24 h-24 rounded-full mx-auto mb-4 border-4 border-indigo-300 dark:border-indigo-600 shadow-md',
+                                onError: (e) => { e.target.onerror = null; e.target.src = "https://placehold.co/96x96/cccccc/333333?text=User"; }
+                            }),
+                            React.createElement(
+                                'p',
+                                { className: 'text-lg font-medium text-gray-700 dark:text-gray-300 mb-2' },
+                                'Hello, ',
+                                user.displayName || 'User',
+                                '!'
+                            ),
+                            React.createElement(
+                                'p',
+                                { className: 'text-sm text-gray-500 dark:text-gray-400 mb-6' },
+                                user.email
+                            ),
+                            React.createElement(
+                                'p',
+                                { className: 'text-xs text-gray-400 dark:text-gray-500 mb-6' },
+                                'Your User ID: ',
+                                React.createElement('span', { className: 'font-mono break-all' }, userId)
+                            ),
+                            // Notes Section
+                            React.createElement(
+                                'div',
+                                { className: 'mt-8 pt-6 border-t border-gray-200 dark:border-gray-700' },
+                                React.createElement(
+                                    'h3',
+                                    { className: 'text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4' },
+                                    'Your Notes'
+                                ),
+                                React.createElement(
+                                    'div',
+                                    { className: 'flex mb-4' },
+                                    React.createElement('input', {
+                                        type: 'text',
+                                        value: newNote,
+                                        onChange: (e) => setNewNote(e.target.value),
+                                        placeholder: 'Write a new note...',
+                                        className: 'flex-grow p-3 rounded-l-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400'
+                                    }),
+                                    React.createElement(
+                                        'button',
+                                        {
+                                            onClick: saveNote,
+                                            className: 'bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-5 rounded-r-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800'
+                                        },
+                                        'Add Note'
+                                    )
+                                ),
+                                notes.length === 0 ? (
+                                    React.createElement(
+                                        'p',
+                                        { className: 'text-gray-500 dark:text-gray-400' },
+                                        'No notes yet. Add one above!'
+                                    )
+                                ) : (
+                                    React.createElement(
+                                        'ul',
+                                        { className: 'space-y-3 max-h-60 overflow-y-auto pr-2' },
+                                        notes.map((note) =>
+                                            React.createElement(
+                                                'li',
+                                                { key: note.id, className: 'flex items-center justify-between bg-gray-100 dark:bg-gray-700 p-3 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600' },
+                                                React.createElement(
+                                                    'span',
+                                                    { className: 'text-gray-800 dark:text-gray-200 text-left flex-grow break-words pr-2' },
+                                                    note.text
+                                                ),
+                                                React.createElement(
+                                                    'button',
+                                                    {
+                                                        onClick: () => deleteNote(note.id),
+                                                        className: 'text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-600 ml-4 p-1 rounded-full hover:bg-red-100 dark:hover:bg-red-800 transition duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-red-500',
+                                                        title: 'Delete Note'
+                                                    },
+                                                    React.createElement(
+                                                        'svg',
+                                                        { xmlns: 'http://www.w3.org/2000/svg', className: 'h-5 w-5', viewBox: '0 0 20 20', fill: 'currentColor' },
+                                                        React.createElement('path', { fillRule: 'evenodd', d: 'M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 11-2 0v6a1 1 0 112 0V8z', clipRule: 'evenodd' })
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                            ),
+                            React.createElement(
+                                'button',
+                                {
+                                    onClick: signOutUser,
+                                    className: 'mt-8 w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800'
+                                },
+                                'Sign Out'
+                            )
+                        )
+                    ) : (
+                        // User is not signed in
+                        React.createElement(
+                            'div',
+                            { className: 'text-center' },
+                            React.createElement(
+                                'p',
+                                { className: 'text-gray-600 dark:text-gray-300 mb-6' },
+                                'Sign in to access your personalized content.'
+                            ),
+                            React.createElement(
+                                'button',
+                                {
+                                    onClick: signInWithGoogle,
+                                    className: 'w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg flex items-center justify-center space-x-3 transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800'
+                                },
+                                React.createElement(
+                                    'svg',
+                                    { className: 'w-5 h-5', viewBox: '0 0 48 48', fill: 'none', xmlns: 'http://www.w3.org/2000/svg' },
+                                    React.createElement('path', { d: 'M44.5 20H24V28.5H35.5C34.75 32.5 32.25 35.5 28.5 37.5L28.25 37.75L34 42.25L34.25 42.5C40.5 37 44.5 29 44.5 20Z', fill: '#4285F4' }),
+                                    React.createElement('path', { d: 'M24 44C30.5 44 36 41.5 39.75 37.5L34 33C32.25 34.25 29.75 35.25 27 35.25C21.75 35.25 17.25 31.75 15.5 26.75L15.25 26.5L9.5 31L9.25 31.25C12.75 37.75 17.75 42.5 24 44Z', fill: '#34A853' }),
+                                    React.createElement('path', { d: 'M8.5 29.5C8.25 28.25 8 27 8 24C8 21 8.25 19.75 8.5 18.5L8.25 18.25L2.5 13.75L2.25 14C1 16.75 0 20.25 0 24C0 27.75 1 31.25 2.25 34L8.25 29.5H8.5Z', fill: '#FBBC05' }),
+                                    React.createElement('path', { d: 'M24 12.75C27 12.75 29.5 13.75 31.25 15.5L36 10.75C32.25 7.25 27 4.75 24 4.75C17.75 4.75 12.75 9.5 9.25 16L15.25 20.25C17 15.25 21.5 11.75 26.75 11.75H27Z', fill: '#EA4335' })
+                                ),
+                                'Sign in with Google'
+                            )
+                        )
+                    )
+                )
+            );
+        };
 
-      // Set initial button text
-      document.getElementById('testFocusSound').innerHTML = '▶ Test Sound';
-      document.getElementById('testBreakSound').innerHTML = '▶ Test Sound';
-      document.getElementById('stopFocusSound').innerHTML = '⏹ Stop';
-      document.getElementById('stopBreakSound').innerHTML = '⏹ Stop';
-    });
-
-    // Add cleanup when sound settings panel is closed
-    soundSettingsToggle.addEventListener('click', () => {
-      soundSettingsMenubar.classList.toggle('hidden');
-      if (soundSettingsMenubar.classList.contains('hidden')) {
-        stopTestSound();
-      }
-    });
-
-    // Update sound settings toggle functionality
-    soundSettingsToggle.addEventListener('click', () => {
-      soundSettingsMenubar.classList.toggle('visible');
-      if (!soundSettingsMenubar.classList.contains('visible')) {
-        stopTestSound();
-      }
-    });
-
-    // Update the sound initialization
-    function initializeSoundSettings() {
-      // Load saved sound settings
-      loadSoundSettings();
-      updateVolumeDisplays();
-
-      // Add event listeners for volume controls
-      masterVolume.addEventListener('input', () => {
-        soundSettings.masterVolume = parseInt(masterVolume.value);
-        updateVolumeDisplays();
-        saveSoundSettings();
-      });
-
-      focusAlarmVolume.addEventListener('input', () => {
-        soundSettings.focusAlarm.volume = parseInt(focusAlarmVolume.value);
-        updateVolumeDisplays();
-        saveSoundSettings();
-      });
-
-      breakAlarmVolume.addEventListener('input', () => {
-        soundSettings.breakAlarm.volume = parseInt(breakAlarmVolume.value);
-        updateVolumeDisplays();
-        saveSoundSettings();
-      });
-
-      // Add event listeners for sound selection
-      focusAlarmSound.addEventListener('change', () => {
-        soundSettings.focusAlarm.sound = focusAlarmSound.value;
-        saveSoundSettings();
-      });
-
-      breakAlarmSound.addEventListener('change', () => {
-        soundSettings.breakAlarm.sound = breakAlarmSound.value;
-        saveSoundSettings();
-      });
-
-      // Add event listeners for test buttons
-      document.getElementById('testFocusSound').addEventListener('click', () => testAlarmSound('focus'));
-      document.getElementById('testBreakSound').addEventListener('click', () => testAlarmSound('break'));
-      document.getElementById('stopFocusSound').addEventListener('click', stopTestSound);
-      document.getElementById('stopBreakSound').addEventListener('click', stopTestSound);
-    }
-
-    // Update the window load event listener
-    window.addEventListener('load', function() {
-      initializeSoundSettings();
-      loadSavedGoals();
-      loadTodaySessions();
-      createStudyCharts();
-      updateAverages();
-      initializeSessionEditor();
-      
-      // Start session tracking
-      trackSessionTime();
-      
-      // Set up updates
-      setInterval(() => {
-        trackSessionTime();
-        updateAllReports();
-      }, 1000);
-      
-      // Initial update
-      updateAllReports();
-    });
-  </script>
+        // Render the React App component into the root div
+        const container = document.getElementById('root');
+        const root = ReactDOM.createRoot(container);
+        root.render(React.createElement(App, null));
+    </script>
 </body>
 </html>
