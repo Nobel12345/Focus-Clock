@@ -117,6 +117,7 @@
 
         // --- UTILS & HELPERS ---
         const formatTime = s => `${Math.floor(s/3600).toString().padStart(2,'0')}:${Math.floor(s%3600/60).toString().padStart(2,'0')}:${Math.floor(s%60).toString().padStart(2,'0')}`;
+        const getLocalDateString = (date) => `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
         const showPage = pageId => {
             ui.pages.forEach(p => p.classList.toggle('active', p.id === `page-${pageId}`));
             ui.navItems.forEach(n => n.classList.toggle('active', n.dataset.page === pageId));
@@ -231,13 +232,12 @@
             listenForTodos();
             calculateAndRenderTodayTotal();
 
-            // Start the ranking refresh interval
             if (rankingInterval) clearInterval(rankingInterval);
             rankingInterval = setInterval(() => {
                 if (document.getElementById('page-ranking').classList.contains('active')) {
                     renderRankings();
                 }
-            }, 60000); // 60000ms = 1 minute
+            }, 60000);
         }
 
         const createListener = (q, callback) => {
@@ -260,9 +260,10 @@
             if (!subject) return;
 
             try {
+                const localDateString = getLocalDateString(new Date());
                 const batch = writeBatch(db);
                 const logRef = doc(collection(db, `artifacts/${appId}/users/${userId}/study_logs`));
-                batch.set(logRef, { subjectId, subjectName: subject.name, duration, endTime: serverTimestamp() });
+                batch.set(logRef, { subjectId, subjectName: subject.name, duration, endTime: serverTimestamp(), localDate: localDateString });
                 
                 const profileRef = doc(db, `artifacts/${appId}/public/data/user_profiles`, userId);
                 const profileSnap = await getDoc(profileRef);
@@ -312,7 +313,6 @@
             
             clearInterval(activeTimerInterval);
             
-            // Await the logging and status updates before refreshing the UI
             await logStudySession(activeSubjectId, elapsedSeconds);
             await setPublicStatus(false);
             
@@ -325,7 +325,6 @@
             ui.startStudyingBtn.classList.remove('hidden');
             ui.stopStudyingBtn.classList.add('hidden');
             
-            // Now that the data is saved, update the total
             await calculateAndRenderTodayTotal();
         }
 
@@ -366,9 +365,9 @@
         async function calculateAndRenderTodayTotal() {
             if (!userId) return;
             try {
-                const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+                const todayLocalDateString = getLocalDateString(new Date());
                 const logsRef = collection(db, `artifacts/${appId}/users/${userId}/study_logs`);
-                const q = query(logsRef, where("endTime", ">=", Timestamp.fromDate(todayStart)));
+                const q = query(logsRef, where("localDate", "==", todayLocalDateString));
                 const querySnapshot = await getDocs(q);
                 let totalSecondsToday = querySnapshot.docs.reduce((sum, doc) => sum + doc.data().duration, 0);
                 ui.totalTimeDisplay.textContent = `Total Today: ${formatTime(totalSecondsToday)}`;
@@ -381,13 +380,23 @@
             if (!userId) return;
             try {
                 const now = new Date();
-                let startDate;
-                if (period === 'today') startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-                else if (period === '7days') startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6);
-                else startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29);
+                let startDate = new Date();
+                
+                if (period === '7days') {
+                    startDate.setDate(now.getDate() - 6);
+                } else if (period === '30days') {
+                    startDate.setDate(now.getDate() - 29);
+                }
                 
                 const logsRef = collection(db, `artifacts/${appId}/users/${userId}/study_logs`);
-                const q = query(logsRef, where("endTime", ">=", Timestamp.fromDate(startDate)));
+                let q;
+
+                if (period === 'today') {
+                    q = query(logsRef, where("localDate", "==", getLocalDateString(now)));
+                } else {
+                    q = query(logsRef, where("localDate", ">=", getLocalDateString(startDate)));
+                }
+
                 const querySnapshot = await getDocs(q);
                 
                 const dataBySubject = {};
