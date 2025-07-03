@@ -17,11 +17,24 @@
         .fade-in { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
         .timer-text { font-weight: 900; letter-spacing: -0.05em; }
+        #advanced-color-picker, #edit-color-picker { cursor: pointer; }
+        .options-menu {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 40px;
+            background-color: #1F2937; /* gray-800 */
+            border: 1px solid #374151; /* gray-700 */
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            z-index: 100;
+        }
+        .options-menu.active { display: block; }
     </style>
 </head>
 <body class="bg-gray-900 text-white flex flex-col h-screen antialiased">
 
-    <!-- Authentication Screen (starts as active) -->
+    <!-- Authentication Screen -->
     <div id="auth-screen" class="active flex-col items-center justify-center h-full p-4 fade-in">
         <div class="w-full max-w-sm text-center">
             <h1 class="text-4xl font-bold text-white mb-2">FocusFlow</h1>
@@ -41,8 +54,10 @@
     <div id="app-container" class="flex-col h-screen">
         <main class="flex-grow overflow-hidden">
             <!-- Timer/Home Page -->
-            <div id="page-timer" class="page active flex-col h-full overflow-hidden"><header class="p-4 md:p-6 flex items-center justify-between z-10"><div class="flex items-center space-x-4"><h1 class="text-2xl font-bold text-gray-100">FocusFlow</h1><div id="user-info" class="hidden bg-gray-800/50 rounded-lg px-3 py-1.5 text-xs text-gray-400">Welcome, <span id="user-display-name"></span></div></div><button id="sign-out-btn" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg text-sm transition">Sign Out</button></header><div class="relative flex-grow flex items-center justify-center"><div id="live-sessions-grid" class="absolute inset-0 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2 p-4 overflow-hidden"></div><div class="relative text-center z-10 bg-gray-900/50 backdrop-blur-sm p-8 rounded-full"><p id="active-subject-display" class="text-xl font-semibold text-blue-400 h-7 mb-2"></p><h2 id="session-timer" class="text-7xl md:text-8xl timer-text text-white">00:00:00</h2><p id="total-time-display" class="text-gray-400 mt-2">Total Today: 00:00:00</p><div id="timer-controls" class="mt-8"><button id="start-studying-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-full text-lg transition-transform transform hover:scale-105">Start Studying</button><button id="stop-studying-btn" class="hidden bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-10 rounded-full text-lg transition-transform transform hover:scale-105">Stop</button></div></div></div></div>
-            <!-- Other pages (Stats, Planner, Ranking) -->
+            <div id="page-timer" class="page active flex-col h-full overflow-hidden"><header class="p-4 md:p-6 flex items-center justify-between z-20"><h1 class="text-2xl font-bold text-gray-100">FocusFlow</h1><button id="profile-btn" class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-gray-400 hover:bg-gray-600 transition overflow-hidden"><img id="header-avatar" class="w-full h-full object-cover hidden" src="" alt="User Avatar"><svg id="header-avatar-placeholder" class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" /></svg></button></header><div class="relative flex-grow flex items-center justify-center -mt-16"><div id="live-sessions-grid" class="absolute inset-0 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2 p-4 overflow-hidden"></div><div class="relative text-center z-10 bg-gray-900/50 backdrop-blur-sm p-8 rounded-full"><p id="active-subject-display" class="text-xl font-semibold text-blue-400 h-7 mb-2"></p><h2 id="session-timer" class="text-7xl md:text-8xl timer-text text-white">00:00:00</h2><p id="total-time-display" class="text-gray-400 mt-2">Total Today: 00:00:00</p><div id="timer-controls" class="mt-8"><button id="start-studying-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-full text-lg transition-transform transform hover:scale-105">Start Studying</button><button id="stop-studying-btn" class="hidden bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-10 rounded-full text-lg transition-transform transform hover:scale-105">Stop</button></div></div></div></div>
+            <!-- Account Details Page -->
+            <div id="page-account" class="page flex-col h-full overflow-y-auto no-scrollbar"><header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-gray-800"><button id="back-to-timer-btn" class="text-gray-400 hover:text-white"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button><h1 class="text-xl font-bold text-gray-100">Account Details</h1><div></div></header><div class="p-4 md:p-6 space-y-2"><button id="avatar-item" class="account-item w-full flex items-center justify-between p-4 bg-gray-800 rounded-lg"><span class="font-medium">Avatar</span><div class="flex items-center space-x-3"><div class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-gray-400 overflow-hidden"><img id="account-avatar-img" src="" class="w-full h-full object-cover hidden"><svg id="account-avatar-placeholder" class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" /></svg></div><svg class="w-5 h-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg></div></button><input type="file" id="avatar-file-input" class="hidden" accept="image/*"><button id="username-item" class="account-item w-full flex items-center justify-between p-4 bg-gray-800 rounded-lg"><span class="font-medium">Username</span><div class="flex items-center space-x-3"><span id="account-username" class="text-gray-400"></span><svg class="w-5 h-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg></div></button><div class="account-item flex items-center justify-between p-4 bg-gray-800 rounded-lg"><span class="font-medium">Account</span><span id="account-email" class="text-gray-400"></span></div><button id="change-password-item" class="account-item w-full flex items-center justify-between p-4 bg-gray-800 rounded-lg"><span class="font-medium">Change Password</span><svg class="w-5 h-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg></button></div><div class="p-4 md:p-6 mt-4"><button id="sign-out-btn" class="w-full text-center p-4 bg-red-600/20 text-red-400 rounded-lg hover:bg-red-600/30 transition">Sign Out</button></div></div>
+            <!-- Other pages -->
             <div id="page-stats" class="page flex-col p-4 md:p-6 space-y-4 h-full overflow-y-auto no-scrollbar"><header class="flex items-center justify-between"><h1 class="text-2xl font-bold text-gray-100">My Stats</h1></header><div class="flex justify-center bg-gray-800/50 rounded-lg p-1"><button class="stat-period-btn active flex-1 p-2 rounded-md bg-blue-600" data-period="today">Today</button><button class="stat-period-btn flex-1 p-2 rounded-md" data-period="7days">7 Days</button><button class="stat-period-btn flex-1 p-2 rounded-md" data-period="30days">30 Days</button></div><div class="bg-gray-800 p-4 rounded-2xl shadow-lg flex-grow"><canvas id="stats-chart"></canvas></div></div>
             <div id="page-planner" class="page flex-col p-4 md:p-6 space-y-4 h-full overflow-hidden"><header class="flex items-center justify-between"><h1 class="text-2xl font-bold text-gray-100">Daily Planner</h1></header><div class="flex-grow bg-gray-800 rounded-2xl p-4 flex flex-col overflow-hidden"><div class="flex items-center mb-4"><input type="text" id="todo-input" placeholder="Add a new task..." class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition"><button id="add-todo-btn" class="ml-3 px-4 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold transition">Add</button></div><div id="todo-list" class="flex-grow overflow-y-auto space-y-2 no-scrollbar"></div></div></div>
             <div id="page-ranking" class="page flex-col p-4 md:p-6 space-y-4 h-full overflow-hidden"><header class="flex items-center justify-between"><h1 class="text-2xl font-bold text-gray-100">Global Rankings</h1></header><div id="ranking-list" class="flex-grow bg-gray-800 rounded-2xl p-4 overflow-y-auto no-scrollbar space-y-2"></div></div>
@@ -52,13 +67,18 @@
 
     <!-- Modals -->
     <div id="select-subject-modal" class="modal fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm items-center justify-center p-4 z-50"><div class="bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-md"><h3 class="text-xl font-bold mb-4">Select a Subject to Begin</h3><div id="modal-subjects-list" class="space-y-3 max-h-64 overflow-y-auto no-scrollbar"></div><button id="cancel-select-subject-btn" class="mt-6 w-full px-5 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg font-semibold transition">Cancel</button></div></div>
-    <div id="add-subject-modal" class="modal fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm items-center justify-center p-4 z-50"><div class="bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm"><h3 class="text-xl font-bold mb-4">Add New Subject</h3><input type="text" id="subject-name-input" placeholder="e.g., Quantum Physics" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition"><div class="mt-4"><p class="text-sm text-gray-400 mb-2">Choose a color:</p><div id="color-picker" class="flex justify-between"></div></div><p class="text-red-500 text-sm mt-2 hidden" id="subject-name-error">Subject name cannot be empty.</p><div class="flex justify-end space-x-3 mt-6"><button id="cancel-add-btn" class="px-5 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg font-semibold transition">Cancel</button><button id="confirm-add-btn" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold transition">Add</button></div></div></div>
+    <div id="add-subject-modal" class="modal fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm items-center justify-center p-4 z-50"><div class="bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm"><h3 class="text-xl font-bold mb-4">Add New Subject</h3><input type="text" id="subject-name-input" placeholder="e.g., Quantum Physics" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition"><div class="mt-4"><p class="text-sm text-gray-400 mb-2">Choose a color:</p><div class="flex items-center justify-center space-x-4"><canvas id="advanced-color-picker" width="200" height="200"></canvas><div id="color-preview" class="w-10 h-10 rounded-full border-2 border-gray-500"></div></div></div><p class="text-red-500 text-sm mt-2 hidden" id="subject-name-error">Subject name cannot be empty.</p><div class="flex justify-end space-x-3 mt-6"><button id="cancel-add-btn" class="px-5 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg font-semibold transition">Cancel</button><button id="confirm-add-btn" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold transition">Add</button></div></div></div>
+    <div id="edit-subject-modal" class="modal fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm items-center justify-center p-4 z-50"><div class="bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm"><h3 class="text-xl font-bold mb-4">Edit Subject</h3><input type="text" id="edit-subject-name-input" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition"><div class="mt-4"><p class="text-sm text-gray-400 mb-2">Choose a new color:</p><div class="flex items-center justify-center space-x-4"><canvas id="edit-color-picker" width="200" height="200"></canvas><div id="edit-color-preview" class="w-10 h-10 rounded-full border-2 border-gray-500"></div></div></div><div class="flex justify-end space-x-3 mt-6"><button id="cancel-edit-btn" class="px-5 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg font-semibold transition">Cancel</button><button id="confirm-edit-btn" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold transition">Save Changes</button></div></div></div>
+    <div id="confirm-delete-modal" class="modal fixed inset-0 bg-black bg-opacity-80 backdrop-blur-sm items-center justify-center p-4 z-50"><div class="bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm"><h3 class="text-xl font-bold mb-2">Delete Subject</h3><p id="confirm-delete-text" class="text-gray-300 mb-6">Are you sure? This action cannot be undone.</p><div class="flex justify-end space-x-3"><button id="cancel-delete-btn" class="px-5 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg font-semibold transition">Cancel</button><button id="confirm-delete-btn" class="px-5 py-2 bg-red-600 hover:bg-red-700 rounded-lg font-semibold transition">Delete</button></div></div></div>
     <div id="add-name-modal" class="modal fixed inset-0 bg-black bg-opacity-80 backdrop-blur-sm items-center justify-center p-4 z-50"><div class="bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm"><h3 class="text-xl font-bold mb-2">Welcome!</h3><p class="text-gray-400 mb-4">Please set your display name to continue.</p><form id="add-name-form"><input type="text" id="display-name-input" placeholder="Enter your name" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required><button type="submit" class="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Save and Continue</button></form></div></div>
+    <div id="change-username-modal" class="modal fixed inset-0 bg-black bg-opacity-80 backdrop-blur-sm items-center justify-center p-4 z-50"><div class="bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm"><h3 class="text-xl font-bold mb-4">Change Username</h3><form id="change-username-form"><input type="text" id="new-username-input" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required><div class="flex justify-end space-x-3 mt-6"><button type="button" id="cancel-change-username-btn" class="px-5 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg font-semibold transition">Cancel</button><button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold transition">Save</button></div></form></div></div>
+    <div id="change-password-modal" class="modal fixed inset-0 bg-black bg-opacity-80 backdrop-blur-sm items-center justify-center p-4 z-50"><div class="bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm"><h3 class="text-xl font-bold mb-4">Change Password</h3><form id="change-password-form" class="space-y-4"><input type="password" id="new-password-input" placeholder="New Password" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required><p id="change-password-error" class="text-red-400 text-sm h-5"></p><div class="flex justify-end space-x-3 mt-6"><button type="button" id="cancel-change-password-btn" class="px-5 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg font-semibold transition">Cancel</button><button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold transition">Update Password</button></div></form></div></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, collection, onSnapshot, addDoc, updateDoc, serverTimestamp, setDoc, getDoc, deleteDoc, query, where, getDocs, Timestamp, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
 
         // --- CONFIG & STATE ---
         const firebaseConfig = {
@@ -75,10 +95,10 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        let userId = null, subjects = [], todos = [], activeTimerInterval = null, activeSubjectId = null, sessionStartTime = 0, selectedColor = null, statsChart = null, rankingInterval = null;
+        const storage = getStorage(app);
+        let userId = null, subjects = [], todos = [], activeTimerInterval = null, activeSubjectId = null, sessionStartTime = 0, selectedColor = '#FF0000', statsChart = null, rankingInterval = null, subjectToEdit = null, subjectToDelete = null;
         let unsubscribers = [];
-        const subjectColors = [{ name: 'blue', hex: '#3B82F6'}, { name: 'red', hex: '#EF4444'}, { name: 'green', hex: '#22C55E'}, { name: 'yellow', hex: '#EAB308'}, { name: 'purple', hex: '#8B5CF6'}, { name: 'pink', hex: '#EC4899'}];
-
+        
         // --- UI ELEMENTS ---
         const ui = {
             authScreen: document.getElementById('auth-screen'),
@@ -88,10 +108,11 @@
             authToggleBtn: document.getElementById('auth-toggle-btn'),
             loginToggleText: document.getElementById('login-toggle-text'),
             googleSigninBtn: document.getElementById('google-signin-btn'),
+            profileBtn: document.getElementById('profile-btn'),
             signOutBtn: document.getElementById('sign-out-btn'),
             authError: document.getElementById('auth-error'),
-            userDisplayName: document.getElementById('user-display-name'),
-            userInfo: document.getElementById('user-info'),
+            headerAvatar: document.getElementById('header-avatar'),
+            headerAvatarPlaceholder: document.getElementById('header-avatar-placeholder'),
             pages: document.querySelectorAll('.page'),
             navItems: document.querySelectorAll('.nav-item'),
             modals: document.querySelectorAll('.modal'),
@@ -107,12 +128,27 @@
             startStudyingBtn: document.getElementById('start-studying-btn'),
             stopStudyingBtn: document.getElementById('stop-studying-btn'),
             modalSubjectsList: document.getElementById('modal-subjects-list'),
-            colorPicker: document.getElementById('color-picker'),
+            colorPickerCanvas: document.getElementById('advanced-color-picker'),
+            colorPreview: document.getElementById('color-preview'),
+            editSubjectModal: document.getElementById('edit-subject-modal'),
+            editColorPickerCanvas: document.getElementById('edit-color-picker'),
+            confirmDeleteModal: document.getElementById('confirm-delete-modal'),
+            changeUsernameModal: document.getElementById('change-username-modal'),
+            changePasswordModal: document.getElementById('change-password-modal'),
             todoList: document.getElementById('todo-list'),
             todoInput: document.getElementById('todo-input'),
             addTodoBtn: document.getElementById('add-todo-btn'),
             rankingList: document.getElementById('ranking-list'),
             statPeriodBtns: document.querySelectorAll('.stat-period-btn'),
+            accountUsername: document.getElementById('account-username'),
+            accountEmail: document.getElementById('account-email'),
+            changePasswordItem: document.getElementById('change-password-item'),
+            usernameItem: document.getElementById('username-item'),
+            backToTimerBtn: document.getElementById('back-to-timer-btn'),
+            avatarItem: document.getElementById('avatar-item'),
+            avatarFileInput: document.getElementById('avatar-file-input'),
+            accountAvatarImg: document.getElementById('account-avatar-img'),
+            accountAvatarPlaceholder: document.getElementById('account-avatar-placeholder'),
         };
 
         // --- UTILS & HELPERS ---
@@ -123,6 +159,7 @@
             ui.navItems.forEach(n => n.classList.toggle('active', n.dataset.page === pageId));
             if (pageId === 'stats') renderStatsChart('today');
             if (pageId === 'ranking') renderRankings();
+            if (pageId === 'account') renderAccountDetails();
         };
         const showModal = modalId => document.getElementById(modalId).classList.add('active');
         const hideModals = () => ui.modals.forEach(m => m.classList.remove('active'));
@@ -145,17 +182,14 @@
                     const profileSnap = await getDoc(profileRef);
 
                     if (!profileSnap.exists()) {
-                        // This is a new user. Prompt for a name.
                         if (user.displayName) {
                             ui.displayNameInput.value = user.displayName;
                         }
                         showModal('add-name-modal');
                     } else {
-                        // This is a returning user. Load the app.
-                        ui.userDisplayName.textContent = profileSnap.data().displayName || user.email;
-                        ui.userInfo.classList.remove('hidden');
                         ui.authScreen.classList.remove('active');
                         ui.appContainer.classList.add('active', 'flex');
+                        showPage('timer');
                         initializeAppData();
                     }
                 } catch (error) {
@@ -163,7 +197,6 @@
                     await signOut(auth);
                 }
             } else {
-                // User is signed out
                 userId = null;
                 ui.authScreen.classList.add('active');
                 ui.appContainer.classList.remove('active', 'flex');
@@ -201,32 +234,97 @@
             const newName = ui.displayNameInput.value.trim();
             if (newName && auth.currentUser) {
                 try {
-                    // Update Auth profile first
                     await updateProfile(auth.currentUser, { displayName: newName });
-                    
-                    // Now create the Firestore profile
                     const profileRef = doc(db, `artifacts/${appId}/public/data/user_profiles`, auth.currentUser.uid);
-                    await setDoc(profileRef, {
-                        displayName: newName,
-                        totalStudyTime: 0,
-                        createdAt: serverTimestamp()
-                    });
+                    await setDoc(profileRef, { displayName: newName, totalStudyTime: 0, createdAt: serverTimestamp(), photoURL: auth.currentUser.photoURL || null });
                     
                     hideModals();
-                    // Manually trigger the app load now that the profile is created
-                    ui.userDisplayName.textContent = newName;
-                    ui.userInfo.classList.remove('hidden');
                     ui.authScreen.classList.remove('active');
                     ui.appContainer.classList.add('active', 'flex');
+                    showPage('timer');
                     initializeAppData();
                 } catch (error) {
                     handleError(error, 'Updating Name');
                 }
             }
         }
+        
+        async function handleChangeUsername(e) {
+            e.preventDefault();
+            const newUsernameInput = document.getElementById('new-username-input');
+            const newName = newUsernameInput.value.trim();
+            if (newName && auth.currentUser) {
+                try {
+                    await updateProfile(auth.currentUser, { displayName: newName });
+                    const profileRef = doc(db, `artifacts/${appId}/public/data/user_profiles`, auth.currentUser.uid);
+                    await updateDoc(profileRef, { displayName: newName });
+                    hideModals();
+                    renderAccountDetails();
+                } catch (error) {
+                    handleError(error, 'Update Username');
+                }
+            }
+        }
+        
+        async function handleChangePassword(e) {
+            e.preventDefault();
+            const newPassword = document.getElementById('new-password-input').value;
+            const errorEl = document.getElementById('change-password-error');
+            errorEl.textContent = '';
+            if (newPassword.length < 6) {
+                errorEl.textContent = 'Password must be at least 6 characters.';
+                return;
+            }
+            try {
+                await updatePassword(auth.currentUser, newPassword);
+                hideModals();
+                alert('Password updated successfully!');
+            } catch (error) {
+                errorEl.textContent = 'Error: ' + error.message;
+                console.error("Error changing password:", error);
+            }
+        }
+
+        async function handleAvatarUpload(e) {
+            const file = e.target.files[0];
+            if (!file || !userId) return;
+
+            const storageRef = ref(storage, `avatars/${userId}`);
+            try {
+                // Show loading state if needed
+                await uploadBytes(storageRef, file);
+                const photoURL = await getDownloadURL(storageRef);
+                
+                await updateProfile(auth.currentUser, { photoURL });
+                const profileRef = doc(db, `artifacts/${appId}/public/data/user_profiles`, userId);
+                await updateDoc(profileRef, { photoURL });
+
+                updateUserAvatars(photoURL);
+            } catch (error) {
+                handleError(error, 'Avatar Upload');
+            }
+        }
+
+        function updateUserAvatars(url) {
+            if (url) {
+                ui.headerAvatar.src = url;
+                ui.accountAvatarImg.src = url;
+                ui.headerAvatar.classList.remove('hidden');
+                ui.accountAvatarImg.classList.remove('hidden');
+                ui.headerAvatarPlaceholder.classList.add('hidden');
+                ui.accountAvatarPlaceholder.classList.add('hidden');
+            } else {
+                ui.headerAvatar.classList.add('hidden');
+                ui.accountAvatarImg.classList.add('hidden');
+                ui.headerAvatarPlaceholder.classList.remove('hidden');
+                ui.accountAvatarPlaceholder.classList.remove('hidden');
+            }
+        }
+
 
         // --- FIREBASE & DATA LOGIC ---
         function initializeAppData() {
+            updateUserAvatars(auth.currentUser.photoURL);
             listenForSubjects();
             listenForLiveSessions();
             listenForTodos();
@@ -250,6 +348,8 @@
         const listenForLiveSessions = () => createListener(collection(db, `artifacts/${appId}/public/data/live_sessions`), s => renderLiveSessions(s.docs.map(d => ({ id: d.id, ...d.data() }))));
         
         const addNewSubject = async (name, color) => { try { await addDoc(collection(db, `artifacts/${appId}/users/${userId}/subjects`), { name, color, createdAt: serverTimestamp() }); } catch (e) { handleError(e, 'Add Subject'); } };
+        const updateSubject = async (id, data) => { try { await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/subjects`, id), data); } catch(e) { handleError(e, 'Update Subject'); }};
+        const deleteSubject = async (id) => { try { await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/subjects`, id)); } catch(e) { handleError(e, 'Delete Subject'); }};
         const addNewTodo = async text => { try { await addDoc(collection(db, `artifacts/${appId}/users/${userId}/todos`), { text, completed: false, createdAt: serverTimestamp() }); } catch (e) { handleError(e, 'Add Todo'); } };
         const toggleTodo = async (id, completed) => { try { await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/todos`, id), { completed }); } catch (e) { handleError(e, 'Update Todo'); } };
         const deleteTodo = async id => { try { await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/todos`, id)); } catch (e) { handleError(e, 'Delete Todo'); } };
@@ -332,17 +432,163 @@
         const renderLiveSessions = sessions => { ui.liveSessionsGrid.innerHTML = sessions.map(s => `<div class="bg-gray-800/70 rounded-lg animate-pulse aspect-square"></div>`).join(''); };
         const renderModalSubjectsList = () => {
             ui.modalSubjectsList.innerHTML = subjects.length > 0 
-                ? subjects.map(s => `<button data-id="${s.id}" class="subject-select-btn w-full text-left p-4 bg-gray-700 hover:bg-blue-600 rounded-lg flex items-center space-x-4 transition-colors"><div class="w-4 h-4 rounded-full" style="background-color: ${subjectColors.find(c=>c.name===s.color)?.hex || '#fff'};"></div><span class="font-semibold">${s.name}</span></button>`).join('')
+                ? subjects.map(s => `
+                    <div class="relative flex items-center bg-gray-700 rounded-lg">
+                        <button data-id="${s.id}" class="subject-select-btn w-full text-left p-4 hover:bg-blue-600/50 rounded-lg flex items-center space-x-4 transition-colors flex-grow">
+                            <div class="w-4 h-4 rounded-full" style="background-color: ${s.color || '#3B82F6'};"></div>
+                            <span class="font-semibold">${s.name}</span>
+                        </button>
+                        <button data-id="${s.id}" class="subject-options-btn p-4 text-gray-400 hover:text-white">
+                            <svg class="w-5 h-5 pointer-events-none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" /></svg>
+                        </button>
+                        <div class="options-menu w-32" data-menu-id="${s.id}">
+                            <button class="edit-subject-btn w-full text-left px-4 py-2 text-sm text-gray-200 hover:bg-gray-600" data-id="${s.id}">Edit</button>
+                            <button class="delete-subject-btn w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-gray-600" data-id="${s.id}">Delete</button>
+                        </div>
+                    </div>
+                `).join('')
                 : `<p class="text-center text-gray-400">No subjects yet. Add one from the navigation bar!</p>`;
         };
         const renderTodos = () => {
             ui.todoList.innerHTML = todos.map(todo => `<div class="flex items-center p-3 bg-gray-700/50 rounded-lg"><input type="checkbox" data-id="${todo.id}" class="todo-checkbox h-5 w-5 rounded bg-gray-600 border-gray-500 text-blue-500 focus:ring-blue-600" ${todo.completed ? 'checked' : ''}><span class="ml-3 flex-grow ${todo.completed ? 'line-through text-gray-500' : 'text-gray-200'}">${todo.text}</span><button data-id="${todo.id}" class="delete-todo-btn text-gray-500 hover:text-red-400 transition-colors"><svg class="h-5 w-5 pointer-events-none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></button></div>`).join('');
         };
-        const renderColorPicker = () => {
-            ui.colorPicker.innerHTML = subjectColors.map(c => `<button data-color="${c.name}" class="w-8 h-8 rounded-full border-2 border-transparent focus:border-white transition-all" style="background-color: ${c.hex};"></button>`).join('');
-            selectedColor = subjectColors[0].name;
-            ui.colorPicker.querySelector(`[data-color="${selectedColor}"]`).classList.add('ring-2', 'ring-offset-2', 'ring-offset-gray-800', 'ring-white');
+        
+        // --- ADVANCED COLOR PICKER LOGIC ---
+        let colorPickerState = {
+            hue: 0, saturation: 1, value: 1,
+            isDraggingHue: false, isDraggingSV: false,
         };
+
+        function hsvToRgb(h, s, v) {
+            let r, g, b, i, f, p, q, t;
+            i = Math.floor(h * 6);
+            f = h * 6 - i;
+            p = v * (1 - s);
+            q = v * (1 - f * s);
+            t = v * (1 - (1 - f) * s);
+            switch (i % 6) {
+                case 0: r = v, g = t, b = p; break;
+                case 1: r = q, g = v, b = p; break;
+                case 2: r = p, g = v, b = t; break;
+                case 3: r = p, g = q, b = v; break;
+                case 4: r = t, g = p, b = v; break;
+                case 5: r = v, g = p, b = q; break;
+            }
+            return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+        }
+
+        function rgbToHex(r, g, b) {
+            return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase();
+        }
+        
+        function drawAdvancedColorPicker(canvas, preview, state) {
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+            const center = width / 2;
+            const ringRadius = width / 2 - 10;
+            const ringWidth = 15;
+            const boxSize = (ringRadius - ringWidth) * 2 / Math.sqrt(2) - 10;
+            const boxX = center - boxSize / 2;
+            const boxY = center - boxSize / 2;
+
+            ctx.clearRect(0, 0, width, height);
+
+            // Draw Hue Ring
+            for (let i = 0; i < 360; i++) {
+                const angle = (i * Math.PI) / 180;
+                ctx.strokeStyle = `hsl(${i}, 100%, 50%)`;
+                ctx.beginPath();
+                ctx.arc(center, center, ringRadius, angle, angle + (Math.PI / 180) * 1.1);
+                ctx.lineWidth = ringWidth;
+                ctx.stroke();
+            }
+
+            // Draw Saturation/Value Box
+            const hueColor = `hsl(${state.hue * 360}, 100%, 50%)`;
+            ctx.fillStyle = hueColor;
+            ctx.fillRect(boxX, boxY, boxSize, boxSize);
+
+            const whiteGradient = ctx.createLinearGradient(boxX, boxY, boxX + boxSize, boxY);
+            whiteGradient.addColorStop(0, 'rgba(255,255,255,1)');
+            whiteGradient.addColorStop(1, 'rgba(255,255,255,0)');
+            ctx.fillStyle = whiteGradient;
+            ctx.fillRect(boxX, boxY, boxSize, boxSize);
+
+            const blackGradient = ctx.createLinearGradient(boxX, boxY, boxX, boxY + boxSize);
+            blackGradient.addColorStop(0, 'rgba(0,0,0,0)');
+            blackGradient.addColorStop(1, 'rgba(0,0,0,1)');
+            ctx.fillStyle = blackGradient;
+            ctx.fillRect(boxX, boxY, boxSize, boxSize);
+
+            // Draw Hue Handle
+            const hueAngle = state.hue * 2 * Math.PI;
+            const hueX = center + Math.cos(hueAngle) * ringRadius;
+            const hueY = center + Math.sin(hueAngle) * ringRadius;
+            ctx.beginPath(); ctx.arc(hueX, hueY, ringWidth / 2, 0, 2 * Math.PI); ctx.fillStyle = 'white'; ctx.fill(); ctx.strokeStyle = 'black'; ctx.lineWidth = 1; ctx.stroke();
+
+            // Draw SV Handle
+            const svX = boxX + state.saturation * boxSize;
+            const svY = boxY + (1 - state.value) * boxSize;
+            ctx.beginPath(); ctx.arc(svX, svY, 5, 0, 2 * Math.PI); ctx.fillStyle = 'white'; ctx.fill(); ctx.strokeStyle = 'black'; ctx.stroke();
+            
+            const [r, g, b] = hsvToRgb(state.hue, state.saturation, state.value);
+            const hexColor = rgbToHex(r, g, b);
+            preview.style.backgroundColor = hexColor;
+            return hexColor;
+        }
+
+        function handleColorPickerInteraction(event, canvas, preview, state) {
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            const center = canvas.width / 2;
+            const dx = x - center;
+            const dy = y - center;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const ringRadius = canvas.width / 2 - 10;
+            const ringWidth = 15;
+            const boxSize = (ringRadius - ringWidth) * 2 / Math.sqrt(2) - 10;
+            const boxX = center - boxSize / 2;
+            const boxY = center - boxSize / 2;
+
+            if (event.type === 'mousedown') {
+                if (distance > ringRadius - ringWidth / 2 && distance < ringRadius + ringWidth / 2) {
+                    state.isDraggingHue = true;
+                } else if (x > boxX && x < boxX + boxSize && y > boxY && y < boxY + boxSize) {
+                    state.isDraggingSV = true;
+                }
+            } else if (event.type === 'mouseup' || event.type === 'mouseleave') {
+                state.isDraggingHue = false;
+                state.isDraggingSV = false;
+            }
+
+            if (state.isDraggingHue) {
+                let angle = Math.atan2(dy, dx);
+                if (angle < 0) angle += 2 * Math.PI;
+                state.hue = angle / (2 * Math.PI);
+            } else if (state.isDraggingSV) {
+                state.saturation = Math.max(0, Math.min(1, (x - boxX) / boxSize));
+                state.value = 1 - Math.max(0, Math.min(1, (y - boxY) / boxSize));
+            }
+
+            if (state.isDraggingHue || state.isDraggingSV) {
+                const hex = drawAdvancedColorPicker(canvas, preview, state);
+                selectedColor = hex; // Update global selected color
+            }
+        }
+
+        function renderAccountDetails() {
+            const user = auth.currentUser;
+            if (!user) return;
+            ui.accountUsername.textContent = user.displayName;
+            ui.accountEmail.textContent = user.email;
+            updateUserAvatars(user.photoURL);
+            
+            const isEmailUser = user.providerData.some(p => p.providerId === 'password');
+            ui.changePasswordItem.style.display = isEmailUser ? 'flex' : 'none';
+        }
+
         async function renderRankings() {
             try {
                 ui.rankingList.innerHTML = `<div class="text-center p-8">Loading rankings...</div>`;
@@ -412,7 +658,7 @@
                 const ctx = document.getElementById('stats-chart').getContext('2d');
                 statsChart = new Chart(ctx, {
                     type: 'bar',
-                    data: { labels, datasets: [{ label: 'Hours Studied', data, backgroundColor: labels.map(label => (subjects.find(s => s.name === label) ? (subjectColors.find(c => c.name === subjects.find(s => s.name === label).color)?.hex || '#3B82F6') : '#3B82F6')), borderRadius: 4, }] },
+                    data: { labels, datasets: [{ label: 'Hours Studied', data, backgroundColor: labels.map(label => subjects.find(s => s.name === label)?.color || '#3B82F6'), borderRadius: 4, }] },
                     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#9CA3AF' } }, x: { grid: { display: false }, ticks: { color: '#9CA3AF' } } } }
                 });
             } catch (error) {
@@ -428,6 +674,8 @@
             ui.signupForm.addEventListener('submit', handleEmailSignUp);
             ui.addNameForm.addEventListener('submit', handleAddName);
             ui.signOutBtn.addEventListener('click', () => signOut(auth));
+            ui.profileBtn.addEventListener('click', () => showPage('account'));
+            ui.backToTimerBtn.addEventListener('click', () => showPage('timer'));
             ui.authToggleBtn.addEventListener('click', () => {
                 const isLoginVisible = !ui.loginForm.classList.contains('hidden');
                 ui.loginForm.classList.toggle('hidden', isLoginVisible);
@@ -437,9 +685,26 @@
                 ui.authError.textContent = '';
             });
 
+            // Account Page Listeners
+            ui.avatarItem.addEventListener('click', () => ui.avatarFileInput.click());
+            ui.avatarFileInput.addEventListener('change', handleAvatarUpload);
+            ui.usernameItem.addEventListener('click', () => {
+                document.getElementById('new-username-input').value = auth.currentUser.displayName;
+                showModal('change-username-modal');
+            });
+            ui.changePasswordItem.addEventListener('click', () => showModal('change-password-modal'));
+            document.getElementById('change-username-form').addEventListener('submit', handleChangeUsername);
+            document.getElementById('change-password-form').addEventListener('submit', handleChangePassword);
+            document.getElementById('cancel-change-username-btn').addEventListener('click', hideModals);
+            document.getElementById('cancel-change-password-btn').addEventListener('click', hideModals);
+
+
             // App listeners
             ui.navItems.forEach(item => item.addEventListener('click', () => showPage(item.dataset.page)));
-            ui.addSubjectBtn.addEventListener('click', () => showModal('add-subject-modal'));
+            ui.addSubjectBtn.addEventListener('click', () => {
+                drawAdvancedColorPicker(ui.colorPickerCanvas, ui.colorPreview, colorPickerState);
+                showModal('add-subject-modal');
+            });
             ui.startStudyingBtn.addEventListener('click', () => showModal('select-subject-modal'));
             ui.stopStudyingBtn.addEventListener('click', stopTimer);
             
@@ -450,14 +715,66 @@
                 if (name) { addNewSubject(name, selectedColor); hideModals(); document.getElementById('subject-name-input').value = ''; }
             });
             
-            ui.modalSubjectsList.addEventListener('click', e => { if (e.target.closest('.subject-select-btn')) startTimer(e.target.closest('.subject-select-btn').dataset.id); });
-            ui.colorPicker.addEventListener('click', e => {
-                if (e.target.dataset.color) {
-                    selectedColor = e.target.dataset.color;
-                    ui.colorPicker.querySelectorAll('button').forEach(b => b.classList.remove('ring-2', 'ring-offset-2', 'ring-offset-gray-800', 'ring-white'));
-                    e.target.classList.add('ring-2', 'ring-offset-2', 'ring-offset-gray-800', 'ring-white');
+            ui.modalSubjectsList.addEventListener('click', e => {
+                const optionsBtn = e.target.closest('.subject-options-btn');
+                const selectBtn = e.target.closest('.subject-select-btn');
+                const editBtn = e.target.closest('.edit-subject-btn');
+                const deleteBtn = e.target.closest('.delete-subject-btn');
+                
+                document.querySelectorAll('.options-menu').forEach(m => {
+                    if (optionsBtn && m.dataset.menuId !== optionsBtn.dataset.id) {
+                        m.classList.remove('active');
+                    }
+                });
+
+                if (optionsBtn) {
+                    const menu = optionsBtn.nextElementSibling;
+                    menu.classList.toggle('active');
+                } else if (selectBtn) {
+                    startTimer(selectBtn.dataset.id);
+                } else if (editBtn) {
+                    subjectToEdit = subjects.find(s => s.id === editBtn.dataset.id);
+                    if (subjectToEdit) {
+                        document.getElementById('edit-subject-name-input').value = subjectToEdit.name;
+                        drawAdvancedColorPicker(ui.editColorPickerCanvas, document.getElementById('edit-color-preview'), { hue: 0, saturation: 1, value: 1 });
+                        showModal('edit-subject-modal');
+                    }
+                } else if (deleteBtn) {
+                    subjectToDelete = subjects.find(s => s.id === deleteBtn.dataset.id);
+                    if(subjectToDelete) {
+                        document.getElementById('confirm-delete-text').textContent = `Delete "${subjectToDelete.name}"? This is permanent.`;
+                        showModal('confirm-delete-modal');
+                    }
+                } else {
+                     document.querySelectorAll('.options-menu').forEach(m => m.classList.remove('active'));
                 }
             });
+
+            document.getElementById('cancel-edit-btn').addEventListener('click', hideModals);
+            document.getElementById('confirm-edit-btn').addEventListener('click', () => {
+                const newName = document.getElementById('edit-subject-name-input').value.trim();
+                if (subjectToEdit && newName) {
+                    updateSubject(subjectToEdit.id, { name: newName, color: selectedColor });
+                    hideModals();
+                }
+            });
+
+            document.getElementById('cancel-delete-btn').addEventListener('click', hideModals);
+            document.getElementById('confirm-delete-btn').addEventListener('click', () => {
+                if(subjectToDelete) {
+                    deleteSubject(subjectToDelete.id);
+                    hideModals();
+                }
+            });
+            
+            ui.colorPickerCanvas.addEventListener('mousedown', (e) => handleColorPickerInteraction(e, ui.colorPickerCanvas, ui.colorPreview, colorPickerState));
+            ui.colorPickerCanvas.addEventListener('mousemove', (e) => handleColorPickerInteraction(e, ui.colorPickerCanvas, ui.colorPreview, colorPickerState));
+            document.addEventListener('mouseup', (e) => handleColorPickerInteraction(e, ui.colorPickerCanvas, ui.colorPreview, colorPickerState));
+            
+            const editColorPickerState = { hue: 0, saturation: 1, value: 1, isDraggingHue: false, isDraggingSV: false };
+            ui.editColorPickerCanvas.addEventListener('mousedown', (e) => handleColorPickerInteraction(e, ui.editColorPickerCanvas, document.getElementById('edit-color-preview'), editColorPickerState));
+            ui.editColorPickerCanvas.addEventListener('mousemove', (e) => handleColorPickerInteraction(e, ui.editColorPickerCanvas, document.getElementById('edit-color-preview'), editColorPickerState));
+            document.addEventListener('mouseup', (e) => handleColorPickerInteraction(e, ui.editColorPickerCanvas, document.getElementById('edit-color-preview'), editColorPickerState));
 
             ui.addTodoBtn.addEventListener('click', () => { if (ui.todoInput.value.trim()) { addNewTodo(ui.todoInput.value.trim()); ui.todoInput.value = ''; } });
             ui.todoList.addEventListener('click', e => {
@@ -470,13 +787,21 @@
                 btn.classList.add('active', 'bg-blue-600');
                 renderStatsChart(btn.dataset.period);
             }));
+
+            // Close dropdowns when clicking outside
+            window.addEventListener('click', (e) => {
+                if (!e.target.closest('.relative')) {
+                    // This logic is now handled by the page navigation
+                }
+                if (!e.target.closest('.subject-options-btn')) {
+                     document.querySelectorAll('.options-menu').forEach(m => m.classList.remove('active'));
+                }
+            });
         }
 
         // --- APP START ---
         document.addEventListener('DOMContentLoaded', () => {
-            renderColorPicker();
             setupEventListeners();
-            // onAuthStateChanged will handle the initial view
         });
     </script>
 </body>
