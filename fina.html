@@ -58,15 +58,24 @@
     <div id="app-container" class="flex-col h-screen">
         <main class="flex-grow overflow-hidden">
             <!-- Timer/Home Page -->
-            <div id="page-timer" class="page active flex-col h-full overflow-hidden"><header class="p-4 md:p-6 flex items-center justify-between z-20"><h1 class="text-2xl font-bold text-gray-100">FocusFlow</h1><button id="profile-btn" class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-gray-400 hover:bg-gray-600 transition overflow-hidden"><img id="header-avatar" class="w-full h-full object-cover hidden" src="" alt="User Avatar"><svg id="header-avatar-placeholder" class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" /></svg></button></header><div class="relative flex-grow flex items-center justify-center -mt-16"><div id="live-sessions-grid" class="absolute inset-0 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2 p-4 overflow-hidden"></div><div class="relative text-center z-10 bg-gray-900/50 backdrop-blur-sm p-8 rounded-full"><p id="active-subject-display" class="text-xl font-semibold text-blue-400 h-7 mb-2"></p><h2 id="session-timer" class="text-7xl md:text-8xl timer-text text-white">00:00:00</h2><p id="total-time-display" class="text-gray-400 mt-2">Total Today: 00:00:00</p><div id="timer-controls" class="mt-8"><button id="start-studying-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-full text-lg transition-transform transform hover:scale-105">Start Studying</button><button id="stop-studying-btn" class="hidden bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-10 rounded-full text-lg transition-transform transform hover:scale-105">Stop</button></div></div></div></div>
+            <div id="page-timer" class="page active flex-col h-full overflow-hidden"><header class="p-4 md:p-6 flex items-center justify-between z-20"><h1 class="text-2xl font-bold text-gray-100">FocusFlow</h1><div class="flex items-center space-x-4"><button id="groups-btn" class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-gray-400 hover:bg-gray-600 transition"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" /></svg></button><button id="profile-btn" class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-gray-400 hover:bg-gray-600 transition overflow-hidden"><div id="header-avatar" class="w-full h-full"></div></button></div></header><div class="relative flex-grow flex items-center justify-center -mt-16"><div id="live-sessions-grid" class="absolute inset-0 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2 p-4 overflow-hidden"></div><div class="relative text-center z-10 bg-gray-900/50 backdrop-blur-sm p-8 rounded-full"><p id="active-subject-display" class="text-xl font-semibold text-blue-400 h-7 mb-2"></p><h2 id="session-timer" class="text-7xl md:text-8xl timer-text text-white">00:00:00</h2><p id="total-time-display" class="text-gray-400 mt-2">Total Today: 00:00:00</p><div id="timer-controls" class="mt-8"><button id="start-studying-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-full text-lg transition-transform transform hover:scale-105">Start Studying</button><button id="stop-studying-btn" class="hidden bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-10 rounded-full text-lg transition-transform transform hover:scale-105">Stop</button></div></div></div></div>
             <!-- Account Details Page -->
-            <div id="page-account" class="page flex-col h-full overflow-y-auto no-scrollbar"><header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-gray-800"><button id="back-to-timer-btn" class="text-gray-400 hover:text-white"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button><h1 class="text-xl font-bold text-gray-100">Account Details</h1><div></div></header><div class="p-4 md:p-6 space-y-2"><button id="avatar-item" class="account-item w-full flex items-center justify-between p-4 bg-gray-800 rounded-lg"><span class="font-medium">Avatar</span><div class="flex items-center space-x-3"><div class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-gray-400 overflow-hidden"><img id="account-avatar-img" src="" class="w-full h-full object-cover hidden"><svg id="account-avatar-placeholder" class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" /></svg></div><svg class="w-5 h-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg></div></button><input type="file" id="avatar-file-input" class="hidden" accept="image/*"><button id="username-item" class="account-item w-full flex items-center justify-between p-4 bg-gray-800 rounded-lg"><span class="font-medium">Username</span><div class="flex items-center space-x-3"><span id="account-username" class="text-gray-400"></span><svg class="w-5 h-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg></div></button><div class="account-item flex items-center justify-between p-4 bg-gray-800 rounded-lg"><span class="font-medium">Account</span><span id="account-email" class="text-gray-400"></span></div><button id="change-password-item" class="account-item w-full flex items-center justify-between p-4 bg-gray-800 rounded-lg"><span class="font-medium">Change Password</span><svg class="w-5 h-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg></button></div><div class="p-4 md:p-6 mt-4"><button id="account-sign-out-btn" class="w-full text-center p-4 bg-red-600/20 text-red-400 rounded-lg hover:bg-red-600/30 transition">Sign Out</button></div></div>
+            <div id="page-account" class="page flex-col h-full overflow-y-auto no-scrollbar"><header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-gray-800"><button id="back-to-timer-btn" class="text-gray-400 hover:text-white"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button><h1 class="text-xl font-bold text-gray-100">Account Details</h1><div></div></header><div class="p-4 md:p-6 space-y-2"><button id="avatar-item" class="account-item w-full flex items-center justify-between p-4 bg-gray-800 rounded-lg"><span class="font-medium">Avatar</span><div class="flex items-center space-x-3"><div id="account-avatar" class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-gray-400 overflow-hidden"></div><svg class="w-5 h-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg></div></button><input type="file" id="avatar-file-input" class="hidden" accept="image/*"><button id="username-item" class="account-item w-full flex items-center justify-between p-4 bg-gray-800 rounded-lg"><span class="font-medium">Username</span><div class="flex items-center space-x-3"><span id="account-username" class="text-gray-400"></span><svg class="w-5 h-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg></div></button><div class="account-item flex items-center justify-between p-4 bg-gray-800 rounded-lg"><span class="font-medium">Account</span><span id="account-email" class="text-gray-400"></span></div><button id="change-password-item" class="account-item w-full flex items-center justify-between p-4 bg-gray-800 rounded-lg"><span class="font-medium">Change Password</span><svg class="w-5 h-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg></button></div><div class="p-4 md:p-6 mt-4"><button id="account-sign-out-btn" class="w-full text-center p-4 bg-red-600/20 text-red-400 rounded-lg hover:bg-red-600/30 transition">Sign Out</button></div></div>
+            <!-- Groups Page -->
+            <div id="page-groups" class="page flex-col h-full overflow-y-auto no-scrollbar"><header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-gray-800"><button id="back-to-timer-from-groups-btn" class="text-gray-400 hover:text-white"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button><h1 class="text-xl font-bold text-gray-100">My Groups</h1><div class="flex space-x-2"><button id="join-group-btn" class="p-2 rounded-full bg-gray-700 hover:bg-gray-600"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg></button><button id="create-group-btn" class="p-2 rounded-full bg-blue-600 hover:bg-blue-700"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg></button></div></header><div id="groups-list" class="p-4 md:p-6 space-y-3"></div></div>
+            <!-- Group Details Page -->
+            <div id="page-group-details" class="page flex-col h-full overflow-y-auto no-scrollbar"><header class="p-4 md:p-6 flex items-center z-20 border-b border-gray-800"><button id="back-to-groups-btn" class="text-gray-400 hover:text-white"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button><h1 id="group-details-name" class="text-xl font-bold text-gray-100 mx-auto"></h1><button id="group-settings-btn" class="p-2 rounded-full bg-gray-700 hover:bg-gray-600"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.096 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg></button></header><div class="p-4 md:p-6 space-y-4"><button class="w-full p-4 bg-gray-800 rounded-lg text-left text-gray-300">📣 Group introduction/rules</button><div><h3 id="studying-members-count" class="font-semibold mb-2">Studying 0 members</h3><div id="group-members-list" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div></div></div></div>
+            <!-- Group Attendance Page -->
+            <div id="page-group-attendance" class="page flex-col h-full overflow-y-auto no-scrollbar"><header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-gray-800"><button id="back-to-group-details-btn" class="text-gray-400 hover:text-white"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button><h1 class="text-xl font-bold text-gray-100">Attendance</h1><div></div></header><div class="p-4 md:p-6 space-y-4"><div class="flex items-center justify-between"><button id="prev-week-btn" class="p-2 rounded-full hover:bg-gray-700"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button><h3 id="week-range-display" class="font-semibold"></h3><button id="next-week-btn" class="p-2 rounded-full hover:bg-gray-700"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg></button></div><div id="attendance-grid" class="overflow-x-auto"></div></div></div>
+            <!-- Group Rankings Page -->
+            <div id="page-group-ranking" class="page flex-col h-full overflow-y-auto no-scrollbar"><header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-gray-800"><button id="back-to-group-details-from-ranking-btn" class="text-gray-400 hover:text-white"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button><h1 class="text-xl font-bold text-gray-100">Rankings</h1><div></div></header><div class="p-4 md:p-6 space-y-4"><div class="flex items-center justify-between"><button id="group-ranking-prev-btn" class="p-2 rounded-full hover:bg-gray-700"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button><h3 id="group-ranking-date-display" class="font-semibold"></h3><button id="group-ranking-next-btn" class="p-2 rounded-full hover:bg-gray-700"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg></button></div><div id="group-ranking-list" class="space-y-2"></div></div></div>
             <!-- Other pages -->
             <div id="page-stats" class="page flex-col p-4 md:p-6 space-y-4 h-full overflow-y-auto no-scrollbar"><header class="flex items-center justify-between"><h1 class="text-2xl font-bold text-gray-100">My Stats</h1></header><div class="flex justify-center bg-gray-800/50 rounded-lg p-1"><button class="stat-period-btn active flex-1 p-2 rounded-md bg-blue-600" data-period="today">Today</button><button class="stat-period-btn flex-1 p-2 rounded-md" data-period="7days">7 Days</button><button class="stat-period-btn flex-1 p-2 rounded-md" data-period="30days">30 Days</button></div><div class="bg-gray-800 p-4 rounded-2xl shadow-lg flex-grow"><canvas id="stats-chart"></canvas></div></div>
             <div id="page-planner" class="page flex-col p-4 md:p-6 space-y-4 h-full overflow-hidden"><header class="flex items-center justify-between"><h1 class="text-2xl font-bold text-gray-100">Daily Planner</h1></header><div class="flex-grow bg-gray-800 rounded-2xl p-4 flex flex-col overflow-hidden"><div class="flex items-center mb-4"><input type="text" id="todo-input" placeholder="Add a new task..." class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition"><button id="add-todo-btn" class="ml-3 px-4 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold transition">Add</button></div><div id="todo-list" class="flex-grow overflow-y-auto space-y-2 no-scrollbar"></div></div></div>
             <div id="page-ranking" class="page flex-col p-4 md:p-6 space-y-4 h-full overflow-hidden"><header class="flex items-center justify-between"><h1 class="text-2xl font-bold text-gray-100">Global Rankings</h1></header><div id="ranking-list" class="flex-grow bg-gray-800 rounded-2xl p-4 overflow-y-auto no-scrollbar space-y-2"></div></div>
         </main>
-        <nav class="bg-gray-800 border-t border-gray-700 grid grid-cols-5"><button class="nav-item p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors active" data-page="timer"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg><p class="text-xs mt-1">Timer</p></button><button class="nav-item p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors" data-page="stats"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg><p class="text-xs mt-1">Stats</p></button><button class="nav-item p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors" data-page="ranking"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg><p class="text-xs mt-1">Ranking</p></button><button class="nav-item p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors" data-page="planner"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg><p class="text-xs mt-1">Planner</p></button><button id="add-subject-btn" class="p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg><p class="text-xs mt-1 text-blue-400">Add Subject</p></button></nav>
+        <nav id="main-nav" class="bg-gray-800 border-t border-gray-700 grid grid-cols-5"><button class="nav-item p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors active" data-page="timer"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg><p class="text-xs mt-1">Timer</p></button><button class="nav-item p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors" data-page="stats"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg><p class="text-xs mt-1">Stats</p></button><button class="nav-item p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors" data-page="ranking"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg><p class="text-xs mt-1">Ranking</p></button><button class="nav-item p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors" data-page="planner"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg><p class="text-xs mt-1">Planner</p></button><button id="add-subject-btn" class="p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors"><svg class="w-6 h-6 text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg><p class="text-xs mt-1 text-blue-400">Add Subject</p></button></nav>
+        <nav id="group-nav" class="hidden bg-gray-800 border-t border-gray-700 grid grid-cols-5"><button class="nav-item p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors active" data-page="group-details"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg><p class="text-xs mt-1">Home</p></button><button class="nav-item p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors" data-page="group-attendance"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg><p class="text-xs mt-1">Attendance</p></button><button class="nav-item p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors" data-page="group-ranking"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg><p class="text-xs mt-1">Rankings</p></button><button class="nav-item p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg><p class="text-xs mt-1">Invite</p></button><button class="nav-item p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg><p class="text-xs mt-1">Chat</p></button></nav>
     </div>
 
     <!-- Modals -->
@@ -79,11 +88,14 @@
     <div id="change-password-modal" class="modal fixed inset-0 bg-black bg-opacity-80 backdrop-blur-sm items-center justify-center p-4 z-50"><div class="bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm"><h3 class="text-xl font-bold mb-4">Change Password</h3><form id="change-password-form" class="space-y-4"><input type="password" id="new-password-input" placeholder="New Password" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required><p id="change-password-error" class="text-red-400 text-sm h-5"></p><div class="flex justify-end space-x-3 mt-6"><button type="button" id="cancel-change-password-btn" class="px-5 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg font-semibold transition">Cancel</button><button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold transition">Update Password</button></div></form></div></div>
     <div id="avatar-options-modal" class="modal fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm items-center justify-center p-4 z-50"><div class="bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm space-y-3"><h3 class="text-xl font-bold mb-2 text-center">Change the profile image</h3><button id="choose-character-btn" class="w-full p-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition">Choose character</button><button id="choose-from-album-btn" class="w-full p-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition">Choose image from the album</button><button id="cancel-avatar-options-btn" class="w-full p-3 bg-red-600/20 text-red-400 hover:bg-red-600/30 rounded-lg transition mt-4">Cancel</button></div></div>
     <div id="character-creator-modal" class="modal fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm items-center justify-center p-4 z-50"><div class="bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm"><h3 class="text-xl font-bold mb-4">Choose Character</h3><div><p class="text-sm text-gray-400 mb-2">Character</p><div id="character-selection" class="grid grid-cols-4 gap-2"></div></div><div class="mt-4"><p class="text-sm text-gray-400 mb-2">Background</p><div id="background-color-selection" class="flex flex-wrap gap-2"></div></div><div class="flex justify-end space-x-3 mt-6"><button type="button" id="cancel-character-creator-btn" class="px-5 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg font-semibold transition">Cancel</button><button type="button" id="confirm-character-creator-btn" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold transition">OK</button></div></div></div>
+    <div id="create-group-modal" class="modal fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm items-center justify-center p-4 z-50"><div class="bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-md"><h3 class="text-xl font-bold mb-4">Create New Group</h3><form id="create-group-form" class="space-y-4"><input type="text" id="group-name-input" placeholder="Group Name" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required><input type="password" id="group-password-input" placeholder="Password (Optional)" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"><select id="group-category-select" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"><option>Primary School</option><option>Secondary School</option><option>Sixth Form</option><option>University</option><option>Language Study</option><option>Others</option></select><select id="group-goal-select" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500">${Array.from({length: 12}, (_, i) => `<option value="${i+1}">${i+1} hours per day</option>`).join('')}</select><div><label for="group-capacity-input" class="text-sm text-gray-400">Capacity: <span id="group-capacity-value">50</span> people</label><input type="range" id="group-capacity-input" min="2" max="100" value="50" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer"></div><textarea id="group-description-input" placeholder="Describe your group..." class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" rows="3"></textarea><div class="flex justify-end space-x-3 mt-2"><button type="button" id="cancel-create-group-btn" class="px-5 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg font-semibold transition">Cancel</button><button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold transition">Create</button></div></form></div></div>
+    <div id="join-group-modal" class="modal fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm items-center justify-center p-4 z-50"><div class="bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm"><h3 class="text-xl font-bold mb-4">Join a Group</h3><form id="join-group-form" class="space-y-4"><input type="text" id="group-id-input" placeholder="Enter Group ID" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required><div class="flex justify-end space-x-3 mt-2"><button type="button" id="cancel-join-group-btn" class="px-5 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg font-semibold transition">Cancel</button><button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold transition">Join</button></div></form></div></div>
+
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, collection, onSnapshot, addDoc, updateDoc, serverTimestamp, setDoc, getDoc, deleteDoc, query, where, getDocs, Timestamp, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, collection, onSnapshot, addDoc, updateDoc, serverTimestamp, setDoc, getDoc, deleteDoc, query, where, getDocs, Timestamp, writeBatch, arrayUnion } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL, uploadString } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
 
         // --- CONFIG & STATE ---
@@ -91,7 +103,7 @@
             apiKey: "AIzaSyBSCrL6ravOzFnwOa7A0Jl_W68vEfZVcNw",
             authDomain: "focus-flow-34c07.firebaseapp.com",
             projectId: "focus-flow-34c07",
-            storageBucket: "focus-flow-34c07.firebasestorage.app",
+            storageBucket: "focus-flow-34c07.appspot.com",
             messagingSenderId: "473980178825",
             appId: "1:473980178825:web:164566ec8b068da3281158",
             measurementId: "G-RRFK3LY0E4"
@@ -103,6 +115,9 @@
         const storage = getStorage(app);
         let userId = null, subjects = [], todos = [], activeTimerInterval = null, activeSubjectId = null, sessionStartTime = 0, selectedColor = '#FF0000', statsChart = null, rankingInterval = null, subjectToEdit = null, subjectToDelete = null;
         let unsubscribers = [];
+        let groupMemberTimers = {};
+        let currentGroupId = null;
+        let currentWeekOffset = 0;
         
         // --- UI ELEMENTS ---
         const ui = {
@@ -117,9 +132,10 @@
             signOutBtn: document.getElementById('account-sign-out-btn'),
             authError: document.getElementById('auth-error'),
             headerAvatar: document.getElementById('header-avatar'),
-            headerAvatarPlaceholder: document.getElementById('header-avatar-placeholder'),
             pages: document.querySelectorAll('.page'),
             navItems: document.querySelectorAll('.nav-item'),
+            mainNav: document.getElementById('main-nav'),
+            groupNav: document.getElementById('group-nav'),
             modals: document.querySelectorAll('.modal'),
             addSubjectBtn: document.getElementById('add-subject-btn'),
             selectSubjectModal: document.getElementById('select-subject-modal'),
@@ -142,6 +158,8 @@
             changePasswordModal: document.getElementById('change-password-modal'),
             avatarOptionsModal: document.getElementById('avatar-options-modal'),
             characterCreatorModal: document.getElementById('character-creator-modal'),
+            createGroupModal: document.getElementById('create-group-modal'),
+            joinGroupModal: document.getElementById('join-group-modal'),
             todoList: document.getElementById('todo-list'),
             todoInput: document.getElementById('todo-input'),
             addTodoBtn: document.getElementById('add-todo-btn'),
@@ -154,8 +172,25 @@
             backToTimerBtn: document.getElementById('back-to-timer-btn'),
             avatarItem: document.getElementById('avatar-item'),
             avatarFileInput: document.getElementById('avatar-file-input'),
-            accountAvatarImg: document.getElementById('account-avatar-img'),
-            accountAvatarPlaceholder: document.getElementById('account-avatar-placeholder'),
+            accountAvatar: document.getElementById('account-avatar'),
+            groupsBtn: document.getElementById('groups-btn'),
+            groupsList: document.getElementById('groups-list'),
+            groupDetailsName: document.getElementById('group-details-name'),
+            groupMembersList: document.getElementById('group-members-list'),
+            backToGroupsBtn: document.getElementById('back-to-groups-btn'),
+            groupSettingsBtn: document.getElementById('group-settings-btn'),
+            createGroupBtn: document.getElementById('create-group-btn'),
+            joinGroupBtn: document.getElementById('join-group-btn'),
+            studyingMembersCount: document.getElementById('studying-members-count'),
+            backToGroupDetailsBtn: document.getElementById('back-to-group-details-btn'),
+            weekRangeDisplay: document.getElementById('week-range-display'),
+            attendanceGrid: document.getElementById('attendance-grid'),
+            prevWeekBtn: document.getElementById('prev-week-btn'),
+            nextWeekBtn: document.getElementById('next-week-btn'),
+            groupRankingList: document.getElementById('group-ranking-list'),
+            groupRankingDateDisplay: document.getElementById('group-ranking-date-display'),
+            groupRankingPrevBtn: document.getElementById('group-ranking-prev-btn'),
+            groupRankingNextBtn: document.getElementById('group-ranking-next-btn'),
         };
 
         // --- UTILS & HELPERS ---
@@ -163,10 +198,30 @@
         const getLocalDateString = (date) => `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
         const showPage = pageId => {
             ui.pages.forEach(p => p.classList.toggle('active', p.id === `page-${pageId}`));
-            ui.navItems.forEach(n => n.classList.toggle('active', n.dataset.page === pageId));
+            
+            const isGroupPage = pageId.startsWith('group');
+            ui.mainNav.style.display = isGroupPage ? 'none' : 'grid';
+            ui.groupNav.style.display = isGroupPage ? 'grid' : 'none';
+
+            if (isGroupPage) {
+                document.querySelectorAll('#group-nav .nav-item').forEach(n => {
+                    if (n.dataset.page) {
+                        n.classList.toggle('active', n.dataset.page === pageId)
+                    }
+                });
+            } else {
+                ui.navItems.forEach(n => {
+                    if (n.dataset.page) {
+                        n.classList.toggle('active', n.dataset.page === pageId)
+                    }
+                });
+            }
+
             if (pageId === 'stats') renderStatsChart('today');
             if (pageId === 'ranking') renderRankings();
             if (pageId === 'account') renderAccountDetails();
+            if (pageId === 'groups') renderGroupsList();
+            if (pageId === 'group-ranking') renderGroupRankings();
         };
         const showModal = modalId => document.getElementById(modalId).classList.add('active');
         const hideModals = () => ui.modals.forEach(m => m.classList.remove('active'));
@@ -243,7 +298,7 @@
                 try {
                     await updateProfile(auth.currentUser, { displayName: newName });
                     const profileRef = doc(db, `artifacts/${appId}/public/data/user_profiles`, auth.currentUser.uid);
-                    await setDoc(profileRef, { displayName: newName, totalStudyTime: 0, createdAt: serverTimestamp(), photoURL: auth.currentUser.photoURL || null });
+                    await setDoc(profileRef, { displayName: newName, totalStudyTime: 0, createdAt: serverTimestamp(), photoURL: auth.currentUser.photoURL || null, groups: [] });
                     
                     hideModals();
                     ui.authScreen.classList.remove('active');
@@ -295,7 +350,7 @@
         async function handleAvatarUpload(file) {
             if (!file || !userId) return;
 
-            const storageRef = ref(storage, `avatars/${userId}`);
+            const storageRef = ref(storage, `avatars/${userId}.jpg`); // Use a consistent file extension
             try {
                 await uploadBytes(storageRef, file);
                 const photoURL = await getDownloadURL(storageRef);
@@ -311,25 +366,28 @@
         }
 
         function updateUserAvatars(url) {
+            const defaultAvatar = `<svg class="w-full h-full text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" /></svg>`;
             if (url) {
-                ui.headerAvatar.src = url;
-                ui.accountAvatarImg.src = url;
-                ui.headerAvatar.classList.remove('hidden');
-                ui.accountAvatarImg.classList.remove('hidden');
-                ui.headerAvatarPlaceholder.classList.add('hidden');
-                ui.accountAvatarPlaceholder.classList.add('hidden');
+                ui.headerAvatar.innerHTML = `<img src="${url}" class="w-full h-full object-cover">`;
+                ui.accountAvatar.innerHTML = `<img src="${url}" class="w-full h-full object-cover">`;
             } else {
-                ui.headerAvatar.classList.add('hidden');
-                ui.accountAvatarImg.classList.add('hidden');
-                ui.headerAvatarPlaceholder.classList.remove('hidden');
-                ui.accountAvatarPlaceholder.classList.remove('hidden');
+                ui.headerAvatar.innerHTML = defaultAvatar;
+                ui.accountAvatar.innerHTML = defaultAvatar;
             }
         }
 
 
         // --- FIREBASE & DATA LOGIC ---
-        function initializeAppData() {
-            updateUserAvatars(auth.currentUser.photoURL);
+        async function initializeAppData() {
+            const user = auth.currentUser;
+            if(!user) return;
+            
+            const profileRef = doc(db, `artifacts/${appId}/public/data/user_profiles`, user.uid);
+            const profileSnap = await getDoc(profileRef);
+            if(profileSnap.exists()) {
+                 updateUserAvatars(profileSnap.data().photoURL);
+            }
+
             listenForSubjects();
             listenForLiveSessions();
             listenForTodos();
@@ -674,14 +732,14 @@
         // --- EVENT LISTENERS ---
         function setupEventListeners() {
             // Auth listeners
-            ui.googleSigninBtn.addEventListener('click', handleGoogleSignIn);
-            ui.loginForm.addEventListener('submit', handleEmailLogin);
-            ui.signupForm.addEventListener('submit', handleEmailSignUp);
-            ui.addNameForm.addEventListener('submit', handleAddName);
-            ui.signOutBtn.addEventListener('click', () => signOut(auth));
-            ui.profileBtn.addEventListener('click', () => showPage('account'));
-            ui.backToTimerBtn.addEventListener('click', () => showPage('timer'));
-            ui.authToggleBtn.addEventListener('click', () => {
+            if (ui.googleSigninBtn) ui.googleSigninBtn.addEventListener('click', handleGoogleSignIn);
+            if (ui.loginForm) ui.loginForm.addEventListener('submit', handleEmailLogin);
+            if (ui.signupForm) ui.signupForm.addEventListener('submit', handleEmailSignUp);
+            if (ui.addNameForm) ui.addNameForm.addEventListener('submit', handleAddName);
+            if (ui.signOutBtn) ui.signOutBtn.addEventListener('click', () => signOut(auth));
+            if (ui.profileBtn) ui.profileBtn.addEventListener('click', () => showPage('account'));
+            if (ui.backToTimerBtn) ui.backToTimerBtn.addEventListener('click', () => showPage('timer'));
+            if (ui.authToggleBtn) ui.authToggleBtn.addEventListener('click', () => {
                 const isLoginVisible = !ui.loginForm.classList.contains('hidden');
                 ui.loginForm.classList.toggle('hidden', isLoginVisible);
                 ui.signupForm.classList.toggle('hidden', !isLoginVisible);
@@ -691,52 +749,68 @@
             });
 
             // Account Page Listeners
-            ui.avatarItem.addEventListener('click', () => showModal('avatar-options-modal'));
-            ui.avatarFileInput.addEventListener('change', (e) => handleAvatarUpload(e.target.files[0]));
-            ui.usernameItem.addEventListener('click', () => {
+            if (ui.avatarItem) ui.avatarItem.addEventListener('click', () => showModal('avatar-options-modal'));
+            if (ui.avatarFileInput) ui.avatarFileInput.addEventListener('change', (e) => handleAvatarUpload(e.target.files[0]));
+            if (ui.usernameItem) ui.usernameItem.addEventListener('click', () => {
                 document.getElementById('new-username-input').value = auth.currentUser.displayName;
                 showModal('change-username-modal');
             });
-            ui.changePasswordItem.addEventListener('click', () => showModal('change-password-modal'));
-            document.getElementById('change-username-form').addEventListener('submit', handleChangeUsername);
-            document.getElementById('change-password-form').addEventListener('submit', handleChangePassword);
-            document.getElementById('cancel-change-username-btn').addEventListener('click', hideModals);
-            document.getElementById('cancel-change-password-btn').addEventListener('click', hideModals);
+            if (ui.changePasswordItem) ui.changePasswordItem.addEventListener('click', () => showModal('change-password-modal'));
+            const changeUsernameForm = document.getElementById('change-username-form');
+            if(changeUsernameForm) changeUsernameForm.addEventListener('submit', handleChangeUsername);
+            const changePasswordForm = document.getElementById('change-password-form');
+            if(changePasswordForm) changePasswordForm.addEventListener('submit', handleChangePassword);
+            const cancelChangeUsernameBtn = document.getElementById('cancel-change-username-btn');
+            if(cancelChangeUsernameBtn) cancelChangeUsernameBtn.addEventListener('click', hideModals);
+            const cancelChangePasswordBtn = document.getElementById('cancel-change-password-btn');
+            if(cancelChangePasswordBtn) cancelChangePasswordBtn.addEventListener('click', hideModals);
             
             // Avatar Options Modal
-            document.getElementById('choose-from-album-btn').addEventListener('click', () => {
+            const chooseFromAlbumBtn = document.getElementById('choose-from-album-btn');
+            if(chooseFromAlbumBtn) chooseFromAlbumBtn.addEventListener('click', () => {
                 hideModals();
                 ui.avatarFileInput.click();
             });
-            document.getElementById('choose-character-btn').addEventListener('click', () => {
+            const chooseCharacterBtn = document.getElementById('choose-character-btn');
+            if(chooseCharacterBtn) chooseCharacterBtn.addEventListener('click', () => {
                 hideModals();
                 renderCharacterCreator();
                 showModal('character-creator-modal');
             });
-            document.getElementById('cancel-avatar-options-btn').addEventListener('click', hideModals);
+            const cancelAvatarOptionsBtn = document.getElementById('cancel-avatar-options-btn');
+            if(cancelAvatarOptionsBtn) cancelAvatarOptionsBtn.addEventListener('click', hideModals);
 
             // Character Creator Modal
-            document.getElementById('cancel-character-creator-btn').addEventListener('click', hideModals);
-            document.getElementById('confirm-character-creator-btn').addEventListener('click', handleCharacterCreation);
+            const cancelCharacterCreatorBtn = document.getElementById('cancel-character-creator-btn');
+            if(cancelCharacterCreatorBtn) cancelCharacterCreatorBtn.addEventListener('click', hideModals);
+            const confirmCharacterCreatorBtn = document.getElementById('confirm-character-creator-btn');
+            if(confirmCharacterCreatorBtn) confirmCharacterCreatorBtn.addEventListener('click', handleCharacterCreation);
 
 
             // App listeners
-            ui.navItems.forEach(item => item.addEventListener('click', () => showPage(item.dataset.page)));
-            ui.addSubjectBtn.addEventListener('click', () => {
+            if (ui.navItems) ui.navItems.forEach(item => {
+                if(item.dataset.page) {
+                    item.addEventListener('click', () => showPage(item.dataset.page))
+                }
+            });
+            if (ui.addSubjectBtn) ui.addSubjectBtn.addEventListener('click', () => {
                 drawAdvancedColorPicker(ui.colorPickerCanvas, ui.colorPreview, colorPickerState);
                 showModal('add-subject-modal');
             });
-            ui.startStudyingBtn.addEventListener('click', () => showModal('select-subject-modal'));
-            ui.stopStudyingBtn.addEventListener('click', stopTimer);
+            if (ui.startStudyingBtn) ui.startStudyingBtn.addEventListener('click', () => showModal('select-subject-modal'));
+            if (ui.stopStudyingBtn) ui.stopStudyingBtn.addEventListener('click', stopTimer);
             
-            document.getElementById('cancel-select-subject-btn').addEventListener('click', hideModals);
-            document.getElementById('cancel-add-btn').addEventListener('click', hideModals);
-            document.getElementById('confirm-add-btn').addEventListener('click', () => {
+            const cancelSelectSubjectBtn = document.getElementById('cancel-select-subject-btn');
+            if(cancelSelectSubjectBtn) cancelSelectSubjectBtn.addEventListener('click', hideModals);
+            const cancelAddBtn = document.getElementById('cancel-add-btn');
+            if(cancelAddBtn) cancelAddBtn.addEventListener('click', hideModals);
+            const confirmAddBtn = document.getElementById('confirm-add-btn');
+            if(confirmAddBtn) confirmAddBtn.addEventListener('click', () => {
                 const name = document.getElementById('subject-name-input').value.trim();
                 if (name) { addNewSubject(name, selectedColor); hideModals(); document.getElementById('subject-name-input').value = ''; }
             });
             
-            ui.modalSubjectsList.addEventListener('click', e => {
+            if(ui.modalSubjectsList) ui.modalSubjectsList.addEventListener('click', e => {
                 const optionsBtn = e.target.closest('.subject-options-btn');
                 const selectBtn = e.target.closest('.subject-select-btn');
                 const editBtn = e.target.closest('.edit-subject-btn');
@@ -771,8 +845,10 @@
                 }
             });
 
-            document.getElementById('cancel-edit-btn').addEventListener('click', hideModals);
-            document.getElementById('confirm-edit-btn').addEventListener('click', () => {
+            const cancelEditBtn = document.getElementById('cancel-edit-btn');
+            if(cancelEditBtn) cancelEditBtn.addEventListener('click', hideModals);
+            const confirmEditBtn = document.getElementById('confirm-edit-btn');
+            if(confirmEditBtn) confirmEditBtn.addEventListener('click', () => {
                 const newName = document.getElementById('edit-subject-name-input').value.trim();
                 if (subjectToEdit && newName) {
                     updateSubject(subjectToEdit.id, { name: newName, color: selectedColor });
@@ -780,30 +856,36 @@
                 }
             });
 
-            document.getElementById('cancel-delete-btn').addEventListener('click', hideModals);
-            document.getElementById('confirm-delete-btn').addEventListener('click', () => {
+            const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+            if(cancelDeleteBtn) cancelDeleteBtn.addEventListener('click', hideModals);
+            const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+            if(confirmDeleteBtn) confirmDeleteBtn.addEventListener('click', () => {
                 if(subjectToDelete) {
                     deleteSubject(subjectToDelete.id);
                     hideModals();
                 }
             });
             
-            ui.colorPickerCanvas.addEventListener('mousedown', (e) => handleColorPickerInteraction(e, ui.colorPickerCanvas, ui.colorPreview, colorPickerState));
-            ui.colorPickerCanvas.addEventListener('mousemove', (e) => handleColorPickerInteraction(e, ui.colorPickerCanvas, ui.colorPreview, colorPickerState));
-            document.addEventListener('mouseup', (e) => handleColorPickerInteraction(e, ui.colorPickerCanvas, ui.colorPreview, colorPickerState));
+            if(ui.colorPickerCanvas) {
+                ui.colorPickerCanvas.addEventListener('mousedown', (e) => handleColorPickerInteraction(e, ui.colorPickerCanvas, ui.colorPreview, colorPickerState));
+                ui.colorPickerCanvas.addEventListener('mousemove', (e) => handleColorPickerInteraction(e, ui.colorPickerCanvas, ui.colorPreview, colorPickerState));
+                document.addEventListener('mouseup', (e) => handleColorPickerInteraction(e, ui.colorPickerCanvas, ui.colorPreview, colorPickerState));
+            }
             
             const editColorPickerState = { hue: 0, saturation: 1, value: 1, isDraggingHue: false, isDraggingSV: false };
-            ui.editColorPickerCanvas.addEventListener('mousedown', (e) => handleColorPickerInteraction(e, ui.editColorPickerCanvas, document.getElementById('edit-color-preview'), editColorPickerState));
-            ui.editColorPickerCanvas.addEventListener('mousemove', (e) => handleColorPickerInteraction(e, ui.editColorPickerCanvas, document.getElementById('edit-color-preview'), editColorPickerState));
-            document.addEventListener('mouseup', (e) => handleColorPickerInteraction(e, ui.editColorPickerCanvas, document.getElementById('edit-color-preview'), editColorPickerState));
+            if(ui.editColorPickerCanvas) {
+                ui.editColorPickerCanvas.addEventListener('mousedown', (e) => handleColorPickerInteraction(e, ui.editColorPickerCanvas, document.getElementById('edit-color-preview'), editColorPickerState));
+                ui.editColorPickerCanvas.addEventListener('mousemove', (e) => handleColorPickerInteraction(e, ui.editColorPickerCanvas, document.getElementById('edit-color-preview'), editColorPickerState));
+                document.addEventListener('mouseup', (e) => handleColorPickerInteraction(e, ui.editColorPickerCanvas, document.getElementById('edit-color-preview'), editColorPickerState));
+            }
 
-            ui.addTodoBtn.addEventListener('click', () => { if (ui.todoInput.value.trim()) { addNewTodo(ui.todoInput.value.trim()); ui.todoInput.value = ''; } });
-            ui.todoList.addEventListener('click', e => {
+            if(ui.addTodoBtn) ui.addTodoBtn.addEventListener('click', () => { if (ui.todoInput.value.trim()) { addNewTodo(ui.todoInput.value.trim()); ui.todoInput.value = ''; } });
+            if(ui.todoList) ui.todoList.addEventListener('click', e => {
                 if (e.target.matches('.todo-checkbox')) toggleTodo(e.target.dataset.id, e.target.checked);
                 if (e.target.closest('.delete-todo-btn')) deleteTodo(e.target.closest('.delete-todo-btn').dataset.id);
             });
             
-            ui.statPeriodBtns.forEach(btn => btn.addEventListener('click', () => {
+            if(ui.statPeriodBtns) ui.statPeriodBtns.forEach(btn => btn.addEventListener('click', () => {
                 ui.statPeriodBtns.forEach(b => b.classList.remove('active', 'bg-blue-600'));
                 btn.classList.add('active', 'bg-blue-600');
                 renderStatsChart(btn.dataset.period);
@@ -818,6 +900,44 @@
                      document.querySelectorAll('.options-menu').forEach(m => m.classList.remove('active'));
                 }
             });
+            
+            // Group Listeners
+            if(ui.groupsBtn) ui.groupsBtn.addEventListener('click', () => showPage('groups'));
+            if(ui.backToGroupsBtn) ui.backToGroupsBtn.addEventListener('click', () => showPage('groups'));
+            if(ui.createGroupBtn) ui.createGroupBtn.addEventListener('click', () => showModal('create-group-modal'));
+            const createGroupForm = document.getElementById('create-group-form');
+            if(createGroupForm) createGroupForm.addEventListener('submit', handleCreateGroup);
+            const cancelCreateGroupBtn = document.getElementById('cancel-create-group-btn');
+            if(cancelCreateGroupBtn) cancelCreateGroupBtn.addEventListener('click', hideModals);
+            if(ui.joinGroupBtn) ui.joinGroupBtn.addEventListener('click', () => showModal('join-group-modal'));
+            const joinGroupForm = document.getElementById('join-group-form');
+            if(joinGroupForm) joinGroupForm.addEventListener('submit', handleJoinGroup);
+            const cancelJoinGroupBtn = document.getElementById('cancel-join-group-btn');
+            if(cancelJoinGroupBtn) cancelJoinGroupBtn.addEventListener('click', hideModals);
+            const groupCapacityInput = document.getElementById('group-capacity-input');
+            if(groupCapacityInput) groupCapacityInput.addEventListener('input', (e) => {
+                document.getElementById('group-capacity-value').textContent = e.target.value;
+            });
+            if(ui.groupsList) ui.groupsList.addEventListener('click', e => {
+                const groupBtn = e.target.closest('.group-item-btn');
+                if (groupBtn) {
+                    renderGroupDetails(groupBtn.dataset.groupId);
+                }
+            });
+            if(ui.groupNav) ui.groupNav.addEventListener('click', e => {
+                const navBtn = e.target.closest('.nav-item');
+                if(navBtn && navBtn.dataset.page === 'group-attendance') {
+                    showPage('group-attendance');
+                    renderAttendance(currentGroupId);
+                }
+                 if(navBtn && navBtn.dataset.page === 'group-details') {
+                    showPage('group-details');
+                }
+                 if(navBtn && navBtn.dataset.page === 'group-ranking') {
+                    showPage('group-ranking');
+                }
+            });
+            if(ui.backToGroupDetailsBtn) ui.backToGroupDetailsBtn.addEventListener('click', () => showPage('group-details'));
         }
         
         // --- CHARACTER CREATOR ---
@@ -890,6 +1010,143 @@
                 btn.textContent = 'OK';
                 btn.disabled = false;
             }
+        }
+        
+        // --- GROUP FUNCTIONS ---
+        async function handleCreateGroup(e) {
+            e.preventDefault();
+            const form = e.target;
+            const groupName = form.querySelector('#group-name-input').value.trim();
+            if(!groupName) return;
+
+            const newGroup = {
+                name: groupName,
+                password: form.querySelector('#group-password-input').value,
+                category: form.querySelector('#group-category-select').value,
+                goal: parseInt(form.querySelector('#group-goal-select').value),
+                capacity: parseInt(form.querySelector('#group-capacity-input').value),
+                description: form.querySelector('#group-description-input').value,
+                ownerId: userId,
+                ownerName: auth.currentUser.displayName,
+                members: [userId],
+                createdAt: serverTimestamp(),
+            };
+            
+            try {
+                const groupRef = await addDoc(collection(db, `artifacts/${appId}/public/data/groups`), newGroup);
+                const userProfileRef = doc(db, `artifacts/${appId}/public/data/user_profiles`, userId);
+                await updateDoc(userProfileRef, {
+                    groups: arrayUnion(groupRef.id)
+                });
+                hideModals();
+                renderGroupsList();
+            } catch(error) {
+                handleError(error, 'Create Group');
+            }
+        }
+
+        async function handleJoinGroup(e) {
+            e.preventDefault();
+            const groupId = document.getElementById('group-id-input').value.trim();
+            if(!groupId) return;
+
+            try {
+                const groupRef = doc(db, `artifacts/${appId}/public/data/groups`, groupId);
+                const groupSnap = await getDoc(groupRef);
+
+                if(!groupSnap.exists()) {
+                    alert("Group not found!");
+                    return;
+                }
+                
+                const groupData = groupSnap.data();
+                if(groupData.password) {
+                    const password = prompt("This group is private. Please enter the password:");
+                    if(password !== groupData.password) {
+                        alert("Incorrect password.");
+                        return;
+                    }
+                }
+                
+                await updateDoc(groupRef, { members: arrayUnion(userId) });
+                const userProfileRef = doc(db, `artifacts/${appId}/public/data/user_profiles`, userId);
+                await updateDoc(userProfileRef, { groups: arrayUnion(groupId) });
+
+                hideModals();
+                renderGroupsList();
+            } catch(error) {
+                handleError(error, 'Join Group');
+            }
+        }
+        
+        async function renderGroupsList() {
+            ui.groupsList.innerHTML = `<p>Loading your groups...</p>`;
+            const userProfileRef = doc(db, `artifacts/${appId}/public/data/user_profiles`, userId);
+            const userSnap = await getDoc(userProfileRef);
+            if(!userSnap.exists() || !userSnap.data().groups || userSnap.data().groups.length === 0) {
+                ui.groupsList.innerHTML = `<p class="text-center text-gray-400">You haven't joined any groups yet.</p>`;
+                return;
+            }
+
+            const groupIds = userSnap.data().groups;
+            const groupPromises = groupIds.map(id => getDoc(doc(db, `artifacts/${appId}/public/data/groups`, id)));
+            const groupSnaps = await Promise.all(groupPromises);
+
+            ui.groupsList.innerHTML = groupSnaps.map(snap => {
+                if(!snap.exists()) return '';
+                const group = snap.data();
+                return `
+                    <button class="group-item-btn w-full text-left p-4 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors" data-group-id="${snap.id}">
+                        <div class="flex justify-between items-center">
+                            <h4 class="text-lg font-bold">${group.name} ${group.password ? '🔒' : ''}</h4>
+                            <span class="text-sm text-gray-400">${group.members.length} / ${group.capacity}</span>
+                        </div>
+                        <p class="text-sm text-gray-400 mt-1">Goal: ${group.goal}h/day • Leader: ${group.ownerName}</p>
+                    </button>
+                `;
+            }).join('');
+        }
+
+        async function renderGroupDetails(groupId) {
+            currentGroupId = groupId;
+            showPage('group-details');
+            const groupRef = doc(db, `artifacts/${appId}/public/data/groups`, groupId);
+            const groupSnap = await getDoc(groupRef);
+
+            if(!groupSnap.exists()) {
+                showPage('groups');
+                return;
+            }
+            const groupData = groupSnap.data();
+            ui.groupDetailsName.textContent = groupData.name;
+            if(ui.groupSettingsBtn) ui.groupSettingsBtn.dataset.groupId = groupId;
+
+            const memberPromises = groupData.members.map(id => getDoc(doc(db, `artifacts/${appId}/public/data/user_profiles`, id)));
+            const memberSnaps = await Promise.all(memberPromises);
+
+            ui.groupMembersList.innerHTML = memberSnaps.map(snap => {
+                if(!snap.exists()) return '';
+                const member = snap.data();
+                return `
+                    <div class="p-4 bg-gray-800 rounded-lg text-center">
+                        <div class="w-16 h-16 rounded-full mx-auto mb-2 bg-gray-700 overflow-hidden">
+                            ${member.photoURL ? `<img src="${member.photoURL}" class="w-full h-full object-cover">` : `<svg class="w-full h-full text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" /></svg>`}
+                        </div>
+                        <p class="font-semibold">${member.displayName}</p>
+                        <p class="text-sm text-green-400">Studying...</p>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        async function renderAttendance(groupId) {
+            // This function will be implemented in a future update
+            console.log("Rendering attendance for group:", groupId);
+        }
+
+        async function renderGroupRankings() {
+            // This function will be implemented in a future update
+            console.log("Rendering group rankings");
         }
 
 
