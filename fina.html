@@ -31,6 +31,7 @@
             overflow: hidden;
             transition: all 0.3s ease;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            cursor: pointer;
         }
         .group-card:hover {
             transform: translateY(-5px);
@@ -387,6 +388,55 @@
         .subject-options-menu .delete-btn:hover {
             background-color: #ef4444;
         }
+        /* Group Detail Page */
+        .member-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 16px;
+            padding: 20px;
+        }
+        .member-card {
+            background-color: #1F2937;
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+        }
+        .member-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: #4B5563;
+            margin: 0 auto 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            position: relative;
+        }
+        .member-avatar.studying {
+            outline: 3px solid #10B981;
+        }
+        .member-status-icon {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 20px;
+            height: 20px;
+            background-color: #10B981;
+            border-radius: 50%;
+            border: 2px solid #1F2937;
+        }
+        .member-name {
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .member-time {
+            color: #9CA3AF;
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 <body class="bg-gray-900 text-white flex flex-col h-screen antialiased">
@@ -617,6 +667,21 @@
                     </form>
                 </div>
             </div>
+             <!-- Group Detail Page -->
+            <div id="page-group-detail" class="page flex-col h-full overflow-y-auto no-scrollbar">
+                <header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-gray-800 sticky top-0 bg-gray-900">
+                    <button class="back-button text-gray-400 hover:text-white" data-target="my-groups">
+                        <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                        </svg>
+                    </button>
+                    <h1 id="group-detail-name" class="text-xl font-bold text-gray-100">Group Name</h1>
+                    <div class="w-6"></div>
+                </header>
+                <div id="group-member-grid" class="member-grid">
+                    <!-- Realtime member grid will be rendered here -->
+                </div>
+            </div>
         </main>
         <nav id="main-nav" class="bg-gray-800 border-t border-gray-700 grid grid-cols-5 sticky bottom-0">
             <button class="nav-item p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors active" data-page="timer"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg><p class="text-xs mt-1">Timer</p></button>
@@ -676,6 +741,8 @@
         let sessionStartTime = 0;
         let totalTimeTodayInSeconds = 0;
         let activeSubject = '';
+        let groupDetailUnsubscribe = null;
+        let memberTimerIntervals = [];
 
         // --- Firebase Initialization ---
         try {
@@ -711,6 +778,14 @@
             document.getElementById('auth-screen').classList.remove('active');
             document.getElementById('app-container').classList.remove('active', 'flex');
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            
+            // Cleanup from previous page
+            if (groupDetailUnsubscribe) {
+                groupDetailUnsubscribe();
+                groupDetailUnsubscribe = null;
+            }
+            memberTimerIntervals.forEach(clearInterval);
+            memberTimerIntervals = [];
 
             // Show the correct container/page
             if (pageId === 'auth-screen') {
@@ -734,7 +809,7 @@
             return `${h}h ${m}m`;
         }
         
-        function startTimer(subject) {
+        async function startTimer(subject) {
             if (!subject) return;
 
             activeSubject = subject;
@@ -749,6 +824,10 @@
 
             document.getElementById('start-studying-btn').classList.add('hidden');
             document.getElementById('stop-studying-btn').classList.remove('hidden');
+
+            // Update user's studying status in Firestore
+            const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
+            await updateDoc(userRef, { studying: { subject: activeSubject, startTime: serverTimestamp() } });
         }
 
         async function stopTimer() {
@@ -769,12 +848,17 @@
 
             document.getElementById('stop-studying-btn').classList.add('hidden');
             document.getElementById('start-studying-btn').classList.remove('hidden');
+            
+            // Clear user's studying status in Firestore
+            const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
+            await updateDoc(userRef, { studying: null });
         }
 
         async function saveSession(subject, durationSeconds) {
             if (!currentUser) return;
             try {
                 const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
+                const publicUserRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
                 const sessionsRef = collection(userRef, 'sessions');
 
                 await addDoc(sessionsRef, {
@@ -790,6 +874,11 @@
                         seconds: totalTimeTodayInSeconds
                     }
                 });
+
+                await updateDoc(publicUserRef, {
+                    totalStudySeconds: increment(durationSeconds)
+                });
+
                 console.log('Session saved successfully');
             } catch (error) {
                 console.error("Error saving session: ", error);
@@ -820,11 +909,18 @@
             const userDoc = await getDoc(userDocRef);
 
             if (!userDoc.exists()) {
-                await setDoc(userDocRef, {
+                const initialData = {
                     email: user.email,
                     username: user.displayName,
                     joinedGroups: [],
                     createdAt: serverTimestamp(),
+                    totalStudySeconds: 0,
+                    studying: null
+                };
+                await setDoc(userDocRef, initialData);
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', user.uid), {
+                    username: user.displayName || user.email,
+                    email: user.email,
                     totalStudySeconds: 0
                 });
             }
@@ -879,7 +975,10 @@
                 snapshot.forEach(doc => subjects.push({ id: doc.id, ...doc.data() }));
                 renderSubjectSelectionList(subjects);
             });
-            onSnapshot(usersCollectionRef, () => renderLeaderboard('weekly'));
+            onSnapshot(usersCollectionRef, () => {
+                const activeTab = document.querySelector('.ranking-tab-btn.active');
+                renderLeaderboard(activeTab ? activeTab.dataset.period : 'weekly');
+            });
             onSnapshot(query(sessionsCollectionRef, orderBy("endedAt", "desc")), (snapshot) => {
                 const sessions = [];
                 snapshot.forEach(doc => sessions.push(doc.data()));
@@ -955,7 +1054,7 @@
                         <div class="user-avatar bg-gray-600">${(user.username || 'U').charAt(0).toUpperCase()}</div>
                         <div class="user-info">
                             <div class="user-name">${user.username}</div>
-                            <div class="user-time">${formatTime(user.totalStudySeconds, false)} total</div>
+                            <div class="user-time">${formatTime(user.totalStudySeconds, false)} this ${period}</div>
                         </div>
                     </div>
                 `;
@@ -1024,7 +1123,7 @@
                 if (group.category === 'Language study') headerColor = 'linear-gradient(135deg, #00bcd4 0%, #0097a7 100%)';
                 else if (group.category === 'Secondary School') headerColor = 'linear-gradient(135deg, #9c27b0 0%, #673ab7 100%)';
                 else if (group.category === 'University') headerColor = 'linear-gradient(135deg, #ff9800 0%, #f57c00 100%)';
-                html += `<div class="group-card"><div class="group-header" style="background: ${headerColor}"><div class="group-category">${group.category}</div><div class="group-name">${group.name}${isFull ? '<span class="badge">Full</span>' : ''}</div><div class="group-stats"><div class="stat-item"><div class="stat-value">${group.attendance || 0}%</div><div class="stat-label">Attendance</div></div><div class="stat-item"><div class="stat-value">${group.avgTime || 'N/A'}</div><div class="stat-label">Avg. Time</div></div><div class="stat-item"><div class="stat-value">${memberCount}/${group.capacity}</div><div class="stat-label">Members</div></div></div></div><div class="group-body"><div class="group-goal"><div class="goal-text">Goal: ${group.timeGoal} hours/day</div><div class="leader"><i class="fas fa-crown"></i> Leader: ${group.leaderName}</div></div><div class="group-description">${group.description}</div><div class="joined-badge"><i class="fas fa-check-circle"></i> Joined</div><div class="group-meta"><div>Started: ${group.createdAt?.toDate().toLocaleDateString()}</div><div><i class="fas fa-comment"></i> 12 new</div></div></div></div>`;
+                html += `<div class="group-card" data-group-id="${group.id}"><div class="group-header" style="background: ${headerColor}"><div class="group-category">${group.category}</div><div class="group-name">${group.name}${isFull ? '<span class="badge">Full</span>' : ''}</div><div class="group-stats"><div class="stat-item"><div class="stat-value">${group.attendance || 0}%</div><div class="stat-label">Attendance</div></div><div class="stat-item"><div class="stat-value">${group.avgTime || 'N/A'}</div><div class="stat-label">Avg. Time</div></div><div class="stat-item"><div class="stat-value">${memberCount}/${group.capacity}</div><div class="stat-label">Members</div></div></div></div><div class="group-body"><div class="group-goal"><div class="goal-text">Goal: ${group.timeGoal} hours/day</div><div class="leader"><i class="fas fa-crown"></i> Leader: ${group.leaderName}</div></div><div class="group-description">${group.description}</div><div class="joined-badge"><i class="fas fa-check-circle"></i> Joined</div><div class="group-meta"><div>Started: ${group.createdAt?.toDate().toLocaleDateString()}</div><div><i class="fas fa-comment"></i> 12 new</div></div></div></div>`;
             });
             html += '</div>';
             container.innerHTML = html;
@@ -1147,6 +1246,55 @@
                 return `<div class="planner-day">${dayHeader}${tasksHtml}</div>`;
             }).join('');
         }
+        
+        async function renderGroupDetail(groupId) {
+            const groupDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'groups', groupId);
+            
+            groupDetailUnsubscribe = onSnapshot(groupDocRef, async (groupDoc) => {
+                if (!groupDoc.exists()) {
+                    showPage('page-my-groups');
+                    return;
+                }
+                const groupData = groupDoc.data();
+                document.getElementById('group-detail-name').textContent = groupData.name;
+
+                const memberGrid = document.getElementById('group-member-grid');
+                memberGrid.innerHTML = '<div class="text-center text-gray-500 py-8 col-span-full"><i class="fas fa-spinner fa-spin fa-2x"></i></div>';
+
+                const memberPromises = groupData.members.map(memberId => getDoc(doc(db, 'artifacts', appId, 'users', memberId)));
+                const memberDocs = await Promise.all(memberPromises);
+
+                memberGrid.innerHTML = memberDocs.map(memberDoc => {
+                    const memberData = memberDoc.data();
+                    const isStudying = memberData.studying;
+                    return `
+                        <div class="member-card">
+                            <div class="member-avatar ${isStudying ? 'studying' : ''}">
+                                ${(memberData.username || 'U').charAt(0).toUpperCase()}
+                                ${isStudying ? '<div class="member-status-icon"></div>' : ''}
+                            </div>
+                            <div class="member-name">${memberData.username || 'Anonymous'}</div>
+                            <div class="member-time" id="member-time-${memberDoc.id}">${isStudying ? '00:00:00' : ''}</div>
+                        </div>
+                    `;
+                }).join('');
+                
+                memberTimerIntervals.forEach(clearInterval);
+                memberTimerIntervals = [];
+
+                memberDocs.forEach(memberDoc => {
+                    const memberData = memberDoc.data();
+                    if (memberData.studying && memberData.studying.startTime) {
+                        const memberTimeEl = document.getElementById(`member-time-${memberDoc.id}`);
+                        const interval = setInterval(() => {
+                            const elapsed = Math.floor((Date.now() - memberData.studying.startTime.toDate()) / 1000);
+                            memberTimeEl.textContent = formatTime(elapsed);
+                        }, 1000);
+                        memberTimerIntervals.push(interval);
+                    }
+                });
+            });
+        }
 
         // --- Event Listeners ---
         const ael = (id, event, callback) => {
@@ -1198,6 +1346,9 @@
             }
             const userDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
             await setDoc(userDocRef, { username: username }, { merge: true });
+            
+            const publicUserDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
+            await setDoc(publicUserDocRef, { username: username }, { merge: true });
             
             showPage('page-timer');
             setupRealtimeListeners();
@@ -1338,13 +1489,12 @@
 
         // Subject options menu logic
         document.getElementById('subject-selection-list').addEventListener('click', async (e) => {
+            e.stopPropagation();
             const optionsBtn = e.target.closest('.subject-options-btn');
             const subjectItem = e.target.closest('.subject-item');
 
             if (optionsBtn) {
-                e.stopPropagation(); // Prevent the item selection click
                 const menu = optionsBtn.nextElementSibling;
-                // Close other menus
                 document.querySelectorAll('.subject-options-menu').forEach(m => {
                     if (m !== menu) m.classList.remove('active');
                 });
@@ -1352,15 +1502,12 @@
                 return;
             }
 
-            // Handle item selection
-            if (subjectItem && !e.target.closest('.subject-options-menu')) {
+            if (subjectItem) {
                  document.querySelectorAll('#subject-selection-list .subject-item').forEach(i => i.classList.remove('selected'));
                  subjectItem.classList.add('selected');
             }
             
-            // Handle delete button click
             if (e.target.classList.contains('delete-subject-btn')) {
-                e.stopPropagation();
                 const itemToDelete = e.target.closest('.subject-item');
                 const subjectId = itemToDelete.dataset.subjectId;
                 if (confirm(`Are you sure you want to delete "${itemToDelete.dataset.subjectName}"?`)) {
@@ -1369,9 +1516,7 @@
                 }
             }
             
-            // Handle edit button click
             if (e.target.classList.contains('edit-subject-btn')) {
-                 e.stopPropagation();
                  alert("Edit functionality coming soon!");
             }
         });
@@ -1411,6 +1556,15 @@
             if (e.target.classList.contains('ranking-tab-btn')) {
                 const period = e.target.dataset.period;
                 renderLeaderboard(period);
+            }
+        });
+        
+        document.getElementById('my-groups-list').addEventListener('click', (e) => {
+            const groupCard = e.target.closest('.group-card');
+            if (groupCard) {
+                const groupId = groupCard.dataset.groupId;
+                showPage('page-group-detail');
+                renderGroupDetail(groupId);
             }
         });
 
