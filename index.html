@@ -663,15 +663,23 @@
 
         // --- Firebase Initialization ---
         try {
-            const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+            const firebaseConfig = {
+                apiKey: "AIzaSyBSCrL6ravOzFnwOa7A0Jl_W68vEfZVcNw",
+                authDomain: "focus-flow-34c07.firebaseapp.com",
+                projectId: "focus-flow-34c07",
+                storageBucket: "focus-flow-34c07.appspot.com",
+                messagingSenderId: "473980178825",
+                appId: "1:473980178825:web:164566ec8b068da3281158",
+                measurementId: "G-RRFK3LY0E4"
+            };
+
             const app = initializeApp(firebaseConfig);
             auth = getAuth(app);
             db = getFirestore(app);
             console.log("Firebase initialized successfully.");
-            // REMOVED AUTOMATIC SIGN-IN
         } catch (e) {
             console.error("Firebase initialization failed:", e);
-            alert("Could not connect to the backend. Please try again later.");
+            alert("Could not connect to the backend. Please ensure your Firebase config is correct.");
         }
 
         // --- UI Elements ---
