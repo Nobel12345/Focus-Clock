@@ -13,7 +13,7 @@
         body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .nav-item.active svg, .nav-item.active p { color: #3B82F6; }
+        .nav-item.active svg, .nav-item.active p, .group-nav-item.active i, .group-nav-item.active p { color: #3B82F6; }
 
         /* Page and container visibility */
         #auth-screen, .page, #app-container, .modal { display: none; }
@@ -437,6 +437,36 @@
             color: #9CA3AF;
             font-size: 0.9rem;
         }
+        #group-detail-nav {
+            display: none;
+        }
+        .chat-message {
+            margin-bottom: 1rem;
+            display: flex;
+        }
+        .chat-message.sent {
+            justify-content: flex-end;
+        }
+        .chat-bubble {
+            max-width: 75%;
+            padding: 0.75rem;
+            border-radius: 1rem;
+        }
+        .chat-bubble.sent {
+            background-color: #3B82F6;
+            color: white;
+            border-bottom-right-radius: 0.25rem;
+        }
+        .chat-bubble.received {
+            background-color: #374151;
+            color: white;
+            border-bottom-left-radius: 0.25rem;
+        }
+        .chat-sender {
+            font-size: 0.75rem;
+            color: #9CA3AF;
+            margin-bottom: 0.25rem;
+        }
     </style>
 </head>
 <body class="bg-gray-900 text-white flex flex-col h-screen antialiased">
@@ -668,7 +698,7 @@
                 </div>
             </div>
              <!-- Group Detail Page -->
-            <div id="page-group-detail" class="page flex-col h-full overflow-y-auto no-scrollbar">
+            <div id="page-group-detail" class="page flex-col h-full">
                 <header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-gray-800 sticky top-0 bg-gray-900">
                     <button class="back-button text-gray-400 hover:text-white" data-target="my-groups">
                         <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -678,9 +708,31 @@
                     <h1 id="group-detail-name" class="text-xl font-bold text-gray-100">Group Name</h1>
                     <div class="w-6"></div>
                 </header>
-                <div id="group-member-grid" class="member-grid">
-                    <!-- Realtime member grid will be rendered here -->
+                <div id="group-detail-content" class="flex-grow overflow-y-auto no-scrollbar">
+                    <!-- Content for group detail sub-pages will be rendered here -->
                 </div>
+                <nav id="group-detail-nav" class="bg-gray-800 border-t border-gray-700 grid grid-cols-5 sticky bottom-0">
+                    <button class="group-nav-item p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors active" data-subpage="home">
+                        <i class="fas fa-home"></i>
+                        <p class="text-xs mt-1">Home</p>
+                    </button>
+                    <button class="group-nav-item p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors" data-subpage="attendance">
+                        <i class="fas fa-calendar-check"></i>
+                        <p class="text-xs mt-1">Attendance</p>
+                    </button>
+                    <button class="group-nav-item p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors" data-subpage="rankings">
+                        <i class="fas fa-chart-bar"></i>
+                        <p class="text-xs mt-1">Rankings</p>
+                    </button>
+                    <button class="group-nav-item p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors" data-subpage="invite">
+                        <i class="fas fa-user-plus"></i>
+                        <p class="text-xs mt-1">Invite</p>
+                    </button>
+                    <button class="group-nav-item p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors" data-subpage="chat">
+                        <i class="fas fa-comments"></i>
+                        <p class="text-xs mt-1">Chat</p>
+                    </button>
+                </nav>
             </div>
         </main>
         <nav id="main-nav" class="bg-gray-800 border-t border-gray-700 grid grid-cols-5 sticky bottom-0">
@@ -743,6 +795,7 @@
         let activeSubject = '';
         let groupDetailUnsubscribe = null;
         let memberTimerIntervals = [];
+        let currentGroupId = null;
 
         // --- Firebase Initialization ---
         try {
@@ -794,6 +847,19 @@
                  document.getElementById('app-container').classList.add('active', 'flex');
                  const targetPage = document.getElementById(pageId);
                  if(targetPage) targetPage.classList.add('active');
+            }
+            
+            const mainNav = document.getElementById('main-nav');
+            const groupNav = document.getElementById('group-detail-nav');
+            const mainNavPages = ['page-timer', 'page-stats', 'page-ranking', 'page-planner'];
+
+            mainNav.style.display = 'none';
+            if (groupNav) groupNav.style.display = 'none';
+
+            if (mainNavPages.includes(pageId)) {
+                mainNav.style.display = 'grid';
+            } else if (pageId === 'page-group-detail') {
+                if (groupNav) groupNav.style.display = 'grid';
             }
         }
 
@@ -965,7 +1031,12 @@
             const sessionsCollectionRef = collection(userDocRef, 'sessions');
             const plannerTasksRef = collection(userDocRef, 'plannerTasks');
 
-            onSnapshot(groupsCollectionRef, () => renderAvailableGroups());
+            onSnapshot(groupsCollectionRef, () => {
+                if (document.getElementById('page-my-groups').classList.contains('active') || document.getElementById('page-find-groups').classList.contains('active')) {
+                    renderAvailableGroups();
+                    renderJoinedGroups();
+                }
+            });
             onSnapshot(userDocRef, (doc) => {
                 renderJoinedGroups();
                 if (doc.exists()) updateProfileUI(doc.data());
@@ -976,27 +1047,35 @@
                 renderSubjectSelectionList(subjects);
             });
             onSnapshot(usersCollectionRef, () => {
-                const activeTab = document.querySelector('.ranking-tab-btn.active');
-                renderLeaderboard(activeTab ? activeTab.dataset.period : 'weekly');
+                if (document.getElementById('page-ranking').classList.contains('active')) {
+                    const activeTab = document.querySelector('.ranking-tab-btn.active');
+                    renderLeaderboard(activeTab ? activeTab.dataset.period : 'weekly');
+                }
             });
             onSnapshot(query(sessionsCollectionRef, orderBy("endedAt", "desc")), (snapshot) => {
-                const sessions = [];
-                snapshot.forEach(doc => sessions.push(doc.data()));
-                renderStatsPage(sessions);
+                if (document.getElementById('page-stats').classList.contains('active')) {
+                    const sessions = [];
+                    snapshot.forEach(doc => sessions.push(doc.data()));
+                    renderStatsPage(sessions);
+                }
             });
             onSnapshot(query(plannerTasksRef, orderBy("date")), (snapshot) => {
-                const tasks = [];
-                snapshot.forEach(doc => tasks.push({ id: doc.id, ...doc.data() }));
-                renderPlanner(tasks);
+                if (document.getElementById('page-planner').classList.contains('active')) {
+                    const tasks = [];
+                    snapshot.forEach(doc => tasks.push({ id: doc.id, ...doc.data() }));
+                    renderPlanner(tasks);
+                }
             });
         }
         
         async function renderLeaderboard(period = 'weekly') {
+            const container = document.getElementById('ranking-list');
+            if (!container) return;
+            
             document.querySelectorAll('.ranking-tab-btn').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.period === period);
             });
 
-            const container = document.getElementById('ranking-list');
             container.innerHTML = '<div class="text-center text-gray-500 py-8"><i class="fas fa-spinner fa-spin fa-2x"></i></div>';
 
             const usersCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'users');
@@ -1062,6 +1141,9 @@
         }
 
         function renderStatsPage(sessions) {
+            const weeklyChartEl = document.getElementById('weeklyChart');
+            if (!weeklyChartEl) return;
+            
             const weeklyData = Array(7).fill(0);
             const subjectData = {};
             let totalSecondsThisWeek = 0;
@@ -1084,7 +1166,7 @@
             });
 
             if (charts.weekly) charts.weekly.destroy();
-            const weeklyCtx = document.getElementById('weeklyChart').getContext('2d');
+            const weeklyCtx = weeklyChartEl.getContext('2d');
             charts.weekly = new Chart(weeklyCtx, { type: 'bar', data: { labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], datasets: [{ label: 'Study Time (hours)', data: weeklyData.map(s => s / 3600), backgroundColor: '#3B82F6' }] }, options: { scales: { y: { beginAtZero: true, ticks: { color: '#9CA3AF' }, grid: { color: '#374151' } }, x: { ticks: { color: '#9CA3AF' }, grid: { color: '#374151' } } }, plugins: { legend: { display: false } } } });
 
             if (charts.subject) charts.subject.destroy();
@@ -1097,11 +1179,13 @@
         
         async function renderJoinedGroups() {
             if (!currentUser) return;
+            const container = document.getElementById('my-groups-list');
+            if (!container) return;
+
             const userDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
             const userDoc = await getDoc(userDocRef);
             const joinedGroupIds = userDoc.exists() && userDoc.data().joinedGroups ? userDoc.data().joinedGroups : [];
             
-            const container = document.getElementById('my-groups-list');
             if (joinedGroupIds.length === 0) {
                 container.innerHTML = `<div class="empty-group"><i class="fas fa-users-slash"></i><h3>No Groups Joined Yet</h3><p>You haven't joined any study groups. Join a group or create your own to get started!</p><button class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition mt-4" id="explore-groups-btn">Explore Groups</button></div>`;
                 document.getElementById('explore-groups-btn').addEventListener('click', () => { renderAvailableGroups(); showPage('page-find-groups'); });
@@ -1131,6 +1215,9 @@
 
         async function renderAvailableGroups() {
             if (!currentUser) return;
+            const container = document.getElementById('all-groups-list');
+            if (!container) return;
+            
             const userDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
             const userDoc = await getDoc(userDocRef);
             const joinedGroupIds = userDoc.exists() && userDoc.data().joinedGroups ? userDoc.data().joinedGroups : [];
@@ -1144,7 +1231,6 @@
                 }
             });
 
-            const container = document.getElementById('all-groups-list');
             if (availableGroups.length === 0) {
                 container.innerHTML = `<div class="empty-group"><i class="fas fa-search"></i><h3>No Groups Available</h3><p>There are no study groups available at the moment. Why not create your own group?</p><button class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition mt-4" id="create-first-group-btn">Create Group</button></div>`;
                 document.getElementById('create-first-group-btn').addEventListener('click', () => showPage('page-create-group'));
@@ -1192,6 +1278,7 @@
 
         function renderSubjectSelectionList(subjects) {
             const container = document.getElementById('subject-selection-list');
+            if (!container) return;
             if (subjects.length === 0) {
                 container.innerHTML = `<p class="text-gray-400 text-center">No subjects added yet. Add one below!</p>`;
                 return;
@@ -1213,6 +1300,7 @@
         
         function renderPlanner(tasks) {
             const container = document.getElementById('planner-list');
+            if (!container) return;
             if (tasks.length === 0) {
                 container.innerHTML = `<div class="text-center text-gray-500 py-8">No tasks scheduled. Add one to get started!</div>`;
                 return;
@@ -1248,51 +1336,137 @@
         }
         
         async function renderGroupDetail(groupId) {
+            currentGroupId = groupId;
             const groupDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'groups', groupId);
             
+            if (groupDetailUnsubscribe) groupDetailUnsubscribe();
+
             groupDetailUnsubscribe = onSnapshot(groupDocRef, async (groupDoc) => {
-                if (!groupDoc.exists()) {
+                const container = document.getElementById('group-detail-content');
+                if (!container || !groupDoc.exists()) {
                     showPage('page-my-groups');
                     return;
                 }
                 const groupData = groupDoc.data();
                 document.getElementById('group-detail-name').textContent = groupData.name;
+                const activeSubPage = document.querySelector('#group-detail-nav .active')?.dataset.subpage || 'home';
+                renderGroupSubPage(activeSubPage);
+            });
+        }
 
-                const memberGrid = document.getElementById('group-member-grid');
-                memberGrid.innerHTML = '<div class="text-center text-gray-500 py-8 col-span-full"><i class="fas fa-spinner fa-spin fa-2x"></i></div>';
+        function renderGroupSubPage(subpage) {
+            const container = document.getElementById('group-detail-content');
+            if (!container) return;
 
-                const memberPromises = groupData.members.map(memberId => getDoc(doc(db, 'artifacts', appId, 'users', memberId)));
-                const memberDocs = await Promise.all(memberPromises);
+            document.querySelectorAll('.group-nav-item').forEach(i => i.classList.remove('active'));
+            document.querySelector(`.group-nav-item[data-subpage="${subpage}"]`).classList.add('active');
+            
+            if (subpage === 'home') {
+                 container.innerHTML = '<div class="member-grid" id="group-member-grid"><div class="text-center text-gray-500 py-8 col-span-full"><i class="fas fa-spinner fa-spin fa-2x"></i></div></div>';
+                 renderGroupMembers(currentGroupId);
+            } else if (subpage === 'invite') {
+                const inviteLink = `${window.location.origin}${window.location.pathname}?groupId=${currentGroupId}`;
+                container.innerHTML = `<div class="p-8 text-center"><img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(inviteLink)}" class="mx-auto mb-4"><p class="text-blue-400 break-all">${inviteLink}</p><div class="flex gap-4 mt-4"><button id="copy-link-btn" class="w-full py-2 bg-gray-700 rounded-lg">Copy Link</button><button class="w-full py-2 bg-orange-500 rounded-lg">Share Link</button></div><p class="text-gray-500 mt-4 text-sm">Share this link to invite a friend or organization to study with you.</p></div>`;
+                document.getElementById('copy-link-btn').addEventListener('click', () => {
+                    const tempInput = document.createElement('input');
+                    document.body.appendChild(tempInput);
+                    tempInput.value = inviteLink;
+                    tempInput.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(tempInput);
+                    alert('Link copied to clipboard!');
+                });
+            } else if (subpage === 'chat') {
+                container.innerHTML = `<div class="p-4 flex flex-col h-full"><div id="chat-messages" class="flex-grow overflow-y-auto"></div><form id="chat-form" class="flex gap-2 mt-4"><input id="chat-input" class="flex-grow bg-gray-700 rounded-lg p-3" placeholder="Type a message..."><button type="submit" class="bg-blue-600 px-4 rounded-lg"><i class="fas fa-paper-plane"></i></button></form></div>`;
+                setupGroupChat(currentGroupId);
+            } else {
+                 container.innerHTML = `<div class="p-8 text-center text-gray-400">${subpage.charAt(0).toUpperCase() + subpage.slice(1)} page is coming soon!</div>`;
+            }
+        }
+        
+        async function renderGroupMembers(groupId) {
+             const groupDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'groups', groupId);
+             const groupDoc = await getDoc(groupDocRef);
+             if (!groupDoc.exists()) return;
 
-                memberGrid.innerHTML = memberDocs.map(memberDoc => {
-                    const memberData = memberDoc.data();
-                    const isStudying = memberData.studying;
-                    return `
-                        <div class="member-card">
-                            <div class="member-avatar ${isStudying ? 'studying' : ''}">
-                                ${(memberData.username || 'U').charAt(0).toUpperCase()}
-                                ${isStudying ? '<div class="member-status-icon"></div>' : ''}
-                            </div>
-                            <div class="member-name">${memberData.username || 'Anonymous'}</div>
-                            <div class="member-time" id="member-time-${memberDoc.id}">${isStudying ? '00:00:00' : ''}</div>
+             const groupData = groupDoc.data();
+             const memberGrid = document.getElementById('group-member-grid');
+             if (!memberGrid) return;
+             
+             const memberPromises = groupData.members.map(memberId => getDoc(doc(db, 'artifacts', appId, 'users', memberId)));
+             const memberDocs = await Promise.all(memberPromises);
+
+             memberGrid.innerHTML = memberDocs.map(memberDoc => {
+                 const memberData = memberDoc.data();
+                 const isStudying = memberData.studying;
+                 return `
+                     <div class="member-card">
+                         <div class="member-avatar ${isStudying ? 'studying' : ''}">
+                             ${(memberData.username || 'U').charAt(0).toUpperCase()}
+                             ${isStudying ? '<div class="member-status-icon"></div>' : ''}
+                         </div>
+                         <div class="member-name">${memberData.username || 'Anonymous'}</div>
+                         <div class="member-time" id="member-time-${memberDoc.id}">${isStudying ? '00:00:00' : ''}</div>
+                     </div>
+                 `;
+             }).join('');
+             
+             memberTimerIntervals.forEach(clearInterval);
+             memberTimerIntervals = [];
+
+             memberDocs.forEach(memberDoc => {
+                 const memberData = memberDoc.data();
+                 if (memberData.studying && memberData.studying.startTime) {
+                     const memberTimeEl = document.getElementById(`member-time-${memberDoc.id}`);
+                     const interval = setInterval(() => {
+                         const elapsed = Math.floor((Date.now() - memberData.studying.startTime.toDate()) / 1000);
+                         if(memberTimeEl) memberTimeEl.textContent = formatTime(elapsed);
+                     }, 1000);
+                     memberTimerIntervals.push(interval);
+                 }
+             });
+        }
+        
+        function setupGroupChat(groupId) {
+            const chatMessagesContainer = document.getElementById('chat-messages');
+            const chatForm = document.getElementById('chat-form');
+            const chatInput = document.getElementById('chat-input');
+            if (!chatMessagesContainer || !chatForm) return;
+
+            const messagesRef = collection(db, 'artifacts', appId, 'public', 'data', 'groups', groupId, 'messages');
+            const q = query(messagesRef, orderBy("timestamp"));
+
+            onSnapshot(q, (snapshot) => {
+                chatMessagesContainer.innerHTML = '';
+                snapshot.forEach(doc => {
+                    const msg = doc.data();
+                    const isSent = msg.senderId === currentUser.uid;
+                    const messageEl = document.createElement('div');
+                    messageEl.classList.add('chat-message', isSent ? 'sent' : 'received');
+                    messageEl.innerHTML = `
+                        <div class="chat-bubble ${isSent ? 'sent' : 'received'}">
+                            ${!isSent ? `<div class="chat-sender">${msg.senderName}</div>` : ''}
+                            <div>${msg.text}</div>
                         </div>
                     `;
-                }).join('');
-                
-                memberTimerIntervals.forEach(clearInterval);
-                memberTimerIntervals = [];
-
-                memberDocs.forEach(memberDoc => {
-                    const memberData = memberDoc.data();
-                    if (memberData.studying && memberData.studying.startTime) {
-                        const memberTimeEl = document.getElementById(`member-time-${memberDoc.id}`);
-                        const interval = setInterval(() => {
-                            const elapsed = Math.floor((Date.now() - memberData.studying.startTime.toDate()) / 1000);
-                            memberTimeEl.textContent = formatTime(elapsed);
-                        }, 1000);
-                        memberTimerIntervals.push(interval);
-                    }
+                    chatMessagesContainer.appendChild(messageEl);
                 });
+                chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+            });
+
+            chatForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const text = chatInput.value.trim();
+                if (text && currentUser) {
+                    const userDoc = await getDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid));
+                    await addDoc(messagesRef, {
+                        text: text,
+                        senderId: currentUser.uid,
+                        senderName: userDoc.data().username,
+                        timestamp: serverTimestamp()
+                    });
+                    chatInput.value = '';
+                }
             });
         }
 
@@ -1565,6 +1739,13 @@
                 const groupId = groupCard.dataset.groupId;
                 showPage('page-group-detail');
                 renderGroupDetail(groupId);
+            }
+        });
+        
+        document.getElementById('group-detail-nav').addEventListener('click', (e) => {
+            const navItem = e.target.closest('.group-nav-item');
+            if (navItem) {
+                renderGroupSubPage(navItem.dataset.subpage);
             }
         });
 
