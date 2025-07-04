@@ -217,10 +217,21 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            font-weight: bold;
         }
         .user-info { flex-grow: 1; }
         .user-name { font-weight: 600; }
         .user-time { color: #9CA3AF; font-size: 0.9rem; }
+        .ranking-tab-btn {
+            background-color: #374151;
+            color: #9CA3AF;
+            transition: all 0.2s;
+        }
+        .ranking-tab-btn.active {
+            background-color: #1F2937;
+            color: white;
+            border-bottom: 2px solid #3B82F6;
+        }
         
         /* Planner page styles */
         .planner-container { padding: 20px; }
@@ -244,7 +255,7 @@
         }
         .task-checkbox { margin-right: 10px; }
         .task-name { flex-grow: 1; }
-        .task-time { color: #9CA3AF; font-size: 0.9rem; }
+        .task-name.completed { text-decoration: line-through; color: #6B7280; }
         
         /* Modal Styles */
         .modal {
@@ -488,8 +499,7 @@
                     </div>
                     <div class="stat-card">
                         <div class="stat-title">Daily Average</div>
-                        <div class="text-3xl font-bold text-blue-400">3h 42m</div>
-                        <div class="text-gray-400 mt-2">+12% from last week</div>
+                        <div id="daily-average" class="text-3xl font-bold text-blue-400">0h 0m</div>
                     </div>
                 </div>
             </div>
@@ -505,13 +515,15 @@
                     <h1 class="text-xl font-bold text-gray-100">Leaderboard</h1>
                     <div class="w-6"></div> <!-- Empty div for balance -->
                 </header>
-                <div class="ranking-list">
-                    <div class="ranking-item"><div class="rank rank-1">1</div><div class="user-avatar bg-yellow-500">A</div><div class="user-info"><div class="user-name">Alex Johnson</div><div class="user-time">42h 15m this week</div></div></div>
-                    <div class="ranking-item"><div class="rank rank-2">2</div><div class="user-avatar bg-gray-400">M</div><div class="user-info"><div class="user-name">Maria Garcia</div><div class="user-time">38h 30m this week</div></div></div>
-                    <div class="ranking-item"><div class="rank rank-3">3</div><div class="user-avatar bg-amber-600">S</div><div class="user-info"><div class="user-name">Sam Wilson</div><div class="user-time">35h 45m this week</div></div></div>
-                    <div class="ranking-item"><div class="rank">4</div><div class="user-avatar bg-green-500">J</div><div class="user-info"><div class="user-name">Jamie Lee</div><div class="user-time">32h 10m this week</div></div></div>
-                    <div class="ranking-item"><div class="rank">5</div><div class="user-avatar bg-purple-500">T</div><div class="user-info"><div class="user-name">Taylor Smith</div><div class="user-time">28h 55m this week</div></div></div>
-                    <div class="ranking-item bg-blue-900/30"><div class="rank">7</div><div class="user-avatar bg-blue-500">U</div><div class="user-info"><div class="user-name">You</div><div class="user-time">25h 20m this week</div></div></div>
+                <div class="px-4 pt-4 border-b border-gray-800">
+                    <div class="flex space-x-1" id="ranking-period-tabs">
+                        <button class="ranking-tab-btn flex-1 py-2 px-4 rounded-t-lg font-semibold text-sm" data-period="daily">Daily</button>
+                        <button class="ranking-tab-btn flex-1 py-2 px-4 rounded-t-lg font-semibold text-sm active" data-period="weekly">Weekly</button>
+                        <button class="ranking-tab-btn flex-1 py-2 px-4 rounded-t-lg font-semibold text-sm" data-period="monthly">Monthly</button>
+                    </div>
+                </div>
+                <div id="ranking-list" class="ranking-list">
+                     <!-- Realtime leaderboard will be rendered here -->
                 </div>
             </div>
             
@@ -524,12 +536,10 @@
                         </svg>
                     </button>
                     <h1 class="text-xl font-bold text-gray-100">Study Planner</h1>
-                    <div class="w-6"></div> <!-- Empty div for balance -->
+                    <button id="add-task-btn" class="text-blue-500 font-semibold">Add Task</button>
                 </header>
-                <div class="planner-container">
-                    <div class="planner-day"><div class="day-header"><span>Monday</span><span>June 5</span></div><div class="planner-task"><input type="checkbox" class="task-checkbox"><div class="task-name">Math: Calculus problems</div><div class="task-time">2h</div></div><div class="planner-task"><input type="checkbox" class="task-checkbox"><div class="task-name">Physics: Electromagnetism</div><div class="task-time">1.5h</div></div></div>
-                    <div class="planner-day"><div class="day-header"><span>Tuesday</span><span>June 6</span></div><div class="planner-task"><input type="checkbox" class="task-checkbox"><div class="task-name">Literature: Read chapter 5</div><div class="task-time">1h</div></div><div class="planner-task"><input type="checkbox" class="task-checkbox"><div class="task-name">Chemistry: Organic compounds</div><div class="task-time">2h</div></div></div>
-                    <div class="planner-day"><div class="day-header"><span>Wednesday</span><span>June 7</span></div><div class="planner-task"><input type="checkbox" class="task-checkbox"><div class="task-name">Math: Linear algebra</div><div class="task-time">2h</div></div></div>
+                <div id="planner-list" class="planner-container">
+                    <!-- Realtime planner tasks will be rendered here -->
                 </div>
             </div>
 
@@ -620,6 +630,7 @@
     <!-- Modals -->
     <div id="add-subject-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Add New Subject</div><button class="close-modal">&times;</button></div><form id="add-subject-form"><div class="mb-4"><label for="add-subject-name" class="block text-gray-300 mb-2">Subject Name</label><input type="text" id="add-subject-name" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required></div><div class="mb-4"><label class="block text-gray-300 mb-2">Color</label><div class="flex space-x-2 subject-color-picker"><div class="w-8 h-8 rounded-full bg-red-500 cursor-pointer color-dot" data-color="bg-red-500"></div><div class="w-8 h-8 rounded-full bg-blue-500 cursor-pointer color-dot selected" data-color="bg-blue-500"></div><div class="w-8 h-8 rounded-full bg-green-500 cursor-pointer color-dot" data-color="bg-green-500"></div><div class="w-8 h-8 rounded-full bg-yellow-500 cursor-pointer color-dot" data-color="bg-yellow-500"></div><div class="w-8 h-8 rounded-full bg-purple-500 cursor-pointer color-dot" data-color="bg-purple-500"></div></div></div><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Add Subject</button></form></div></div>
     <div id="start-session-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Start New Session</div><button id="close-start-session-modal" class="close-modal">&times;</button></div><form id="start-session-form"><div id="subject-selection-list" class="mb-4 max-h-60 overflow-y-auto space-y-2"></div><div class="flex items-center gap-4 mt-4"><button type="button" id="open-add-subject-modal-from-start" class="w-full text-center py-3 bg-gray-600 hover:bg-gray-500 rounded-lg font-medium transition">Add New Subject</button><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Start Timer</button></div></form></div></div>
+    <div id="add-task-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Add New Task</div><button class="close-modal">&times;</button></div><form id="add-task-form"><div class="mb-4"><label for="add-task-name" class="block text-gray-300 mb-2">Task Description</label><input type="text" id="add-task-name" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required></div><div class="mb-4"><label for="add-task-date" class="block text-gray-300 mb-2">Date</label><input type="date" id="add-task-date" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required></div><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Add Task</button></form></div></div>
 
     <!-- Firebase SDK -->
     <script type="module">
@@ -646,18 +657,23 @@
             updateDoc,
             deleteDoc,
             getDocs,
-            serverTimestamp
+            serverTimestamp,
+            query,
+            orderBy,
+            limit,
+            increment,
+            where
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- App State ---
         let db, auth;
         let currentUser = null;
-        let chartsInitialized = false;
+        let charts = { weekly: null, subject: null };
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
         // Timer State
         let timerInterval = null;
-        let currentSessionSeconds = 0;
+        let sessionStartTime = 0;
         let totalTimeTodayInSeconds = 0;
         let activeSubject = '';
 
@@ -706,37 +722,30 @@
             }
         }
 
-        // --- Chart Initialization ---
-        function initCharts() {
-            if (chartsInitialized) return;
-            // ... (chart code remains the same)
-            chartsInitialized = true;
+        function formatTime(seconds, includeSeconds = true) {
+            if (seconds < 0) seconds = 0;
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = Math.floor(seconds % 60);
+            
+            if (includeSeconds) {
+                return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+            }
+            return `${h}h ${m}m`;
         }
         
-        // --- Timer Functions ---
-        function formatTime(seconds) {
-            const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
-            const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
-            const s = Math.floor(seconds % 60).toString().padStart(2, '0');
-            return `${h}:${m}:${s}`;
-        }
-
-        function updateTimerDisplay() {
-            currentSessionSeconds++;
-            sessionTimerDisplay.textContent = formatTime(currentSessionSeconds);
-        }
-
         function startTimer(subject) {
             if (!subject) return;
 
             activeSubject = subject;
             activeSubjectDisplay.textContent = activeSubject;
-            
-            currentSessionSeconds = 0;
-            sessionTimerDisplay.textContent = formatTime(0);
+            sessionStartTime = Date.now();
             
             if(timerInterval) clearInterval(timerInterval);
-            timerInterval = setInterval(updateTimerDisplay, 1000);
+            timerInterval = setInterval(() => {
+                const elapsedSeconds = Math.floor((Date.now() - sessionStartTime) / 1000);
+                sessionTimerDisplay.textContent = formatTime(elapsedSeconds);
+            }, 1000);
 
             document.getElementById('start-studying-btn').classList.add('hidden');
             document.getElementById('stop-studying-btn').classList.remove('hidden');
@@ -744,9 +753,10 @@
 
         async function stopTimer() {
             if(timerInterval) clearInterval(timerInterval);
-            timerInterval = null;
+            
+            const elapsedMillis = Date.now() - sessionStartTime;
+            const sessionDurationSeconds = Math.floor(elapsedMillis / 1000);
 
-            const sessionDurationSeconds = currentSessionSeconds;
             if (sessionDurationSeconds > 0) {
                 totalTimeTodayInSeconds += sessionDurationSeconds;
                 await saveSession(activeSubject, sessionDurationSeconds);
@@ -755,6 +765,7 @@
             activeSubjectDisplay.textContent = '';
             sessionTimerDisplay.textContent = formatTime(0);
             totalTimeDisplay.textContent = `Total Today: ${formatTime(totalTimeTodayInSeconds)}`;
+            timerInterval = null;
 
             document.getElementById('stop-studying-btn').classList.add('hidden');
             document.getElementById('start-studying-btn').classList.remove('hidden');
@@ -772,12 +783,13 @@
                     endedAt: serverTimestamp()
                 });
 
-                await setDoc(userRef, {
+                await updateDoc(userRef, {
+                    totalStudySeconds: increment(durationSeconds),
                     totalTimeToday: {
                         date: new Date().toISOString().split('T')[0],
                         seconds: totalTimeTodayInSeconds
                     }
-                }, { merge: true });
+                });
                 console.log('Session saved successfully');
             } catch (error) {
                 console.error("Error saving session: ", error);
@@ -793,7 +805,7 @@
                 const data = userDoc.data();
                 const todayStr = new Date().toISOString().split('T')[0];
                 if (data.totalTimeToday && data.totalTimeToday.date === todayStr) {
-                    totalTimeTodayInSeconds = data.totalTimeToday.seconds;
+                    totalTimeTodayInSeconds = data.totalTimeToday.seconds || 0;
                 } else {
                     totalTimeTodayInSeconds = 0;
                 }
@@ -808,26 +820,26 @@
             const userDoc = await getDoc(userDocRef);
 
             if (!userDoc.exists()) {
-                // New user, create the document
                 await setDoc(userDocRef, {
                     email: user.email,
-                    username: user.displayName, // Can be null
+                    username: user.displayName,
                     joinedGroups: [],
-                    createdAt: serverTimestamp()
+                    createdAt: serverTimestamp(),
+                    totalStudySeconds: 0
                 });
             }
-            return await getDoc(userDocRef); // Return the fresh document
+            return await getDoc(userDocRef);
         }
 
         function updateProfileUI(userData) {
             if (!userData) return;
             document.getElementById('profile-page-name').textContent = userData.username || 'User';
             document.getElementById('profile-page-email').textContent = userData.email || '';
-            document.getElementById('header-avatar').textContent = (userData.username || 'U').charAt(0).toUpperCase();
-            document.getElementById('profile-page-avatar').textContent = (userData.username || 'U').charAt(0).toUpperCase();
+            const avatarChar = (userData.username || 'U').charAt(0).toUpperCase();
+            document.getElementById('header-avatar').textContent = avatarChar;
+            document.getElementById('profile-page-avatar').textContent = avatarChar;
         }
 
-        // --- Authentication State Listener ---
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
@@ -841,7 +853,6 @@
                     showPage('page-timer');
                     setupRealtimeListeners();
                     loadDailyTotal();
-                    initCharts();
                 }
             } else {
                 currentUser = null;
@@ -849,28 +860,142 @@
             }
         });
 
-        // --- Realtime Data Listeners ---
         function setupRealtimeListeners() {
             if (!currentUser) return;
             const groupsCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'groups');
+            const usersCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'users');
             const userDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
             const subjectsCollectionRef = collection(userDocRef, 'subjects');
+            const sessionsCollectionRef = collection(userDocRef, 'sessions');
+            const plannerTasksRef = collection(userDocRef, 'plannerTasks');
 
             onSnapshot(groupsCollectionRef, () => renderAvailableGroups());
             onSnapshot(userDocRef, (doc) => {
                 renderJoinedGroups();
-                if (doc.exists()) {
-                    updateProfileUI(doc.data());
-                }
+                if (doc.exists()) updateProfileUI(doc.data());
             });
             onSnapshot(subjectsCollectionRef, (snapshot) => {
                 const subjects = [];
                 snapshot.forEach(doc => subjects.push({ id: doc.id, ...doc.data() }));
                 renderSubjectSelectionList(subjects);
             });
+            onSnapshot(usersCollectionRef, () => renderLeaderboard('weekly'));
+            onSnapshot(query(sessionsCollectionRef, orderBy("endedAt", "desc")), (snapshot) => {
+                const sessions = [];
+                snapshot.forEach(doc => sessions.push(doc.data()));
+                renderStatsPage(sessions);
+            });
+            onSnapshot(query(plannerTasksRef, orderBy("date")), (snapshot) => {
+                const tasks = [];
+                snapshot.forEach(doc => tasks.push({ id: doc.id, ...doc.data() }));
+                renderPlanner(tasks);
+            });
+        }
+        
+        async function renderLeaderboard(period = 'weekly') {
+            document.querySelectorAll('.ranking-tab-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.period === period);
+            });
+
+            const container = document.getElementById('ranking-list');
+            container.innerHTML = '<div class="text-center text-gray-500 py-8"><i class="fas fa-spinner fa-spin fa-2x"></i></div>';
+
+            const usersCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'users');
+            const usersSnapshot = await getDocs(usersCollectionRef);
+
+            const userPromises = usersSnapshot.docs.map(async (userDoc) => {
+                const userData = userDoc.data();
+                const userRef = doc(db, 'artifacts', appId, 'users', userDoc.id);
+                const sessionsRef = collection(userRef, 'sessions');
+
+                const now = new Date();
+                let startDate;
+                switch (period) {
+                    case 'daily':
+                        startDate = new Date(now.setHours(0, 0, 0, 0));
+                        break;
+                    case 'monthly':
+                        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                        break;
+                    case 'weekly':
+                    default:
+                        startDate = new Date();
+                        startDate.setDate(startDate.getDate() - 7);
+                        break;
+                }
+
+                const q = query(sessionsRef, where("endedAt", ">=", startDate));
+                const sessionsSnapshot = await getDocs(q);
+                
+                let totalSeconds = 0;
+                sessionsSnapshot.forEach(sessionDoc => {
+                    totalSeconds += sessionDoc.data().durationSeconds;
+                });
+                
+                return {
+                    username: userData.username || 'Anonymous',
+                    email: userData.email,
+                    totalStudySeconds: totalSeconds
+                };
+            });
+
+            const userScores = await Promise.all(userPromises);
+            userScores.sort((a, b) => b.totalStudySeconds - a.totalStudySeconds);
+
+            container.innerHTML = userScores.map((user, index) => {
+                const rank = index + 1;
+                let rankClass = '';
+                if (rank === 1) rankClass = 'rank-1';
+                if (rank === 2) rankClass = 'rank-2';
+                if (rank === 3) rankClass = 'rank-3';
+
+                return `
+                    <div class="ranking-item ${currentUser.email === user.email ? 'bg-blue-900/30' : ''}">
+                        <div class="rank ${rankClass}">${rank}</div>
+                        <div class="user-avatar bg-gray-600">${(user.username || 'U').charAt(0).toUpperCase()}</div>
+                        <div class="user-info">
+                            <div class="user-name">${user.username}</div>
+                            <div class="user-time">${formatTime(user.totalStudySeconds, false)} total</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
 
-        // --- Group Rendering ---
+        function renderStatsPage(sessions) {
+            const weeklyData = Array(7).fill(0);
+            const subjectData = {};
+            let totalSecondsThisWeek = 0;
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const oneWeekAgo = new Date(today);
+            oneWeekAgo.setDate(today.getDate() - 7);
+
+            sessions.forEach(session => {
+                const sessionDate = session.endedAt?.toDate();
+                if (sessionDate && sessionDate >= oneWeekAgo) {
+                    const dayIndex = (sessionDate.getDay() + 6) % 7; // Monday = 0
+                    weeklyData[dayIndex] += session.durationSeconds;
+                    totalSecondsThisWeek += session.durationSeconds;
+                }
+                if (session.subject) {
+                    subjectData[session.subject] = (subjectData[session.subject] || 0) + session.durationSeconds;
+                }
+            });
+
+            if (charts.weekly) charts.weekly.destroy();
+            const weeklyCtx = document.getElementById('weeklyChart').getContext('2d');
+            charts.weekly = new Chart(weeklyCtx, { type: 'bar', data: { labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], datasets: [{ label: 'Study Time (hours)', data: weeklyData.map(s => s / 3600), backgroundColor: '#3B82F6' }] }, options: { scales: { y: { beginAtZero: true, ticks: { color: '#9CA3AF' }, grid: { color: '#374151' } }, x: { ticks: { color: '#9CA3AF' }, grid: { color: '#374151' } } }, plugins: { legend: { display: false } } } });
+
+            if (charts.subject) charts.subject.destroy();
+            const subjectCtx = document.getElementById('subjectChart').getContext('2d');
+            charts.subject = new Chart(subjectCtx, { type: 'doughnut', data: { labels: Object.keys(subjectData), datasets: [{ data: Object.values(subjectData), backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899'], borderWidth: 0 }] }, options: { plugins: { legend: { position: 'right', labels: { color: '#E5E7EB' } } } } });
+
+            const dailyAvgSeconds = totalSecondsThisWeek / 7;
+            document.getElementById('daily-average').textContent = formatTime(dailyAvgSeconds, false);
+        }
+        
         async function renderJoinedGroups() {
             if (!currentUser) return;
             const userDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
@@ -986,6 +1111,42 @@
                 </div>
             `).join('');
         }
+        
+        function renderPlanner(tasks) {
+            const container = document.getElementById('planner-list');
+            if (tasks.length === 0) {
+                container.innerHTML = `<div class="text-center text-gray-500 py-8">No tasks scheduled. Add one to get started!</div>`;
+                return;
+            }
+
+            const groupedTasks = tasks.reduce((acc, task) => {
+                const date = task.date;
+                if (!acc[date]) {
+                    acc[date] = [];
+                }
+                acc[date].push(task);
+                return acc;
+            }, {});
+
+            container.innerHTML = Object.keys(groupedTasks).sort().map(dateStr => {
+                const date = new Date(dateStr + 'T00:00:00');
+                const dayHeader = `
+                    <div class="day-header">
+                        <span>${date.toLocaleDateString(undefined, { weekday: 'long' })}</span>
+                        <span>${date.toLocaleDateString(undefined, { month: 'long', day: 'numeric' })}</span>
+                    </div>
+                `;
+
+                const tasksHtml = groupedTasks[dateStr].map(task => `
+                    <div class="planner-task">
+                        <input type="checkbox" class="task-checkbox" data-task-id="${task.id}" ${task.completed ? 'checked' : ''}>
+                        <div class="task-name ${task.completed ? 'completed' : ''}">${task.name}</div>
+                    </div>
+                `).join('');
+
+                return `<div class="planner-day">${dayHeader}${tasksHtml}</div>`;
+            }).join('');
+        }
 
         // --- Event Listeners ---
         const ael = (id, event, callback) => {
@@ -1041,7 +1202,6 @@
             showPage('page-timer');
             setupRealtimeListeners();
             loadDailyTotal();
-            initCharts();
         });
 
         // Navigation
@@ -1213,6 +1373,44 @@
             if (e.target.classList.contains('edit-subject-btn')) {
                  e.stopPropagation();
                  alert("Edit functionality coming soon!");
+            }
+        });
+        
+        const addTaskModal = document.getElementById('add-task-modal');
+        ael('add-task-btn', 'click', () => addTaskModal.classList.add('active'));
+        addTaskModal.querySelector('.close-modal').addEventListener('click', () => addTaskModal.classList.remove('active'));
+
+        ael('add-task-form', 'submit', async (e) => {
+            e.preventDefault();
+            if (!currentUser) return;
+            const name = document.getElementById('add-task-name').value.trim();
+            const date = document.getElementById('add-task-date').value;
+            if (!name || !date) {
+                alert("Please provide a name and date for the task.");
+                return;
+            }
+            const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
+            const plannerTasksRef = collection(userRef, 'plannerTasks');
+            await addDoc(plannerTasksRef, { name, date, completed: false });
+            
+            addTaskModal.classList.remove('active');
+            document.getElementById('add-task-form').reset();
+        });
+
+        document.getElementById('planner-list').addEventListener('change', async (e) => {
+            if (e.target.classList.contains('task-checkbox')) {
+                const taskId = e.target.dataset.taskId;
+                const isCompleted = e.target.checked;
+                const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
+                const taskRef = doc(userRef, 'plannerTasks', taskId);
+                await updateDoc(taskRef, { completed: isCompleted });
+            }
+        });
+        
+        document.getElementById('ranking-period-tabs').addEventListener('click', (e) => {
+            if (e.target.classList.contains('ranking-tab-btn')) {
+                const period = e.target.dataset.period;
+                renderLeaderboard(period);
             }
         });
 
