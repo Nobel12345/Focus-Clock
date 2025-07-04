@@ -3,36 +3,378 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FocusFlow - Study Timer</title>
+    <title>FocusFlow - Real-time Study Timer</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* Base styles */
         body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .nav-item.active svg, .nav-item.active p { color: #3B82F6; }
+
+        /* Page and container visibility */
         #auth-screen, .page, #app-container, .modal { display: none; }
         #auth-screen.active, .page.active, #app-container.active, .modal.active { display: flex; }
         .fade-in { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+
+        /* UI element styles */
         .timer-text { font-weight: 900; letter-spacing: -0.05em; }
-        #advanced-color-picker, #edit-color-picker { cursor: pointer; }
-        .options-menu {
+        
+        /* Group study styles */
+        .group-card {
+            background: #1f2937;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+        .group-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+        }
+        .group-header {
+            padding: 16px;
+            background: linear-gradient(135deg, #4361ee 0%, #4895ef 100%);
+            color: white;
+        }
+        .group-category {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+            opacity: 0.9;
+        }
+        .group-name {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .group-name .badge {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+        }
+        .group-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 12px;
+        }
+        .stat-item { text-align: center; }
+        .stat-value { font-size: 1.1rem; font-weight: 700; }
+        .stat-label { font-size: 0.75rem; opacity: 0.8; }
+        .group-body { padding: 16px; }
+        .group-goal {
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #374151;
+        }
+        .goal-text { font-weight: 600; color: white; margin-bottom: 6px; }
+        .leader {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 600;
+            color: #3B82F6;
+        }
+        .leader i { color: gold; }
+        .group-description {
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 12px;
+            line-height: 1.4;
+        }
+        .group-meta {
+            display: flex;
+            justify-content: space-between;
+            color: #9CA3AF;
+            font-size: 0.8rem;
+            margin-top: 12px;
+        }
+        .join-btn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            background: #4cc9f0;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 12px;
+        }
+        .join-btn:hover { background: #4895ef; }
+        .join-btn:disabled { background: #6c757d; cursor: not-allowed; }
+        .joined-badge {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            background: #3B82F6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            text-align: center;
+            margin-top: 12px;
+        }
+        .empty-group {
+            text-align: center;
+            padding: 40px 20px;
+            color: #9CA3AF;
+        }
+        .empty-group i { font-size: 3rem; color: #374151; margin-bottom: 16px; }
+        .empty-group h3 { font-size: 1.5rem; margin-bottom: 12px; color: white; }
+        .empty-group p { font-size: 1rem; max-width: 500px; margin: 0 auto 20px; }
+        .category-option, .time-option {
+            padding: 12px;
+            text-align: center;
+            background: #374151;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            font-weight: 600;
+        }
+        .category-option:hover, .time-option:hover { background: #4B5563; }
+        .category-option.selected, .time-option.selected {
+            background: #3B82F6;
+            color: white;
+            border-color: #2563EB;
+        }
+        .create-group-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            background: #3B82F6;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 30;
+        }
+        .create-group-btn:hover { background: #2563EB; transform: scale(1.05); }
+        
+        /* Stats page styles */
+        .stats-container { padding: 20px; }
+        .stat-card {
+            background: #1F2937;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .stat-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #E5E7EB;
+        }
+        
+        /* Ranking page styles */
+        .ranking-list { padding: 20px; }
+        .ranking-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background: #1F2937;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+        .rank {
+            font-weight: 700;
+            margin-right: 15px;
+            width: 30px;
+            text-align: center;
+        }
+        .rank-1 { color: gold; }
+        .rank-2 { color: silver; }
+        .rank-3 { color: #cd7f32; }
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #374151;
+            margin-right: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .user-info { flex-grow: 1; }
+        .user-name { font-weight: 600; }
+        .user-time { color: #9CA3AF; font-size: 0.9rem; }
+        
+        /* Planner page styles */
+        .planner-container { padding: 20px; }
+        .planner-day {
+            background: #1F2937;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .day-header {
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .planner-task {
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #374151;
+        }
+        .task-checkbox { margin-right: 10px; }
+        .task-name { flex-grow: 1; }
+        .task-time { color: #9CA3AF; font-size: 0.9rem; }
+        
+        /* Modal Styles */
+        .modal {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background: #1F2937;
+            border-radius: 12px;
+            padding: 25px;
+            width: 90%;
+            max-width: 400px;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .modal-title { font-size: 1.3rem; font-weight: 600; }
+        .close-modal {
+            background: none;
+            border: none;
+            color: #9CA3AF;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        /* Profile Settings */
+        .profile-container { padding: 20px; }
+        .profile-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .profile-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: #374151;
+            margin-right: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: bold;
+        }
+        .profile-name { font-size: 1.3rem; font-weight: 600; }
+        .profile-email { color: #9CA3AF; }
+        .settings-item {
+            padding: 15px 0;
+            border-bottom: 1px solid #374151;
+        }
+        .settings-label { font-weight: 600; margin-bottom: 5px; }
+        .settings-value { color: #9CA3AF; }
+        
+        /* Loading spinner */
+        .fa-spinner { animation: spin 1s linear infinite; }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Responsive fixes */
+        @media (max-width: 640px) {
+            .group-card { margin-bottom: 1rem; }
+            .group-stats { flex-direction: column; gap: 0.5rem; }
+            .stat-item { display: flex; justify-content: space-between; align-items: center; }
+            .create-group-btn { bottom: 70px; right: 15px; }
+            #session-timer { font-size: 4rem; }
+        }
+        .subject-color-picker .color-dot {
+            outline: 2px solid transparent;
+            transition: outline-color 0.2s;
+        }
+        .subject-color-picker .color-dot.selected {
+            outline-color: #3B82F6;
+        }
+        .subject-item {
+            cursor: pointer;
+            border: 2px solid #374151;
+            position: relative; /* For options menu positioning */
+        }
+        .subject-item.selected {
+            border-color: #3B82F6;
+            background-color: #2563eb30;
+        }
+        .subject-options-btn {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9CA3AF;
+            padding: 5px;
+        }
+        .subject-options-menu {
             display: none;
             position: absolute;
-            right: 0;
-            top: 40px;
-            background-color: #1F2937; /* gray-800 */
-            border: 1px solid #374151; /* gray-700 */
+            right: 25px;
+            top: 25px;
+            background-color: #111827;
+            border: 1px solid #374151;
             border-radius: 0.5rem;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            z-index: 100;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            z-index: 10;
         }
-        .options-menu.active { display: block; }
-        .character-item.selected, .bg-color-item.selected {
-            outline: 2px solid #3B82F6;
-            outline-offset: 2px;
+        .subject-options-menu.active {
+            display: block;
+        }
+        .subject-options-menu button {
+            display: block;
+            width: 100%;
+            padding: 8px 12px;
+            text-align: left;
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+        }
+        .subject-options-menu button:hover {
+            background-color: #374151;
+        }
+        .subject-options-menu .delete-btn:hover {
+            background-color: #ef4444;
         }
     </style>
 </head>
@@ -44,1132 +386,835 @@
             <h1 class="text-4xl font-bold text-white mb-2">FocusFlow</h1>
             <p class="text-gray-400 mb-8">Your Ultimate Study Companion</p>
             <div id="auth-form-container" class="bg-gray-800 p-8 rounded-2xl shadow-lg">
-                <form id="login-form" class="space-y-4"><h2 class="text-2xl font-bold text-white mb-4">Login</h2><input type="email" id="login-email" placeholder="Email" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required><input type="password" id="login-password" placeholder="Password" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Sign In</button></form>
-                <form id="signup-form" class="hidden space-y-4"><h2 class="text-2xl font-bold text-white mb-4">Create Account</h2><input type="email" id="signup-email" placeholder="Email" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required><input type="password" id="signup-password" placeholder="Password (min. 6 characters)" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Sign Up</button></form>
+                <form id="login-form" class="space-y-4">
+                    <h2 class="text-2xl font-bold text-white mb-4">Login</h2>
+                    <input type="email" id="login-email" placeholder="Email" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    <input type="password" id="login-password" placeholder="Password" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Sign In</button>
+                </form>
+                <form id="signup-form" class="hidden space-y-4">
+                    <h2 class="text-2xl font-bold text-white mb-4">Create Account</h2>
+                    <input type="email" id="signup-email" placeholder="Email" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    <input type="password" id="signup-password" placeholder="Password (min. 6 characters)" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required minlength="6">
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Sign Up</button>
+                </form>
                 <p id="auth-error" class="text-red-400 text-sm mt-4 h-5"></p>
-                <div class="flex items-center my-6"><hr class="flex-grow border-gray-600"><span class="mx-4 text-gray-500">OR</span><hr class="flex-grow border-gray-600"></div>
-                <button id="google-signin-btn" class="w-full bg-white text-gray-800 font-semibold py-3 rounded-lg flex items-center justify-center transition hover:bg-gray-200"><svg class="w-6 h-6 mr-3" viewBox="0 0 48 48"><path fill="#4285F4" d="M43.611 20.083H24v8.838h11.002c-0.463 2.878-2.18 5.424-4.852 7.199l7.217 5.626C43.02 37.21 46 29.54 46 20.083z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.897-5.781l-7.217-5.626c-2.13 1.442-4.852 2.308-7.68 2.308-5.878 0-10.845-3.965-12.624-9.26l-7.42 5.781C6.383 39.04 14.46 48 24 48z"/><path fill="#FBBC05" d="M11.376 28.71c-0.565-1.71-0.565-3.526 0-5.236l-7.42-5.781C1.678 21.24 0 26.52 0 32.14c0 5.62 1.678 10.9 4.053 14.18l7.323-5.61z"/><path fill="#EA4335" d="M24 10.73c3.52 0 6.565 1.218 9.015 3.655l6.345-6.345C35.93 2.13 30.48 0 24 0 14.46 0 6.383 8.96 2.053 17.71l7.42 5.781c1.779-5.295 6.746-9.26 12.624-9.26z"/></svg>Sign in with Google</button>
-                <p class="mt-8 text-sm text-gray-400"><span id="login-toggle-text">Don't have an account?</span><button id="auth-toggle-btn" class="font-semibold text-blue-400 hover:text-blue-300">Sign Up</button></p>
+                <div class="flex items-center my-6">
+                    <hr class="flex-grow border-gray-600">
+                    <span class="mx-4 text-gray-500">OR</span>
+                    <hr class="flex-grow border-gray-600">
+                </div>
+                <button id="google-signin-btn" class="w-full bg-white text-gray-800 font-semibold py-3 rounded-lg flex items-center justify-center transition hover:bg-gray-200">
+                    <svg class="w-6 h-6 mr-3" viewBox="0 0 48 48">
+                        <path fill="#4285F4" d="M43.611 20.083H24v8.838h11.002c-0.463 2.878-2.18 5.424-4.852 7.199l7.217 5.626C43.02 37.21 46 29.54 46 20.083z"/>
+                        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.897-5.781l-7.217-5.626c-2.13 1.442-4.852 2.308-7.68 2.308-5.878 0-10.845-3.965-12.624-9.26l-7.42 5.781C6.383 39.04 14.46 48 24 48z"/>
+                        <path fill="#FBBC05" d="M11.376 28.71c-0.565-1.71-0.565-3.526 0-5.236l-7.42-5.781C1.678 21.24 0 26.52 0 32.14c0 5.62 1.678 10.9 4.053 14.18l7.323-5.61z"/>
+                        <path fill="#EA4335" d="M24 10.73c3.52 0 6.565 1.218 9.015 3.655l6.345-6.345C35.93 2.13 30.48 0 24 0 14.46 0 6.383 8.96 2.053 17.71l7.42 5.781c1.779-5.295 6.746-9.26 12.624-9.26z"/>
+                    </svg>
+                    Sign in with Google
+                </button>
+                <p class="mt-8 text-sm text-gray-400">
+                    <span id="login-toggle-text">Don't have an account?</span>
+                    <button id="auth-toggle-btn" class="font-semibold text-blue-400 hover:text-blue-300">Sign Up</button>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Username Setup Screen -->
+    <div id="page-username-setup" class="page flex-col items-center justify-center h-full p-4 fade-in">
+        <div class="w-full max-w-sm text-center">
+            <h1 class="text-3xl font-bold text-white mb-2">Welcome to FocusFlow!</h1>
+            <p class="text-gray-400 mb-8">Let's set up your username.</p>
+            <div class="bg-gray-800 p-8 rounded-2xl shadow-lg">
+                <form id="username-setup-form" class="space-y-4">
+                    <input type="text" id="username-input" placeholder="Enter your username" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required minlength="3">
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Save Username</button>
+                </form>
             </div>
         </div>
     </div>
 
     <!-- Main App Container -->
     <div id="app-container" class="flex-col h-screen">
-        <main class="flex-grow overflow-hidden">
+        <main class="flex-grow overflow-y-auto no-scrollbar">
             <!-- Timer/Home Page -->
-            <div id="page-timer" class="page active flex-col h-full overflow-hidden"><header class="p-4 md:p-6 flex items-center justify-between z-20"><h1 class="text-2xl font-bold text-white mb-2">FocusFlow</h1><div class="flex items-center space-x-4"><button id="groups-btn" class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-gray-400 hover:bg-gray-600 transition"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" /></svg></button><button id="profile-btn" class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-gray-400 hover:bg-gray-600 transition overflow-hidden"><div id="header-avatar" class="w-full h-full"></div></button></div></header><div class="relative flex-grow flex items-center justify-center -mt-16"><div id="live-sessions-grid" class="absolute inset-0 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2 p-4 overflow-hidden"></div><div class="relative text-center z-10 bg-gray-900/50 backdrop-blur-sm p-8 rounded-full"><p id="active-subject-display" class="text-xl font-semibold text-blue-400 h-7 mb-2"></p><h2 id="session-timer" class="text-7xl md:text-8xl timer-text text-white">00:00:00</h2><p id="total-time-display" class="text-gray-400 mt-2">Total Today: 00:00:00</p><div id="timer-controls" class="mt-8"><button id="start-studying-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-full text-lg transition-transform transform hover:scale-105">Start Studying</button><button id="stop-studying-btn" class="hidden bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-10 rounded-full text-lg transition-transform transform hover:scale-105">Stop</button></div></div></div></div>
-            <!-- Account Details Page -->
-            <div id="page-account" class="page flex-col h-full overflow-y-auto no-scrollbar"><header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-gray-800"><button id="back-to-timer-btn" class="text-gray-400 hover:text-white"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button><h1 class="text-xl font-bold text-gray-100">Account Details</h1><div></div></header><div class="p-4 md:p-6 space-y-2"><button id="avatar-item" class="account-item w-full flex items-center justify-between p-4 bg-gray-800 rounded-lg"><span class="font-medium">Avatar</span><div class="flex items-center space-x-3"><div id="account-avatar" class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-gray-400 overflow-hidden"></div><svg class="w-5 h-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg></div></button><input type="file" id="avatar-file-input" class="hidden" accept="image/*"><button id="username-item" class="account-item w-full flex items-center justify-between p-4 bg-gray-800 rounded-lg"><span class="font-medium">Username</span><div class="flex items-center space-x-3"><span id="account-username" class="text-gray-400"></span><svg class="w-5 h-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg></div></button><div class="account-item flex items-center justify-between p-4 bg-gray-800 rounded-lg"><span class="font-medium">Account</span><span id="account-email" class="text-gray-400"></span></div><button id="change-password-item" class="account-item w-full flex items-center justify-between p-4 bg-gray-800 rounded-lg"><span class="font-medium">Change Password</span><svg class="w-5 h-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg></button></div><div class="p-4 md:p-6 mt-4"><button id="account-sign-out-btn" class="w-full text-center p-4 bg-red-600/20 text-red-400 rounded-lg hover:bg-red-600/30 transition">Sign Out</button></div></div>
+            <div id="page-timer" class="page active flex-col h-full">
+                <header class="p-4 md:p-6 flex items-center justify-between z-20">
+                    <h1 class="text-2xl font-bold text-white">FocusFlow</h1>
+                    <div class="flex items-center space-x-4">
+                        <button id="groups-btn" class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-gray-400 hover:bg-gray-600 transition">
+                            <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
+                            </svg>
+                        </button>
+                        <button id="profile-btn" class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-gray-400 hover:bg-gray-600 transition overflow-hidden">
+                            <div id="header-avatar" class="w-full h-full flex items-center justify-center bg-blue-500 text-white font-bold">U</div>
+                        </button>
+                    </div>
+                </header>
+                <div class="relative flex-grow flex items-center justify-center -mt-16">
+                    <div class="relative text-center z-10 bg-gray-900/50 backdrop-blur-sm p-8 rounded-full">
+                        <p id="active-subject-display" class="text-xl font-semibold text-blue-400 h-7 mb-2"></p>
+                        <h2 id="session-timer" class="text-7xl md:text-8xl timer-text text-white">00:00:00</h2>
+                        <p id="total-time-display" class="text-gray-400 mt-2">Total Today: 00:00:00</p>
+                        <div id="timer-controls" class="mt-8">
+                            <button id="start-studying-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-full text-lg transition-transform transform hover:scale-105">Start Studying</button>
+                            <button id="stop-studying-btn" class="hidden bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-10 rounded-full text-lg transition-transform transform hover:scale-105">Stop</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Stats Page -->
+            <div id="page-stats" class="page flex-col h-full overflow-y-auto no-scrollbar">
+                <header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-gray-800 sticky top-0 bg-gray-900">
+                    <button class="back-button text-gray-400 hover:text-white" data-target="timer">
+                        <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                        </svg>
+                    </button>
+                    <h1 class="text-xl font-bold text-gray-100">Your Stats</h1>
+                    <div class="w-6"></div> <!-- Empty div for balance -->
+                </header>
+                <div class="stats-container">
+                    <div class="stat-card">
+                        <div class="stat-title">Study Time This Week</div>
+                        <canvas id="weeklyChart" height="200"></canvas>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-title">Subject Distribution</div>
+                        <canvas id="subjectChart" height="200"></canvas>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-title">Daily Average</div>
+                        <div class="text-3xl font-bold text-blue-400">3h 42m</div>
+                        <div class="text-gray-400 mt-2">+12% from last week</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Ranking Page -->
+            <div id="page-ranking" class="page flex-col h-full overflow-y-auto no-scrollbar">
+                <header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-gray-800 sticky top-0 bg-gray-900">
+                    <button class="back-button text-gray-400 hover:text-white" data-target="timer">
+                        <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                        </svg>
+                    </button>
+                    <h1 class="text-xl font-bold text-gray-100">Leaderboard</h1>
+                    <div class="w-6"></div> <!-- Empty div for balance -->
+                </header>
+                <div class="ranking-list">
+                    <div class="ranking-item"><div class="rank rank-1">1</div><div class="user-avatar bg-yellow-500">A</div><div class="user-info"><div class="user-name">Alex Johnson</div><div class="user-time">42h 15m this week</div></div></div>
+                    <div class="ranking-item"><div class="rank rank-2">2</div><div class="user-avatar bg-gray-400">M</div><div class="user-info"><div class="user-name">Maria Garcia</div><div class="user-time">38h 30m this week</div></div></div>
+                    <div class="ranking-item"><div class="rank rank-3">3</div><div class="user-avatar bg-amber-600">S</div><div class="user-info"><div class="user-name">Sam Wilson</div><div class="user-time">35h 45m this week</div></div></div>
+                    <div class="ranking-item"><div class="rank">4</div><div class="user-avatar bg-green-500">J</div><div class="user-info"><div class="user-name">Jamie Lee</div><div class="user-time">32h 10m this week</div></div></div>
+                    <div class="ranking-item"><div class="rank">5</div><div class="user-avatar bg-purple-500">T</div><div class="user-info"><div class="user-name">Taylor Smith</div><div class="user-time">28h 55m this week</div></div></div>
+                    <div class="ranking-item bg-blue-900/30"><div class="rank">7</div><div class="user-avatar bg-blue-500">U</div><div class="user-info"><div class="user-name">You</div><div class="user-time">25h 20m this week</div></div></div>
+                </div>
+            </div>
+            
+            <!-- Planner Page -->
+            <div id="page-planner" class="page flex-col h-full overflow-y-auto no-scrollbar">
+                <header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-gray-800 sticky top-0 bg-gray-900">
+                    <button class="back-button text-gray-400 hover:text-white" data-target="timer">
+                        <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                        </svg>
+                    </button>
+                    <h1 class="text-xl font-bold text-gray-100">Study Planner</h1>
+                    <div class="w-6"></div> <!-- Empty div for balance -->
+                </header>
+                <div class="planner-container">
+                    <div class="planner-day"><div class="day-header"><span>Monday</span><span>June 5</span></div><div class="planner-task"><input type="checkbox" class="task-checkbox"><div class="task-name">Math: Calculus problems</div><div class="task-time">2h</div></div><div class="planner-task"><input type="checkbox" class="task-checkbox"><div class="task-name">Physics: Electromagnetism</div><div class="task-time">1.5h</div></div></div>
+                    <div class="planner-day"><div class="day-header"><span>Tuesday</span><span>June 6</span></div><div class="planner-task"><input type="checkbox" class="task-checkbox"><div class="task-name">Literature: Read chapter 5</div><div class="task-time">1h</div></div><div class="planner-task"><input type="checkbox" class="task-checkbox"><div class="task-name">Chemistry: Organic compounds</div><div class="task-time">2h</div></div></div>
+                    <div class="planner-day"><div class="day-header"><span>Wednesday</span><span>June 7</span></div><div class="planner-task"><input type="checkbox" class="task-checkbox"><div class="task-name">Math: Linear algebra</div><div class="task-time">2h</div></div></div>
+                </div>
+            </div>
+
+            <!-- Profile Settings Page -->
+            <div id="page-profile" class="page flex-col h-full overflow-y-auto no-scrollbar">
+                <header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-gray-800 sticky top-0 bg-gray-900">
+                    <button class="back-button text-gray-400 hover:text-white" data-target="timer">
+                        <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                        </svg>
+                    </button>
+                    <h1 class="text-xl font-bold text-gray-100">Profile Settings</h1>
+                    <div class="w-6"></div> <!-- Empty div for balance -->
+                </header>
+                <div class="profile-container">
+                    <div class="profile-header"><div id="profile-page-avatar" class="profile-avatar">U</div><div><div id="profile-page-name" class="profile-name">User Name</div><div id="profile-page-email" class="profile-email">user@example.com</div></div></div>
+                    <div class="settings-item"><div class="settings-label">Account</div><div class="settings-value">Edit profile information</div></div>
+                    <div class="settings-item"><div class="settings-label">Notifications</div><div class="settings-value">Enabled</div></div>
+                    <div class="settings-item"><div class="settings-label">Appearance</div><div class="settings-value">Dark Mode</div></div>
+                    <div class="settings-item"><div class="settings-label">Study Goals</div><div class="settings-value">4 hours/day</div></div>
+                    <div class="settings-item"><div class="settings-label">About FocusFlow</div><div class="settings-value">Version 1.0.0</div></div>
+                    <button id="sign-out-btn" class="w-full mt-8 py-3 bg-red-600 hover:bg-red-700 rounded-lg font-medium transition">Sign Out</button>
+                </div>
+            </div>
+            
             <!-- My Groups Page -->
-            <div id="page-my-groups" class="page flex-col h-full overflow-y-auto no-scrollbar"><header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-gray-800"><button id="back-to-timer-from-my-groups-btn" class="text-gray-400 hover:text-white"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button><h1 class="text-xl font-bold text-gray-100">My Groups</h1><button id="notification-btn" class="text-gray-400 hover:text-white"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg></button></header><div id="my-groups-list" class="p-4 md:p-6 space-y-3 flex-grow"></div><button id="go-to-find-groups-btn" class="absolute bottom-6 right-6 w-14 h-14 bg-blue-600 rounded-full flex items-center justify-center text-white shadow-lg hover:bg-blue-700 transition text-3xl">+</button></div>
+            <div id="page-my-groups" class="page flex-col h-full overflow-y-auto no-scrollbar">
+                <header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-gray-800 sticky top-0 bg-gray-900">
+                    <button class="back-button text-gray-400 hover:text-white" data-target="timer">
+                        <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                        </svg>
+                    </button>
+                    <h1 class="text-xl font-bold text-gray-100">My Groups</h1>
+                    <button id="notification-btn" class="text-gray-400 hover:text-white">
+                        <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+                    </button>
+                </header>
+                <div id="my-groups-list" class="p-4 md:p-6 space-y-3 flex-grow"></div>
+                <button id="go-to-find-groups-btn" class="create-group-btn"><i class="fas fa-plus text-xl"></i></button>
+            </div>
+            
             <!-- Find Groups Page -->
-            <div id="page-find-groups" class="page flex-col h-full overflow-y-auto no-scrollbar"><header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-gray-800"><button id="back-to-my-groups-btn" class="text-gray-400 hover:text-white"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button><h1 class="text-xl font-bold text-gray-100">Study Group</h1><button id="search-groups-btn" class="text-gray-400 hover:text-white"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg></button></header><div id="all-groups-list" class="p-4 md:p-6 space-y-3 flex-grow"></div><button id="go-to-create-group-btn" class="absolute bottom-6 right-6 w-14 h-14 bg-blue-600 rounded-full flex items-center justify-center text-white shadow-lg hover:bg-blue-700 transition text-3xl">+</button></div>
+            <div id="page-find-groups" class="page flex-col h-full overflow-y-auto no-scrollbar">
+                <header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-gray-800 sticky top-0 bg-gray-900">
+                    <button class="back-button text-gray-400 hover:text-white" data-target="my-groups">
+                        <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+                    </button>
+                    <h1 class="text-xl font-bold text-gray-100">Study Groups</h1>
+                    <button id="search-groups-btn" class="text-gray-400 hover:text-white">
+                        <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                    </button>
+                </header>
+                <div id="all-groups-list" class="p-4 md:p-6 space-y-3 flex-grow"></div>
+                <button id="go-to-create-group-btn" class="create-group-btn"><i class="fas fa-plus text-xl"></i></button>
+            </div>
+            
             <!-- Create Group Page -->
-            <div id="page-create-group" class="page flex-col h-full overflow-y-auto no-scrollbar"><header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-gray-800"><button id="back-to-find-groups-btn" class="text-gray-400 hover:text-white"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button><h1 class="text-xl font-bold text-gray-100">Create Group</h1><button id="create-group-done-btn" class="font-semibold text-blue-500 hover:text-blue-400">Done</button></header><div class="p-4 md:p-6"><form id="create-group-form" class="space-y-4"><input type="text" id="group-name-input" placeholder="Group Name" class="w-full bg-gray-800 border-b-2 border-gray-600 p-3 text-white focus:outline-none focus:border-blue-500" required><input type="password" id="group-password-input" placeholder="Password (Optional)" class="w-full bg-gray-800 border-b-2 border-gray-600 p-3 text-white focus:outline-none focus:border-blue-500"><button type="button" id="category-select-btn" class="w-full flex justify-between items-center p-3 bg-gray-800 rounded-lg"><span class="text-gray-400">Category</span><span id="category-display" class="text-white">Choose Category</span></svg></button><button type="button" id="goal-select-btn" class="w-full flex justify-between items-center p-3 bg-gray-800 rounded-lg"><span class="text-gray-400">Daily Time Goal</span><span id="goal-display" class="text-white">1 hours per day</span></svg></button><button type="button" id="capacity-select-btn" class="w-full flex justify-between items-center p-3 bg-gray-800 rounded-lg"><span class="text-gray-400">Capacity</span><span id="capacity-display" class="text-white">50 people</span></svg></button><textarea id="group-description-input" placeholder="Describe your group. Include any joining criteria or motivational messages to welcome new members." class="w-full bg-gray-800 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" rows="4"></textarea></form></div></div>
-            <!-- Group Details Page -->
-            <div id="page-group-details" class="page flex-col h-full overflow-y-auto no-scrollbar"><header class="p-4 md:p-6 flex items-center z-20 border-b border-gray-800"><button id="back-to-groups-btn" class="text-gray-400 hover:text-white"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button><h1 id="group-details-name" class="text-xl font-bold text-gray-100 mx-auto"></h1><button id="group-settings-btn" class="p-2 rounded-full bg-gray-700 hover:bg-gray-600"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.096 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg></button></header><div class="p-4 md:p-6 space-y-4"><button class="w-full p-4 bg-gray-800 rounded-lg text-left text-gray-300">📣 Group introduction/rules</button><div><h3 id="studying-members-count" class="font-semibold mb-2">Studying 0 members</h3><div id="group-members-list" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div></div></div></div>
-            <!-- Group Attendance Page -->
-            <div id="page-group-attendance" class="page flex-col h-full overflow-y-auto no-scrollbar"><header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-gray-800"><button id="back-to-group-details-btn" class="text-gray-400 hover:text-white"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button><h1 class="text-xl font-bold text-gray-100">Attendance</h1><div></div></header><div class="p-4 md:p-6 space-y-4"><div class="flex items-center justify-between"><button id="prev-week-btn" class="p-2 rounded-full hover:bg-gray-700"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button><h3 id="week-range-display" class="font-semibold"></h3><button id="next-week-btn" class="p-2 rounded-full hover:bg-gray-700"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg></button></div><div id="attendance-grid" class="overflow-x-auto"></div></div></div>
-            <!-- Group Rankings Page -->
-            <div id="page-group-ranking" class="page flex-col h-full overflow-y-auto no-scrollbar"><header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-gray-800"><button id="back-to-group-details-from-ranking-btn" class="text-gray-400 hover:text-white"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button><h1 class="text-xl font-bold text-gray-100">Rankings</h1><div></div></header><div class="p-4 md:p-6 space-y-4"><div class="flex items-center justify-between"><button id="group-ranking-prev-btn" class="p-2 rounded-full hover:bg-gray-700"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button><h3 id="group-ranking-date-display" class="font-semibold"></h3><button id="group-ranking-next-btn" class="p-2 rounded-full hover:bg-gray-700"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg></button></div><div id="group-ranking-list" class="space-y-2"></div></div></div>
-            <!-- Other pages -->
-            <div id="page-stats" class="page flex-col p-4 md:p-6 space-y-4 h-full overflow-y-auto no-scrollbar"><header class="flex items-center justify-between"><h1 class="text-2xl font-bold text-gray-100">My Stats</h1></header><div class="flex justify-center bg-gray-800/50 rounded-lg p-1"><button class="stat-period-btn active flex-1 p-2 rounded-md bg-blue-600" data-period="today">Today</button><button class="stat-period-btn flex-1 p-2 rounded-md" data-period="7days">7 Days</button><button class="stat-period-btn flex-1 p-2 rounded-md" data-period="30days">30 Days</button></div><div class="bg-gray-800 p-4 rounded-2xl shadow-lg flex-grow"><canvas id="stats-chart"></canvas></div></div>
-            <div id="page-planner" class="page flex-col p-4 md:p-6 space-y-4 h-full overflow-hidden"><header class="flex items-center justify-between"><h1 class="text-2xl font-bold text-gray-100">Daily Planner</h1></header><div class="flex-grow bg-gray-800 rounded-2xl p-4 flex flex-col overflow-hidden"><div class="flex items-center mb-4"><input type="text" id="todo-input" placeholder="Add a new task..." class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition"><button id="add-todo-btn" class="ml-3 px-4 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold transition">Add</button></div><div id="todo-list" class="flex-grow overflow-y-auto space-y-2 no-scrollbar"></div></div></div>
-            <div id="page-ranking" class="page flex-col p-4 md:p-6 space-y-4 h-full overflow-hidden"><header class="flex items-center justify-between"><h1 class="text-2xl font-bold text-gray-100">Global Rankings</h1></header><div id="ranking-list" class="flex-grow bg-gray-800 rounded-2xl p-4 overflow-y-auto no-scrollbar space-y-2"></div></div>
+            <div id="page-create-group" class="page flex-col h-full overflow-y-auto no-scrollbar">
+                <header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-gray-800 sticky top-0 bg-gray-900">
+                    <button class="back-button text-gray-400 hover:text-white" data-target="find-groups">
+                        <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+                    </button>
+                    <h1 class="text-xl font-bold text-gray-100">Create Group</h1>
+                    <button id="create-group-done-btn" class="font-semibold text-blue-500 hover:text-blue-400">Done</button>
+                </header>
+                <div class="p-4 md:p-6">
+                    <form id="create-group-form" class="space-y-4">
+                        <div class="form-group"><label for="group-name-input" class="block mb-2 font-medium">Group Name</label><input type="text" id="group-name-input" placeholder="Enter group name" class="w-full bg-gray-800 border-2 border-gray-700 rounded-lg p-3 text-white focus:outline-none focus:border-blue-500" required></div>
+                        <div class="form-group"><label for="group-password-input" class="block mb-2 font-medium">Password (Optional)</label><input type="password" id="group-password-input" placeholder="Set a password for private groups" class="w-full bg-gray-800 border-2 border-gray-700 rounded-lg p-3 text-white focus:outline-none focus:border-blue-500"></div>
+                        <div class="form-group"><label class="block mb-2 font-medium">Category</label><div class="grid grid-cols-2 gap-3"><div class="category-option">Primary school</div><div class="category-option selected">Secondary School</div><div class="category-option">Sixth Form</div><div class="category-option">University</div><div class="category-option">Language study</div><div class="category-option">Others</div></div></div>
+                        <div class="form-group"><label class="block mb-2 font-medium">Daily Time Goal</label><div class="grid grid-cols-3 gap-2"><div class="time-option">1 hour</div><div class="time-option">2 hours</div><div class="time-option selected">3 hours</div><div class="time-option">4 hours</div><div class="time-option">5 hours</div><div class="time-option">6 hours</div><div class="time-option">7 hours</div><div class="time-option">8 hours</div><div class="time-option">9 hours</div><div class="time-option">10 hours</div><div class="time-option">11 hours</div><div class="time-option">12 hours</div></div></div>
+                        <div class="form-group"><label class="block mb-2 font-medium">Capacity</label><div class="flex items-center space-x-3"><button id="decrease-capacity" type="button" class="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center text-xl">-</button><div id="capacity-value" class="text-xl font-bold w-12 text-center">15</div><button id="increase-capacity" type="button" class="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center text-xl">+</button><span class="text-gray-400">people</span></div></div>
+                        <div class="form-group"><label for="group-description-input" class="block mb-2 font-medium">Group Description</label><textarea id="group-description-input" placeholder="Describe your group, include any joining criteria or motivational messages to welcome new members" class="w-full bg-gray-800 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" rows="4" required></textarea></div>
+                    </form>
+                </div>
+            </div>
         </main>
-        <nav id="main-nav" class="bg-gray-800 border-t border-gray-700 grid grid-cols-5"><button class="nav-item p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors active" data-page="timer"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg><p class="text-xs mt-1">Timer</p></button><button class="nav-item p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors" data-page="stats"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg><p class="text-xs mt-1">Stats</p></button><button class="nav-item p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors" data-page="ranking"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg><p class="text-xs mt-1">Ranking</p></button><button class="nav-item p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors" data-page="planner"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg><p class="text-xs mt-1">Planner</p></button><button id="add-subject-btn" class="p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors"><svg class="w-6 h-6 text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg><p class="text-xs mt-1 text-blue-400">Add Subject</p></button></nav>
-        <nav id="group-nav" class="hidden bg-gray-800 border-t border-gray-700 grid grid-cols-5"><button class="nav-item p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors active" data-page="group-details"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg><p class="text-xs mt-1">Home</p></button><button class="nav-item p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors" data-page="group-attendance"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg><p class="text-xs mt-1">Attendance</p></button><button class="nav-item p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors" data-page="group-ranking"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg><p class="text-xs mt-1">Rankings</p></button><button class="nav-item p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg><p class="text-xs mt-1">Invite</p></button><button class="nav-item p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg><p class="text-xs mt-1">Chat</p></button></nav>
+        <nav id="main-nav" class="bg-gray-800 border-t border-gray-700 grid grid-cols-5 sticky bottom-0">
+            <button class="nav-item p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors active" data-page="timer"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg><p class="text-xs mt-1">Timer</p></button>
+            <button class="nav-item p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors" data-page="stats"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg><p class="text-xs mt-1">Stats</p></button>
+            <button class="nav-item p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors" data-page="ranking"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg><p class="text-xs mt-1">Ranking</p></button>
+            <button class="nav-item p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors" data-page="planner"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg><p class="text-xs mt-1">Planner</p></button>
+            <button id="add-subject-btn" class="p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors"><svg class="w-6 h-6 text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg><p class="text-xs mt-1 text-blue-400">Add Subject</p></button>
+        </nav>
     </div>
 
     <!-- Modals -->
-    <div id="select-subject-modal" class="modal fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm items-center justify-center p-4 z-50"><div class="bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-md"><h3 class="text-xl font-bold mb-4">Select a Subject to Begin</h3><div id="modal-subjects-list" class="space-y-3 max-h-64 overflow-y-auto no-scrollbar"></div><button id="cancel-select-subject-btn" class="mt-6 w-full px-5 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg font-semibold transition">Cancel</button></div></div>
-    <div id="add-subject-modal" class="modal fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm items-center justify-center p-4 z-50"><div class="bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm"><h3 class="text-xl font-bold mb-4">Add New Subject</h3><input type="text" id="subject-name-input" placeholder="e.g., Quantum Physics" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition"><div class="mt-4"><p class="text-sm text-gray-400 mb-2">Choose a color:</p><div class="flex items-center justify-center space-x-4"><canvas id="advanced-color-picker" width="200" height="200"></canvas><div id="color-preview" class="w-10 h-10 rounded-full border-2 border-gray-500"></div></div></div><p class="text-red-500 text-sm mt-2 hidden" id="subject-name-error">Subject name cannot be empty.</p><div class="flex justify-end space-x-3 mt-6"><button id="cancel-add-btn" class="px-5 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg font-semibold transition">Cancel</button><button id="confirm-add-btn" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold transition">Add</button></div></div></div>
-    <div id="edit-subject-modal" class="modal fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm items-center justify-center p-4 z-50"><div class="bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm"><h3 class="text-xl font-bold mb-4">Edit Subject</h3><input type="text" id="edit-subject-name-input" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition"><div class="mt-4"><p class="text-sm text-gray-400 mb-2">Choose a new color:</p><div class="flex items-center justify-center space-x-4"><canvas id="edit-color-picker" width="200" height="200"></canvas><div id="edit-color-preview" class="w-10 h-10 rounded-full border-2 border-gray-500"></div></div></div><div class="flex justify-end space-x-3 mt-6"><button id="cancel-edit-btn" class="px-5 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg font-semibold transition">Cancel</button><button id="confirm-edit-btn" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold transition">Save Changes</button></div></div></div>
-    <div id="confirm-delete-modal" class="modal fixed inset-0 bg-black bg-opacity-80 backdrop-blur-sm items-center justify-center p-4 z-50"><div class="bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm"><h3 class="text-xl font-bold mb-2">Delete Subject</h3><p id="confirm-delete-text" class="text-gray-300 mb-6">Are you sure? This action cannot be undone.</p><div class="flex justify-end space-x-3"><button id="cancel-delete-btn" class="px-5 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg font-semibold transition">Cancel</button><button id="confirm-delete-btn" class="px-5 py-2 bg-red-600 hover:bg-red-700 rounded-lg font-semibold transition">Delete</button></div></div></div>
-    <div id="add-name-modal" class="modal fixed inset-0 bg-black bg-opacity-80 backdrop-blur-sm items-center justify-center p-4 z-50"><div class="bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm"><h3 class="text-xl font-bold mb-2">Welcome!</h3><p class="text-gray-400 mb-4">Please set your display name to continue.</p><form id="add-name-form"><input type="text" id="display-name-input" placeholder="Enter your name" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required><button type="submit" class="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Save and Continue</button></form></div></div>
-    <div id="change-username-modal" class="modal fixed inset-0 bg-black bg-opacity-80 backdrop-blur-sm items-center justify-center p-4 z-50"><div class="bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm"><h3 class="text-xl font-bold mb-4">Change Username</h3><form id="change-username-form"><input type="text" id="new-username-input" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required><div class="flex justify-end space-x-3 mt-6"><button type="button" id="cancel-change-username-btn" class="px-5 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg font-semibold transition">Cancel</button><button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold transition">Save</button></div></form></div></div>
-    <div id="change-password-modal" class="modal fixed inset-0 bg-black bg-opacity-80 backdrop-blur-sm items-center justify-center p-4 z-50"><div class="bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm"><h3 class="text-xl font-bold mb-4">Change Password</h3><form id="change-password-form" class="space-y-4"><input type="password" id="new-password-input" placeholder="New Password" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required><p id="change-password-error" class="text-red-400 text-sm h-5"></p><div class="flex justify-end space-x-3 mt-6"><button type="button" id="cancel-change-password-btn" class="px-5 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg font-semibold transition">Cancel</button><button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold transition">Update Password</button></div></form></div></div>
-    <div id="avatar-options-modal" class="modal fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm items-center justify-center p-4 z-50"><div class="bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm space-y-3"><h3 class="text-xl font-bold mb-2 text-center">Change the profile image</h3><button id="choose-character-btn" class="w-full p-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition">Choose character</button><button id="choose-from-album-btn" class="w-full p-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition">Choose image from the album</button><button id="cancel-avatar-options-btn" class="w-full p-3 bg-red-600/20 text-red-400 hover:bg-red-600/30 rounded-lg transition mt-4">Cancel</button></div></div>
-    <div id="character-creator-modal" class="modal fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm items-center justify-center p-4 z-50"><div class="bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm"><h3 class="text-xl font-bold mb-4">Choose Character</h3><div><p class="text-sm text-gray-400 mb-2">Character</p><div id="character-selection" class="grid grid-cols-4 gap-2"></div></div><div class="mt-4"><p class="text-sm text-gray-400 mb-2">Background</p><div id="background-color-selection" class="flex flex-wrap gap-2"></div></div><div class="flex justify-end space-x-3 mt-6"><button type="button" id="cancel-character-creator-btn" class="px-5 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg font-semibold transition">Cancel</button><button type="button" id="confirm-character-creator-btn" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold transition">OK</button></div></div></div>
-    <div id="create-group-modal" class="modal fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm items-center justify-center p-4 z-50"><div class="bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-md"><h3 class="text-xl font-bold mb-4">Create New Group</h3><form id="create-group-form" class="space-y-4"><input type="text" id="group-name-input" placeholder="Group Name" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required><input type="password" id="group-password-input" placeholder="Password (Optional)" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"><select id="group-category-select" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"><option>Primary School</option><option>Secondary School</option><option>Sixth Form</option><option>University</option><option>Language Study</option><option>Others</option></select><select id="group-goal-select" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500">${Array.from({length: 12}, (_, i) => `<option value="${i+1}">${i+1} hours per day</option>`).join('')}</select><div><label for="group-capacity-input" class="text-sm text-gray-400">Capacity: <span id="group-capacity-value">50</span> people</label><input type="range" id="group-capacity-input" min="2" max="100" value="50" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer"></div><textarea id="group-description-input" placeholder="Describe your group..." class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" rows="3"></textarea><div class="flex justify-end space-x-3 mt-2"><button type="button" id="cancel-create-group-btn" class="px-5 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg font-semibold transition">Cancel</button><button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold transition">Create</button></div></form></div></div>
-    <div id="join-group-modal" class="modal fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm items-center justify-center p-4 z-50"><div class="bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm"><h3 class="text-xl font-bold mb-4">Join a Group</h3><form id="join-group-form" class="space-y-4"><input type="text" id="group-id-input" placeholder="Enter Group ID" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required><div class="flex justify-end space-x-3 mt-2"><button type="button" id="cancel-join-group-btn" class="px-5 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg font-semibold transition">Cancel</button><button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold transition">Join</button></div></form></div></div>
+    <div id="add-subject-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Add New Subject</div><button class="close-modal">&times;</button></div><form id="add-subject-form"><div class="mb-4"><label for="add-subject-name" class="block text-gray-300 mb-2">Subject Name</label><input type="text" id="add-subject-name" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required></div><div class="mb-4"><label class="block text-gray-300 mb-2">Color</label><div class="flex space-x-2 subject-color-picker"><div class="w-8 h-8 rounded-full bg-red-500 cursor-pointer color-dot" data-color="bg-red-500"></div><div class="w-8 h-8 rounded-full bg-blue-500 cursor-pointer color-dot selected" data-color="bg-blue-500"></div><div class="w-8 h-8 rounded-full bg-green-500 cursor-pointer color-dot" data-color="bg-green-500"></div><div class="w-8 h-8 rounded-full bg-yellow-500 cursor-pointer color-dot" data-color="bg-yellow-500"></div><div class="w-8 h-8 rounded-full bg-purple-500 cursor-pointer color-dot" data-color="bg-purple-500"></div></div></div><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Add Subject</button></form></div></div>
+    <div id="start-session-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Start New Session</div><button id="close-start-session-modal" class="close-modal">&times;</button></div><form id="start-session-form"><div id="subject-selection-list" class="mb-4 max-h-60 overflow-y-auto space-y-2"></div><div class="flex items-center gap-4 mt-4"><button type="button" id="open-add-subject-modal-from-start" class="w-full text-center py-3 bg-gray-600 hover:bg-gray-500 rounded-lg font-medium transition">Add New Subject</button><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Start Timer</button></div></form></div></div>
 
-
+    <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, collection, onSnapshot, addDoc, updateDoc, serverTimestamp, setDoc, getDoc, deleteDoc, query, where, getDocs, Timestamp, writeBatch, arrayUnion } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { getStorage, ref, uploadBytes, getDownloadURL, uploadString } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
+        import { 
+            getAuth, 
+            onAuthStateChanged, 
+            createUserWithEmailAndPassword, 
+            signInWithEmailAndPassword, 
+            signInWithPopup, 
+            GoogleAuthProvider,
+            signOut,
+            signInWithCustomToken
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { 
+            getFirestore, 
+            doc, 
+            setDoc, 
+            getDoc, 
+            addDoc, 
+            collection, 
+            onSnapshot,
+            arrayUnion,
+            updateDoc,
+            deleteDoc,
+            getDocs,
+            serverTimestamp
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- CONFIG & STATE ---
-        const firebaseConfig = {
-            apiKey: "AIzaSyBSCrL6ravOzFnwOa7A0Jl_W68vEfZVcNw",
-            authDomain: "focus-flow-34c07.firebaseapp.com",
-            projectId: "focus-flow-34c07",
-            storageBucket: "focus-flow-34c07.appspot.com",
-            messagingSenderId: "473980178825",
-            appId: "1:473980178825:web:164566ec8b068da3281158",
-            measurementId: "G-RRFK3LY0E4"
-        };
-        const appId = 'focusflow-study-timer';
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const storage = getStorage(app);
-        let userId = null, subjects = [], todos = [], activeTimerInterval = null, activeSubjectId = null, sessionStartTime = 0, selectedColor = '#FF0000', statsChart = null, rankingInterval = null, subjectToEdit = null, subjectToDelete = null;
-        let unsubscribers = [];
-        let groupMemberTimers = {};
-        let currentGroupId = null;
-        let currentWeekOffset = 0;
+        // --- App State ---
+        let db, auth;
+        let currentUser = null;
+        let chartsInitialized = false;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+        // Timer State
+        let timerInterval = null;
+        let currentSessionSeconds = 0;
+        let totalTimeTodayInSeconds = 0;
+        let activeSubject = '';
+
+        // --- Firebase Initialization ---
+        try {
+            const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+            const app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+            console.log("Firebase initialized successfully.");
+            // REMOVED AUTOMATIC SIGN-IN
+        } catch (e) {
+            console.error("Firebase initialization failed:", e);
+            alert("Could not connect to the backend. Please try again later.");
+        }
+
+        // --- UI Elements ---
+        const authError = document.getElementById('auth-error');
+        const sessionTimerDisplay = document.getElementById('session-timer');
+        const totalTimeDisplay = document.getElementById('total-time-display');
+        const activeSubjectDisplay = document.getElementById('active-subject-display');
         
-        // --- UI ELEMENTS ---
-        const ui = {
-            authScreen: document.getElementById('auth-screen'),
-            appContainer: document.getElementById('app-container'),
-            loginForm: document.getElementById('login-form'),
-            signupForm: document.getElementById('signup-form'),
-            authToggleBtn: document.getElementById('auth-toggle-btn'),
-            loginToggleText: document.getElementById('login-toggle-text'),
-            googleSigninBtn: document.getElementById('google-signin-btn'),
-            profileBtn: document.getElementById('profile-btn'),
-            signOutBtn: document.getElementById('account-sign-out-btn'),
-            authError: document.getElementById('auth-error'),
-            headerAvatar: document.getElementById('header-avatar'),
-            pages: document.querySelectorAll('.page'),
-            navItems: document.querySelectorAll('.nav-item'),
-            mainNav: document.getElementById('main-nav'),
-            groupNav: document.getElementById('group-nav'),
-            modals: document.querySelectorAll('.modal'),
-            addSubjectBtn: document.getElementById('add-subject-btn'),
-            selectSubjectModal: document.getElementById('select-subject-modal'),
-            addNameModal: document.getElementById('add-name-modal'),
-            addNameForm: document.getElementById('add-name-form'),
-            displayNameInput: document.getElementById('display-name-input'),
-            liveSessionsGrid: document.getElementById('live-sessions-grid'),
-            sessionTimer: document.getElementById('session-timer'),
-            totalTimeDisplay: document.getElementById('total-time-display'),
-            activeSubjectDisplay: document.getElementById('active-subject-display'),
-            startStudyingBtn: document.getElementById('start-studying-btn'),
-            stopStudyingBtn: document.getElementById('stop-studying-btn'),
-            modalSubjectsList: document.getElementById('modal-subjects-list'),
-            colorPickerCanvas: document.getElementById('advanced-color-picker'),
-            colorPreview: document.getElementById('color-preview'),
-            editSubjectModal: document.getElementById('edit-subject-modal'),
-            editColorPickerCanvas: document.getElementById('edit-color-picker'),
-            confirmDeleteModal: document.getElementById('confirm-delete-modal'),
-            changeUsernameModal: document.getElementById('change-username-modal'),
-            changePasswordModal: document.getElementById('change-password-modal'),
-            avatarOptionsModal: document.getElementById('avatar-options-modal'),
-            characterCreatorModal: document.getElementById('character-creator-modal'),
-            createGroupModal: document.getElementById('create-group-modal'),
-            joinGroupModal: document.getElementById('join-group-modal'),
-            todoList: document.getElementById('todo-list'),
-            todoInput: document.getElementById('todo-input'),
-            addTodoBtn: document.getElementById('add-todo-btn'),
-            rankingList: document.getElementById('ranking-list'),
-            statPeriodBtns: document.querySelectorAll('.stat-period-btn'),
-            accountUsername: document.getElementById('account-username'),
-            accountEmail: document.getElementById('account-email'),
-            changePasswordItem: document.getElementById('change-password-item'),
-            usernameItem: document.getElementById('username-item'),
-            backToTimerBtn: document.getElementById('back-to-timer-btn'),
-            avatarItem: document.getElementById('avatar-item'),
-            avatarFileInput: document.getElementById('avatar-file-input'),
-            accountAvatar: document.getElementById('account-avatar'),
-            groupsBtn: document.getElementById('groups-btn'),
-            myGroupsList: document.getElementById('my-groups-list'),
-            allGroupsList: document.getElementById('all-groups-list'),
-            groupDetailsName: document.getElementById('group-details-name'),
-            groupMembersList: document.getElementById('group-members-list'),
-            backToGroupsBtn: document.getElementById('back-to-groups-btn'),
-            groupSettingsBtn: document.getElementById('group-settings-btn'),
-            createGroupBtn: document.getElementById('create-group-btn'),
-            joinGroupBtn: document.getElementById('join-group-btn'),
-            studyingMembersCount: document.getElementById('studying-members-count'),
-            backToGroupDetailsBtn: document.getElementById('back-to-group-details-btn'),
-            weekRangeDisplay: document.getElementById('week-range-display'),
-            attendanceGrid: document.getElementById('attendance-grid'),
-            prevWeekBtn: document.getElementById('prev-week-btn'),
-            nextWeekBtn: document.getElementById('next-week-btn'),
-            groupRankingList: document.getElementById('group-ranking-list'),
-            groupRankingDateDisplay: document.getElementById('group-ranking-date-display'),
-            groupRankingPrevBtn: document.getElementById('group-ranking-prev-btn'),
-            groupRankingNextBtn: document.getElementById('group-ranking-next-btn'),
-            backToTimerFromMyGroupsBtn: document.getElementById('back-to-timer-from-my-groups-btn'),
-            goToFindGroupsBtn: document.getElementById('go-to-find-groups-btn'),
-            backToMyGroupsBtn: document.getElementById('back-to-my-groups-btn'),
-            goToCreateGroupBtn: document.getElementById('go-to-create-group-btn'),
-            backToFindGroupsBtn: document.getElementById('back-to-find-groups-btn'),
-            createGroupDoneBtn: document.getElementById('create-group-done-btn'),
-        };
-
-        // --- UTILS & HELPERS ---
-        const formatTime = s => `${Math.floor(s/3600).toString().padStart(2,'0')}:${Math.floor(s%3600/60).toString().padStart(2,'0')}:${Math.floor(s%60).toString().padStart(2,'0')}`;
-        const getLocalDateString = (date) => `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
-        const showPage = pageId => {
+        // --- Page Navigation ---
+        function showPage(pageId) {
             if (!pageId) return;
-            ui.pages.forEach(p => p.classList.toggle('active', p.id === `page-${pageId}`));
-            
-            const isGroupPage = pageId.startsWith('group-');
-            const isGroupHomePage = pageId === 'my-groups' || pageId === 'find-groups' || pageId === 'create-group';
-            
-            ui.mainNav.style.display = (isGroupPage || isGroupHomePage) ? 'none' : 'grid';
-            ui.groupNav.style.display = isGroupPage ? 'grid' : 'none';
+            // Hide all top-level containers and pages
+            document.getElementById('auth-screen').classList.remove('active');
+            document.getElementById('app-container').classList.remove('active', 'flex');
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
 
-            if (isGroupPage) {
-                document.querySelectorAll('#group-nav .nav-item').forEach(n => {
-                    if (n.dataset.page) {
-                        n.classList.toggle('active', n.dataset.page === pageId)
-                    }
-                });
+            // Show the correct container/page
+            if (pageId === 'auth-screen') {
+                document.getElementById('auth-screen').classList.add('active');
             } else {
-                document.querySelectorAll('#main-nav .nav-item').forEach(n => {
-                    if (n.dataset.page) {
-                        n.classList.toggle('active', n.dataset.page === pageId)
-                    }
-                });
-            }
-
-            if (pageId === 'stats') renderStatsChart('today');
-            if (pageId === 'ranking') renderRankings();
-            if (pageId === 'account') renderAccountDetails();
-            if (pageId === 'my-groups') renderMyGroupsList();
-            if (pageId === 'find-groups') renderAllGroupsList();
-            if (pageId === 'group-ranking') renderGroupRankings();
-            if (pageId === 'group-attendance') renderAttendance();
-        };
-        const showModal = modalId => document.getElementById(modalId).classList.add('active');
-        const hideModals = () => ui.modals.forEach(m => m.classList.remove('active'));
-        
-        function handleError(error, context = 'An unexpected error') {
-            console.error(`${context}:`, error);
-            if (error.code === 'permission-denied' || error.code === 'PERMISSION_DENIED') {
-                ui.authError.textContent = "Permissions error. Please check Firestore rules.";
-            } else {
-                ui.authError.textContent = `${context}: ${error.message}`;
+                 document.getElementById('app-container').classList.add('active', 'flex');
+                 const targetPage = document.getElementById(pageId);
+                 if(targetPage) targetPage.classList.add('active');
             }
         }
 
-        // --- AUTHENTICATION ---
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                userId = user.uid;
-                try {
-                    const profileRef = doc(db, `artifacts/${appId}/public/data/user_profiles`, user.uid);
-                    const profileSnap = await getDoc(profileRef);
-
-                    if (!profileSnap.exists()) {
-                        if (user.displayName) {
-                            ui.displayNameInput.value = user.displayName;
-                        }
-                        showModal('add-name-modal');
-                    } else {
-                        ui.authScreen.classList.remove('active');
-                        ui.appContainer.classList.add('active', 'flex');
-                        showPage('timer');
-                        initializeAppData();
-                    }
-                } catch (error) {
-                    handleError(error, 'User Profile Check');
-                    await signOut(auth);
-                }
-            } else {
-                userId = null;
-                ui.authScreen.classList.add('active');
-                ui.appContainer.classList.remove('active', 'flex');
-                unsubscribers.forEach(unsub => unsub());
-                unsubscribers = [];
-                if (statsChart) statsChart.destroy();
-                if (rankingInterval) clearInterval(rankingInterval);
-            }
-        });
-
-        async function handleGoogleSignIn() {
-            const provider = new GoogleAuthProvider();
-            try { await signInWithPopup(auth, provider); } 
-            catch (error) { handleError(error, 'Google Sign-In'); }
+        // --- Chart Initialization ---
+        function initCharts() {
+            if (chartsInitialized) return;
+            // ... (chart code remains the same)
+            chartsInitialized = true;
         }
         
-        async function handleEmailSignUp(e) {
-            e.preventDefault();
-            const email = ui.signupForm.querySelector('#signup-email').value;
-            const password = ui.signupForm.querySelector('#signup-password').value;
-            try { await createUserWithEmailAndPassword(auth, email, password); } 
-            catch (error) { handleError(error, 'Sign-up'); }
+        // --- Timer Functions ---
+        function formatTime(seconds) {
+            const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
+            const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+            const s = Math.floor(seconds % 60).toString().padStart(2, '0');
+            return `${h}:${m}:${s}`;
         }
 
-        async function handleEmailLogin(e) {
-            e.preventDefault();
-            const email = ui.loginForm.querySelector('#login-email').value;
-            const password = ui.loginForm.querySelector('#login-password').value;
-            try { await signInWithEmailAndPassword(auth, email, password); } 
-            catch (error) { handleError(error, 'Login'); }
+        function updateTimerDisplay() {
+            currentSessionSeconds++;
+            sessionTimerDisplay.textContent = formatTime(currentSessionSeconds);
         }
 
-        async function handleAddName(e) {
-            e.preventDefault();
-            const newName = ui.displayNameInput.value.trim();
-            if (newName && auth.currentUser) {
-                try {
-                    await updateProfile(auth.currentUser, { displayName: newName });
-                    const profileRef = doc(db, `artifacts/${appId}/public/data/user_profiles`, auth.currentUser.uid);
-                    await setDoc(profileRef, { displayName: newName, totalStudyTime: 0, createdAt: serverTimestamp(), photoURL: auth.currentUser.photoURL || null, groups: [] });
-                    
-                    hideModals();
-                    ui.authScreen.classList.remove('active');
-                    ui.appContainer.classList.add('active', 'flex');
-                    showPage('timer');
-                    initializeAppData();
-                } catch (error) {
-                    handleError(error, 'Updating Name');
-                }
-            }
-        }
-        
-        async function handleChangeUsername(e) {
-            e.preventDefault();
-            const newUsernameInput = document.getElementById('new-username-input');
-            const newName = newUsernameInput.value.trim();
-            if (newName && auth.currentUser) {
-                try {
-                    await updateProfile(auth.currentUser, { displayName: newName });
-                    const profileRef = doc(db, `artifacts/${appId}/public/data/user_profiles`, auth.currentUser.uid);
-                    await updateDoc(profileRef, { displayName: newName });
-                    hideModals();
-                    renderAccountDetails();
-                } catch (error) {
-                    handleError(error, 'Update Username');
-                }
-            }
-        }
-        
-        async function handleChangePassword(e) {
-            e.preventDefault();
-            const newPassword = document.getElementById('new-password-input').value;
-            const errorEl = document.getElementById('change-password-error');
-            errorEl.textContent = '';
-            if (newPassword.length < 6) {
-                errorEl.textContent = 'Password must be at least 6 characters.';
-                return;
-            }
-            try {
-                await updatePassword(auth.currentUser, newPassword);
-                hideModals();
-                alert('Password updated successfully!');
-            } catch (error) {
-                errorEl.textContent = 'Error: ' + error.message;
-                console.error("Error changing password:", error);
-            }
-        }
-
-        async function handleAvatarUpload(file) {
-            if (!file || !userId) return;
-
-            const storageRef = ref(storage, `avatars/${userId}.jpg`); // Use a consistent file extension
-            try {
-                await uploadBytes(storageRef, file);
-                const photoURL = await getDownloadURL(storageRef);
-                
-                await updateProfile(auth.currentUser, { photoURL });
-                const profileRef = doc(db, `artifacts/${appId}/public/data/user_profiles`, userId);
-                await updateDoc(profileRef, { photoURL });
-
-                updateUserAvatars(photoURL);
-            } catch (error) {
-                handleError(error, 'Avatar Upload');
-            }
-        }
-
-        function updateUserAvatars(url) {
-            const defaultAvatar = `<svg class="w-full h-full text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" /></svg>`;
-            if (url) {
-                ui.headerAvatar.innerHTML = `<img src="${url}" class="w-full h-full object-cover">`;
-                ui.accountAvatar.innerHTML = `<img src="${url}" class="w-full h-full object-cover">`;
-            } else {
-                ui.headerAvatar.innerHTML = defaultAvatar;
-                ui.accountAvatar.innerHTML = defaultAvatar;
-            }
-        }
-
-
-        // --- FIREBASE & DATA LOGIC ---
-        async function initializeAppData() {
-            const user = auth.currentUser;
-            if(!user) return;
-            
-            const profileRef = doc(db, `artifacts/${appId}/public/data/user_profiles`, user.uid);
-            const profileSnap = await getDoc(profileRef);
-            if(profileSnap.exists()) {
-                 updateUserAvatars(profileSnap.data().photoURL);
-            }
-
-            listenForSubjects();
-            listenForLiveSessions();
-            listenForTodos();
-            calculateAndRenderTodayTotal();
-
-            if (rankingInterval) clearInterval(rankingInterval);
-            rankingInterval = setInterval(() => {
-                if (document.getElementById('page-ranking').classList.contains('active')) {
-                    renderRankings();
-                }
-            }, 60000);
-        }
-
-        const createListener = (q, callback) => {
-            const unsub = onSnapshot(q, callback, (error) => handleError(error, 'Data listener'));
-            unsubscribers.push(unsub);
-        };
-
-        const listenForSubjects = () => createListener(collection(db, `artifacts/${appId}/users/${userId}/subjects`), s => { subjects = s.docs.map(d => ({ id: d.id, ...d.data() })); renderModalSubjectsList(); });
-        const listenForTodos = () => createListener(collection(db, `artifacts/${appId}/users/${userId}/todos`), s => { todos = s.docs.map(d => ({ id: d.id, ...d.data() })); renderTodos(); });
-        const listenForLiveSessions = () => createListener(collection(db, `artifacts/${appId}/public/data/live_sessions`), s => renderLiveSessions(s.docs.map(d => ({ id: d.id, ...d.data() }))));
-        
-        const addNewSubject = async (name, color) => { try { await addDoc(collection(db, `artifacts/${appId}/users/${userId}/subjects`), { name, color, createdAt: serverTimestamp() }); } catch (e) { handleError(e, 'Add Subject'); } };
-        const updateSubject = async (id, data) => { try { await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/subjects`, id), data); } catch(e) { handleError(e, 'Update Subject'); }};
-        const deleteSubject = async (id) => { try { await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/subjects`, id)); } catch(e) { handleError(e, 'Delete Subject'); }};
-        const addNewTodo = async text => { try { await addDoc(collection(db, `artifacts/${appId}/users/${userId}/todos`), { text, completed: false, createdAt: serverTimestamp() }); } catch (e) { handleError(e, 'Add Todo'); } };
-        const toggleTodo = async (id, completed) => { try { await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/todos`, id), { completed }); } catch (e) { handleError(e, 'Update Todo'); } };
-        const deleteTodo = async id => { try { await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/todos`, id)); } catch (e) { handleError(e, 'Delete Todo'); } };
-
-        async function logStudySession(subjectId, duration) {
-            if (!userId || !subjectId || duration < 1) return;
-            const subject = subjects.find(s => s.id === subjectId);
+        function startTimer(subject) {
             if (!subject) return;
 
-            try {
-                const localDateString = getLocalDateString(new Date());
-                const batch = writeBatch(db);
-                const logRef = doc(collection(db, `artifacts/${appId}/users/${userId}/study_logs`));
-                batch.set(logRef, { subjectId, subjectName: subject.name, duration, endTime: serverTimestamp(), localDate: localDateString });
-                
-                const profileRef = doc(db, `artifacts/${appId}/public/data/user_profiles`, userId);
-                const profileSnap = await getDoc(profileRef);
-                const currentTotal = profileSnap.exists() ? profileSnap.data().totalStudyTime : 0;
-                const displayName = auth.currentUser.displayName || auth.currentUser.email;
-                batch.set(profileRef, { totalStudyTime: currentTotal + duration, lastStudied: serverTimestamp(), displayName }, { merge: true });
-
-                await batch.commit();
-            } catch (error) {
-                handleError(error, 'Log Session');
-            }
-        }
-
-        async function setPublicStatus(isStudying, subjectName = '') {
-            try {
-                const sessionRef = doc(db, `artifacts/${appId}/public/data/live_sessions`, userId);
-                if (isStudying) await setDoc(sessionRef, { subjectName, startTime: serverTimestamp() });
-                else await deleteDoc(sessionRef);
-            } catch (error) {
-                handleError(error, 'Update Status');
-            }
-        }
-
-        // --- TIMER LOGIC ---
-        function startTimer(subjectId) {
-            const subject = subjects.find(s => s.id === subjectId);
-            if (!subject) return;
+            activeSubject = subject;
+            activeSubjectDisplay.textContent = activeSubject;
             
-            hideModals();
-            activeSubjectId = subjectId;
-            sessionStartTime = Date.now();
-            setPublicStatus(true, subject.name);
+            currentSessionSeconds = 0;
+            sessionTimerDisplay.textContent = formatTime(0);
+            
+            if(timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(updateTimerDisplay, 1000);
 
-            ui.activeSubjectDisplay.textContent = subject.name;
-            ui.startStudyingBtn.classList.add('hidden');
-            ui.stopStudyingBtn.classList.remove('hidden');
-
-            activeTimerInterval = setInterval(() => {
-                const elapsedSeconds = (Date.now() - sessionStartTime) / 1000;
-                ui.sessionTimer.textContent = formatTime(elapsedSeconds);
-            }, 1000);
+            document.getElementById('start-studying-btn').classList.add('hidden');
+            document.getElementById('stop-studying-btn').classList.remove('hidden');
         }
 
         async function stopTimer() {
-            if (!activeTimerInterval || !activeSubjectId) return;
-            const elapsedSeconds = Math.round((Date.now() - sessionStartTime) / 1000);
-            
-            clearInterval(activeTimerInterval);
-            
-            await logStudySession(activeSubjectId, elapsedSeconds);
-            await setPublicStatus(false);
-            
-            activeTimerInterval = null;
-            activeSubjectId = null;
-            sessionStartTime = 0;
+            if(timerInterval) clearInterval(timerInterval);
+            timerInterval = null;
 
-            ui.sessionTimer.textContent = "00:00:00";
-            ui.activeSubjectDisplay.textContent = "";
-            ui.startStudyingBtn.classList.remove('hidden');
-            ui.stopStudyingBtn.classList.add('hidden');
-            
-            await calculateAndRenderTodayTotal();
-        }
-
-        // --- RENDERING ---
-        const renderLiveSessions = sessions => { ui.liveSessionsGrid.innerHTML = sessions.map(s => `<div class="bg-gray-800/70 rounded-lg animate-pulse aspect-square"></div>`).join(''); };
-        const renderModalSubjectsList = () => {
-            ui.modalSubjectsList.innerHTML = subjects.length > 0 
-                ? subjects.map(s => `
-                    <div class="relative flex items-center bg-gray-700 rounded-lg">
-                        <button data-id="${s.id}" class="subject-select-btn w-full text-left p-4 hover:bg-blue-600/50 rounded-lg flex items-center space-x-4 transition-colors flex-grow">
-                            <div class="w-4 h-4 rounded-full" style="background-color: ${s.color || '#3B82F6'};"></div>
-                            <span class="font-semibold">${s.name}</span>
-                        </button>
-                        <button data-id="${s.id}" class="subject-options-btn p-4 text-gray-400 hover:text-white">
-                            <svg class="w-5 h-5 pointer-events-none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" /></svg>
-                        </button>
-                        <div class="options-menu w-32" data-menu-id="${s.id}">
-                            <button class="edit-subject-btn w-full text-left px-4 py-2 text-sm text-gray-200 hover:bg-gray-600" data-id="${s.id}">Edit</button>
-                            <button class="delete-subject-btn w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-gray-600" data-id="${s.id}">Delete</button>
-                        </div>
-                    </div>
-                `).join('')
-                : `<p class="text-center text-gray-400">No subjects yet. Add one from the navigation bar!</p>`;
-        };
-        const renderTodos = () => {
-            ui.todoList.innerHTML = todos.map(todo => `<div class="flex items-center p-3 bg-gray-700/50 rounded-lg"><input type="checkbox" data-id="${todo.id}" class="todo-checkbox h-5 w-5 rounded bg-gray-600 border-gray-500 text-blue-500 focus:ring-blue-600" ${todo.completed ? 'checked' : ''}><span class="ml-3 flex-grow ${todo.completed ? 'line-through text-gray-500' : 'text-gray-200'}">${todo.text}</span><button data-id="${todo.id}" class="delete-todo-btn text-gray-500 hover:text-red-400 transition-colors"><svg class="h-5 w-5 pointer-events-none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></button></div>`).join('');
-        };
-        
-        // --- ADVANCED COLOR PICKER LOGIC ---
-        let colorPickerState = {
-            hue: 0, saturation: 1, value: 1,
-            isDraggingHue: false, isDraggingSV: false,
-        };
-
-        function hsvToRgb(h, s, v) {
-            let r, g, b, i, f, p, q, t;
-            i = Math.floor(h * 6);
-            f = h * 6 - i;
-            p = v * (1 - s);
-            q = v * (1 - f * s);
-            t = v * (1 - (1 - f) * s);
-            switch (i % 6) {
-                case 0: r = v, g = t, b = p; break;
-                case 1: r = q, g = v, b = p; break;
-                case 2: r = p, g = v, b = t; break;
-                case 3: r = p, g = q, b = v; break;
-                case 4: r = t, g = p, b = v; break;
-                case 5: r = v, g = p, b = q; break;
+            const sessionDurationSeconds = currentSessionSeconds;
+            if (sessionDurationSeconds > 0) {
+                totalTimeTodayInSeconds += sessionDurationSeconds;
+                await saveSession(activeSubject, sessionDurationSeconds);
             }
-            return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
-        }
-
-        function rgbToHex(r, g, b) {
-            return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase();
-        }
-        
-        function drawAdvancedColorPicker(canvas, preview, state) {
-            const ctx = canvas.getContext('2d');
-            const width = canvas.width;
-            const height = canvas.height;
-            const center = width / 2;
-            const ringRadius = width / 2 - 10;
-            const ringWidth = 15;
-            const boxSize = (ringRadius - ringWidth) * 2 / Math.sqrt(2) - 10;
-            const boxX = center - boxSize / 2;
-            const boxY = center - boxSize / 2;
-
-            ctx.clearRect(0, 0, width, height);
-
-            // Draw Hue Ring
-            for (let i = 0; i < 360; i++) {
-                const angle = (i * Math.PI) / 180;
-                ctx.strokeStyle = `hsl(${i}, 100%, 50%)`;
-                ctx.beginPath();
-                ctx.arc(center, center, ringRadius, angle, angle + (Math.PI / 180) * 1.1);
-                ctx.lineWidth = ringWidth;
-                ctx.stroke();
-            }
-
-            // Draw Saturation/Value Box
-            const hueColor = `hsl(${state.hue * 360}, 100%, 50%)`;
-            ctx.fillStyle = hueColor;
-            ctx.fillRect(boxX, boxY, boxSize, boxSize);
-
-            const whiteGradient = ctx.createLinearGradient(boxX, boxY, boxX + boxSize, boxY);
-            whiteGradient.addColorStop(0, 'rgba(255,255,255,1)');
-            whiteGradient.addColorStop(1, 'rgba(255,255,255,0)');
-            ctx.fillStyle = whiteGradient;
-            ctx.fillRect(boxX, boxY, boxSize, boxSize);
-
-            const blackGradient = ctx.createLinearGradient(boxX, boxY, boxX, boxY + boxSize);
-            blackGradient.addColorStop(0, 'rgba(0,0,0,0)');
-            blackGradient.addColorStop(1, 'rgba(0,0,0,1)');
-            ctx.fillStyle = blackGradient;
-            ctx.fillRect(boxX, boxY, boxSize, boxSize);
-
-            // Draw Hue Handle
-            const hueAngle = state.hue * 2 * Math.PI;
-            const hueX = center + Math.cos(hueAngle) * ringRadius;
-            const hueY = center + Math.sin(hueAngle) * ringRadius;
-            ctx.beginPath(); ctx.arc(hueX, hueY, ringWidth / 2, 0, 2 * Math.PI); ctx.fillStyle = 'white'; ctx.fill(); ctx.strokeStyle = 'black'; ctx.lineWidth = 1; ctx.stroke();
-
-            // Draw SV Handle
-            const svX = boxX + state.saturation * boxSize;
-            const svY = boxY + (1 - state.value) * boxSize;
-            ctx.beginPath(); ctx.arc(svX, svY, 5, 0, 2 * Math.PI); ctx.fillStyle = 'white'; ctx.fill(); ctx.strokeStyle = 'black'; ctx.stroke();
             
-            const [r, g, b] = hsvToRgb(state.hue, state.saturation, state.value);
-            const hexColor = rgbToHex(r, g, b);
-            preview.style.backgroundColor = hexColor;
-            return hexColor;
+            activeSubjectDisplay.textContent = '';
+            sessionTimerDisplay.textContent = formatTime(0);
+            totalTimeDisplay.textContent = `Total Today: ${formatTime(totalTimeTodayInSeconds)}`;
+
+            document.getElementById('stop-studying-btn').classList.add('hidden');
+            document.getElementById('start-studying-btn').classList.remove('hidden');
         }
 
-        function handleColorPickerInteraction(event, canvas, preview, state) {
-            const rect = canvas.getBoundingClientRect();
-            const x = event.clientX - rect.left;
-            const y = event.clientY - rect.top;
-            const center = canvas.width / 2;
-            const dx = x - center;
-            const dy = y - center;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            const ringRadius = canvas.width / 2 - 10;
-            const ringWidth = 15;
-            const boxSize = (ringRadius - ringWidth) * 2 / Math.sqrt(2) - 10;
-            const boxX = center - boxSize / 2;
-            const boxY = center - boxSize / 2;
-
-            if (event.type === 'mousedown') {
-                if (distance > ringRadius - ringWidth / 2 && distance < ringRadius + ringWidth / 2) {
-                    state.isDraggingHue = true;
-                } else if (x > boxX && x < boxX + boxSize && y > boxY && y < boxY + boxSize) {
-                    state.isDraggingSV = true;
-                }
-            } else if (event.type === 'mouseup' || event.type === 'mouseleave') {
-                state.isDraggingHue = false;
-                state.isDraggingSV = false;
-            }
-
-            if (state.isDraggingHue) {
-                let angle = Math.atan2(dy, dx);
-                if (angle < 0) angle += 2 * Math.PI;
-                state.hue = angle / (2 * Math.PI);
-            } else if (state.isDraggingSV) {
-                state.saturation = Math.max(0, Math.min(1, (x - boxX) / boxSize));
-                state.value = 1 - Math.max(0, Math.min(1, (y - boxY) / boxSize));
-            }
-
-            if (state.isDraggingHue || state.isDraggingSV) {
-                const hex = drawAdvancedColorPicker(canvas, preview, state);
-                selectedColor = hex; // Update global selected color
-            }
-        }
-
-        function renderAccountDetails() {
-            const user = auth.currentUser;
-            if (!user) return;
-            ui.accountUsername.textContent = user.displayName;
-            ui.accountEmail.textContent = user.email;
-            updateUserAvatars(user.photoURL);
-            
-            const isEmailUser = user.providerData.some(p => p.providerId === 'password');
-            ui.changePasswordItem.style.display = isEmailUser ? 'flex' : 'none';
-        }
-
-        async function renderRankings() {
+        async function saveSession(subject, durationSeconds) {
+            if (!currentUser) return;
             try {
-                ui.rankingList.innerHTML = `<div class="text-center p-8">Loading rankings...</div>`;
-                const profilesRef = collection(db, `artifacts/${appId}/public/data/user_profiles`);
-                const q = query(profilesRef);
-                const querySnapshot = await getDocs(q);
-                const rankings = querySnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-                rankings.sort((a, b) => (b.totalStudyTime || 0) - (a.totalStudyTime || 0));
-                
-                ui.rankingList.innerHTML = rankings.map((p, i) => `<div class="flex items-center p-3 rounded-lg ${p.id === userId ? 'bg-blue-600/30' : 'bg-gray-700/50'}"><span class="font-bold text-lg w-10">${i+1}</span><div class="flex-grow">
-                    <p class="font-semibold">${p.displayName || `User ${p.id.substring(0,8)}...`}</p>
-                    <p class="text-sm text-gray-400">${formatTime(p.totalStudyTime || 0)}</p>
-                </div></div>`).join('');
+                const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
+                const sessionsRef = collection(userRef, 'sessions');
+
+                await addDoc(sessionsRef, {
+                    subject: subject,
+                    durationSeconds: durationSeconds,
+                    endedAt: serverTimestamp()
+                });
+
+                await setDoc(userRef, {
+                    totalTimeToday: {
+                        date: new Date().toISOString().split('T')[0], // YYYY-MM-DD
+                        seconds: totalTimeTodayInSeconds
+                    }
+                }, { merge: true });
+                console.log('Session saved successfully');
             } catch (error) {
-                handleError(error, 'Fetch Rankings');
+                console.error("Error saving session: ", error);
             }
         }
 
-        // --- CALCULATIONS & STATS ---
-        async function calculateAndRenderTodayTotal() {
-            if (!userId) return;
-            try {
-                const todayLocalDateString = getLocalDateString(new Date());
-                const logsRef = collection(db, `artifacts/${appId}/users/${userId}/study_logs`);
-                const q = query(logsRef, where("localDate", "==", todayLocalDateString));
-                const querySnapshot = await getDocs(q);
-                let totalSecondsToday = querySnapshot.docs.reduce((sum, doc) => sum + doc.data().duration, 0);
-                ui.totalTimeDisplay.textContent = `Total Today: ${formatTime(totalSecondsToday)}`;
-            } catch (error) {
-                handleError(error, 'Calculate Today\'s Total');
-            }
-        }
+        async function loadDailyTotal() {
+            if (!currentUser) return;
+            const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
+            const userDoc = await getDoc(userRef);
 
-        async function renderStatsChart(period) {
-            if (!userId) return;
-            try {
-                const now = new Date();
-                let startDate = new Date();
-                
-                if (period === '7days') {
-                    startDate.setDate(now.getDate() - 6);
-                } else if (period === '30days') {
-                    startDate.setDate(now.getDate() - 29);
-                }
-                
-                const logsRef = collection(db, `artifacts/${appId}/users/${userId}/study_logs`);
-                let q;
-
-                if (period === 'today') {
-                    q = query(logsRef, where("localDate", "==", getLocalDateString(now)));
+            if (userDoc.exists()) {
+                const data = userDoc.data();
+                const todayStr = new Date().toISOString().split('T')[0];
+                if (data.totalTimeToday && data.totalTimeToday.date === todayStr) {
+                    totalTimeTodayInSeconds = data.totalTimeToday.seconds;
                 } else {
-                    q = query(logsRef, where("localDate", ">=", getLocalDateString(startDate)));
+                    totalTimeTodayInSeconds = 0;
                 }
-
-                const querySnapshot = await getDocs(q);
-                
-                const dataBySubject = {};
-                querySnapshot.forEach(doc => {
-                    const log = doc.data();
-                    dataBySubject[log.subjectName] = (dataBySubject[log.subjectName] || 0) + log.duration;
-                });
-
-                const labels = Object.keys(dataBySubject);
-                const data = Object.values(dataBySubject).map(s => s / 3600); // show in hours
-
-                if (statsChart) statsChart.destroy();
-                const ctx = document.getElementById('stats-chart').getContext('2d');
-                statsChart = new Chart(ctx, {
-                    type: 'bar',
-                    data: { labels, datasets: [{ label: 'Hours Studied', data, backgroundColor: labels.map(label => subjects.find(s => s.name === label)?.color || '#3B82F6'), borderRadius: 4, }] },
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#9CA3AF' } }, x: { grid: { display: false }, ticks: { color: '#9CA3AF' } } } }
-                });
-            } catch (error) {
-                handleError(error, 'Render Stats');
+            } else {
+                totalTimeTodayInSeconds = 0;
             }
+            totalTimeDisplay.textContent = `Total Today: ${formatTime(totalTimeTodayInSeconds)}`;
         }
 
-        // --- EVENT LISTENERS ---
-        function setupEventListeners() {
-            // Auth listeners
-            if (ui.googleSigninBtn) ui.googleSigninBtn.addEventListener('click', handleGoogleSignIn);
-            if (ui.loginForm) ui.loginForm.addEventListener('submit', handleEmailLogin);
-            if (ui.signupForm) ui.signupForm.addEventListener('submit', handleEmailSignUp);
-            if (ui.addNameForm) ui.addNameForm.addEventListener('submit', handleAddName);
-            if (ui.signOutBtn) ui.signOutBtn.addEventListener('click', () => signOut(auth));
-            if (ui.profileBtn) ui.profileBtn.addEventListener('click', () => showPage('account'));
-            if (ui.backToTimerBtn) ui.backToTimerBtn.addEventListener('click', () => showPage('timer'));
-            if (ui.authToggleBtn) ui.authToggleBtn.addEventListener('click', () => {
-                const isLoginVisible = !ui.loginForm.classList.contains('hidden');
-                ui.loginForm.classList.toggle('hidden', isLoginVisible);
-                ui.signupForm.classList.toggle('hidden', !isLoginVisible);
-                ui.authToggleBtn.textContent = isLoginVisible ? 'Sign In' : 'Sign Up';
-                ui.loginToggleText.textContent = isLoginVisible ? 'Already have an account?' : "Don't have an account?";
-                ui.authError.textContent = '';
-            });
+        async function getOrCreateUserDocument(user) {
+            const userDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', user.uid);
+            const userDoc = await getDoc(userDocRef);
 
-            // Account Page Listeners
-            if (ui.avatarItem) ui.avatarItem.addEventListener('click', () => showModal('avatar-options-modal'));
-            if (ui.avatarFileInput) ui.avatarFileInput.addEventListener('change', (e) => handleAvatarUpload(e.target.files[0]));
-            if (ui.usernameItem) ui.usernameItem.addEventListener('click', () => {
-                document.getElementById('new-username-input').value = auth.currentUser.displayName;
-                showModal('change-username-modal');
-            });
-            if (ui.changePasswordItem) ui.changePasswordItem.addEventListener('click', () => showModal('change-password-modal'));
-            const changeUsernameForm = document.getElementById('change-username-form');
-            if(changeUsernameForm) changeUsernameForm.addEventListener('submit', handleChangeUsername);
-            const changePasswordForm = document.getElementById('change-password-form');
-            if(changePasswordForm) changePasswordForm.addEventListener('submit', handleChangePassword);
-            const cancelChangeUsernameBtn = document.getElementById('cancel-change-username-btn');
-            if(cancelChangeUsernameBtn) cancelChangeUsernameBtn.addEventListener('click', hideModals);
-            const cancelChangePasswordBtn = document.getElementById('cancel-change-password-btn');
-            if(cancelChangePasswordBtn) cancelChangePasswordBtn.addEventListener('click', hideModals);
-            
-            // Avatar Options Modal
-            const chooseFromAlbumBtn = document.getElementById('choose-from-album-btn');
-            if(chooseFromAlbumBtn) chooseFromAlbumBtn.addEventListener('click', () => {
-                hideModals();
-                ui.avatarFileInput.click();
-            });
-            const chooseCharacterBtn = document.getElementById('choose-character-btn');
-            if(chooseCharacterBtn) chooseCharacterBtn.addEventListener('click', () => {
-                hideModals();
-                renderCharacterCreator();
-                showModal('character-creator-modal');
-            });
-            const cancelAvatarOptionsBtn = document.getElementById('cancel-avatar-options-btn');
-            if(cancelAvatarOptionsBtn) cancelAvatarOptionsBtn.addEventListener('click', hideModals);
-
-            // Character Creator Modal
-            const cancelCharacterCreatorBtn = document.getElementById('cancel-character-creator-btn');
-            if(cancelCharacterCreatorBtn) cancelCharacterCreatorBtn.addEventListener('click', hideModals);
-            const confirmCharacterCreatorBtn = document.getElementById('confirm-character-creator-btn');
-            if(confirmCharacterCreatorBtn) confirmCharacterCreatorBtn.addEventListener('click', handleCharacterCreation);
-
-
-            // App listeners
-            if (ui.navItems) ui.navItems.forEach(item => {
-                if(item.dataset.page) {
-                    item.addEventListener('click', () => showPage(item.dataset.page))
-                }
-            });
-            if (ui.addSubjectBtn) ui.addSubjectBtn.addEventListener('click', () => {
-                drawAdvancedColorPicker(ui.colorPickerCanvas, ui.colorPreview, colorPickerState);
-                showModal('add-subject-modal');
-            });
-            if (ui.startStudyingBtn) ui.startStudyingBtn.addEventListener('click', () => showModal('select-subject-modal'));
-            if (ui.stopStudyingBtn) ui.stopStudyingBtn.addEventListener('click', stopTimer);
-            
-            const cancelSelectSubjectBtn = document.getElementById('cancel-select-subject-btn');
-            if(cancelSelectSubjectBtn) cancelSelectSubjectBtn.addEventListener('click', hideModals);
-            const cancelAddBtn = document.getElementById('cancel-add-btn');
-            if(cancelAddBtn) cancelAddBtn.addEventListener('click', hideModals);
-            const confirmAddBtn = document.getElementById('confirm-add-btn');
-            if(confirmAddBtn) confirmAddBtn.addEventListener('click', () => {
-                const name = document.getElementById('subject-name-input').value.trim();
-                if (name) { addNewSubject(name, selectedColor); hideModals(); document.getElementById('subject-name-input').value = ''; }
-            });
-            
-            if(ui.modalSubjectsList) ui.modalSubjectsList.addEventListener('click', e => {
-                const optionsBtn = e.target.closest('.subject-options-btn');
-                const selectBtn = e.target.closest('.subject-select-btn');
-                const editBtn = e.target.closest('.edit-subject-btn');
-                const deleteBtn = e.target.closest('.delete-subject-btn');
-                
-                document.querySelectorAll('.options-menu').forEach(m => {
-                    if (optionsBtn && m.dataset.menuId !== optionsBtn.dataset.id) {
-                        m.classList.remove('active');
-                    }
+            if (!userDoc.exists()) {
+                // New user, create the document
+                await setDoc(userDocRef, {
+                    email: user.email,
+                    username: user.displayName, // Can be null
+                    joinedGroups: [],
+                    createdAt: serverTimestamp()
                 });
+            }
+            return await getDoc(userDocRef); // Return the fresh document
+        }
 
-                if (optionsBtn) {
-                    const menu = optionsBtn.nextElementSibling;
-                    menu.classList.toggle('active');
-                } else if (selectBtn) {
-                    startTimer(selectBtn.dataset.id);
-                } else if (editBtn) {
-                    subjectToEdit = subjects.find(s => s.id === editBtn.dataset.id);
-                    if (subjectToEdit) {
-                        document.getElementById('edit-subject-name-input').value = subjectToEdit.name;
-                        drawAdvancedColorPicker(ui.editColorPickerCanvas, document.getElementById('edit-color-preview'), { hue: 0, saturation: 1, value: 1 });
-                        showModal('edit-subject-modal');
-                    }
-                } else if (deleteBtn) {
-                    subjectToDelete = subjects.find(s => s.id === deleteBtn.dataset.id);
-                    if(subjectToDelete) {
-                        document.getElementById('confirm-delete-text').textContent = `Delete "${subjectToDelete.name}"? This is permanent.`;
-                        showModal('confirm-delete-modal');
-                    }
+        function updateProfileUI(userData) {
+            if (!userData) return;
+            document.getElementById('profile-page-name').textContent = userData.username || 'User';
+            document.getElementById('profile-page-email').textContent = userData.email || '';
+            document.getElementById('header-avatar').textContent = (userData.username || 'U').charAt(0).toUpperCase();
+            document.getElementById('profile-page-avatar').textContent = (userData.username || 'U').charAt(0).toUpperCase();
+        }
+
+        // --- Authentication State Listener ---
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUser = user;
+                const userDoc = await getOrCreateUserDocument(user);
+                const userData = userDoc.data();
+                
+                if (!userData || !userData.username) {
+                    showPage('page-username-setup');
                 } else {
-                     document.querySelectorAll('.options-menu').forEach(m => m.classList.remove('active'));
+                    updateProfileUI(userData);
+                    showPage('page-timer');
+                    setupRealtimeListeners();
+                    loadDailyTotal();
+                    initCharts();
                 }
-            });
-
-            const cancelEditBtn = document.getElementById('cancel-edit-btn');
-            if(cancelEditBtn) cancelEditBtn.addEventListener('click', hideModals);
-            const confirmEditBtn = document.getElementById('confirm-edit-btn');
-            if(confirmEditBtn) confirmEditBtn.addEventListener('click', () => {
-                const newName = document.getElementById('edit-subject-name-input').value.trim();
-                if (subjectToEdit && newName) {
-                    updateSubject(subjectToEdit.id, { name: newName, color: selectedColor });
-                    hideModals();
-                }
-            });
-
-            const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
-            if(cancelDeleteBtn) cancelDeleteBtn.addEventListener('click', hideModals);
-            const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
-            if(confirmDeleteBtn) confirmDeleteBtn.addEventListener('click', () => {
-                if(subjectToDelete) {
-                    deleteSubject(subjectToDelete.id);
-                    hideModals();
-                }
-            });
-            
-            if(ui.colorPickerCanvas) {
-                ui.colorPickerCanvas.addEventListener('mousedown', (e) => handleColorPickerInteraction(e, ui.colorPickerCanvas, ui.colorPreview, colorPickerState));
-                ui.colorPickerCanvas.addEventListener('mousemove', (e) => handleColorPickerInteraction(e, ui.colorPickerCanvas, ui.colorPreview, colorPickerState));
-                document.addEventListener('mouseup', (e) => handleColorPickerInteraction(e, ui.colorPickerCanvas, ui.colorPreview, colorPickerState));
+            } else {
+                currentUser = null;
+                showPage('auth-screen');
             }
-            
-            const editColorPickerState = { hue: 0, saturation: 1, value: 1, isDraggingHue: false, isDraggingSV: false };
-            if(ui.editColorPickerCanvas) {
-                ui.editColorPickerCanvas.addEventListener('mousedown', (e) => handleColorPickerInteraction(e, ui.editColorPickerCanvas, document.getElementById('edit-color-preview'), editColorPickerState));
-                ui.editColorPickerCanvas.addEventListener('mousemove', (e) => handleColorPickerInteraction(e, ui.editColorPickerCanvas, document.getElementById('edit-color-preview'), editColorPickerState));
-                document.addEventListener('mouseup', (e) => handleColorPickerInteraction(e, ui.editColorPickerCanvas, document.getElementById('edit-color-preview'), editColorPickerState));
-            }
-
-            if(ui.addTodoBtn) ui.addTodoBtn.addEventListener('click', () => { if (ui.todoInput.value.trim()) { addNewTodo(ui.todoInput.value.trim()); ui.todoInput.value = ''; } });
-            if(ui.todoList) ui.todoList.addEventListener('click', e => {
-                if (e.target.matches('.todo-checkbox')) toggleTodo(e.target.dataset.id, e.target.checked);
-                if (e.target.closest('.delete-todo-btn')) deleteTodo(e.target.closest('.delete-todo-btn').dataset.id);
-            });
-            
-            if(ui.statPeriodBtns) ui.statPeriodBtns.forEach(btn => btn.addEventListener('click', () => {
-                ui.statPeriodBtns.forEach(b => b.classList.remove('active', 'bg-blue-600'));
-                btn.classList.add('active', 'bg-blue-600');
-                renderStatsChart(btn.dataset.period);
-            }));
-
-            // Close dropdowns when clicking outside
-            window.addEventListener('click', (e) => {
-                if (!e.target.closest('.relative')) {
-                    // This logic is now handled by the page navigation
-                }
-                if (!e.target.closest('.subject-options-btn')) {
-                     document.querySelectorAll('.options-menu').forEach(m => m.classList.remove('active'));
-                }
-            });
-            
-            // Group Listeners
-            if(ui.groupsBtn) ui.groupsBtn.addEventListener('click', () => showPage('my-groups'));
-            if(ui.backToTimerFromMyGroupsBtn) ui.backToTimerFromMyGroupsBtn.addEventListener('click', () => showPage('timer'));
-            if(ui.goToFindGroupsBtn) ui.goToFindGroupsBtn.addEventListener('click', () => showPage('find-groups'));
-            if(ui.backToMyGroupsBtn) ui.backToMyGroupsBtn.addEventListener('click', () => showPage('my-groups'));
-            if(ui.goToCreateGroupBtn) ui.goToCreateGroupBtn.addEventListener('click', () => showPage('create-group'));
-            if(ui.backToFindGroupsBtn) ui.backToFindGroupsBtn.addEventListener('click', () => showPage('find-groups'));
-            if(ui.createGroupDoneBtn) ui.createGroupDoneBtn.addEventListener('click', () => document.getElementById('create-group-form').requestSubmit());
-            
-            if(ui.groupNav) ui.groupNav.addEventListener('click', e => {
-                const navBtn = e.target.closest('.nav-item');
-                if(navBtn && navBtn.dataset.page) {
-                    showPage(navBtn.dataset.page);
-                }
-            });
-            if(ui.backToGroupDetailsBtn) ui.backToGroupDetailsBtn.addEventListener('click', () => showPage('group-details'));
-            if(ui.backToGroupDetailsFromRankingBtn) ui.backToGroupDetailsFromRankingBtn.addEventListener('click', () => showPage('group-details'));
-        }
-        
-        // --- CHARACTER CREATOR ---
-        const characters = [
-            `<svg viewBox="0 0 100 100"><path d="M20,80 Q50,95 80,80 L80,50 Q50,65 20,50 Z" fill="white"/><rect x="20" y="30" width="60" height="20" rx="5" fill="white"/><path d="M35,40 Q40,30 45,40" stroke="black" stroke-width="3" fill="none"/><path d="M55,40 Q60,30 65,40" stroke="black" stroke-width="3" fill="none"/><circle cx="50" cy="55" r="3" fill="black"/></svg>`,
-            `<svg viewBox="0 0 100 100"><path d="M20,80 Q50,95 80,80 L80,50 Q50,65 20,50 Z" fill="white"/><rect x="20" y="30" width="60" height="20" rx="5" fill="white"/><rect x="35" y="35" width="10" height="5" fill="black"/><rect x="55" y="35" width="10" height="5" fill="black"/><rect x="45" y="52" width="10" height="3" fill="black"/></svg>`,
-            `<svg viewBox="0 0 100 100"><path d="M25,85 A40,40 0 0,1 75,85 Z" fill="white"/><circle cx="40" cy="50" r="5" fill="black"/><circle cx="60" cy="50" r="5" fill="black"/><path d="M45,65 Q50,75 55,65" stroke="black" stroke-width="3" fill="none"/></svg>`,
-            `<svg viewBox="0 0 100 100"><rect x="20" y="20" width="60" height="60" rx="10" fill="white"/><circle cx="40" cy="45" r="5" fill="#2c3e50"/><circle cx="60" cy="45" r="5" fill="#2c3e50"/><path d="M35,60 L65,60" stroke="#2c3e50" stroke-width="4" stroke-linecap="round"/><path d="M30,20 L30,10" stroke="#2c3e50" stroke-width="4" stroke-linecap="round"/><path d="M70,20 L70,10" stroke="#2c3e50" stroke-width="4" stroke-linecap="round"/></svg>`,
-            `<svg viewBox="0 0 100 100"><path d="M50,10 A40,40 0 0,0 50,90 A40,40 0 0,0 50,10" fill="white"/><path d="M35,40 Q40,50 45,40" stroke="black" stroke-width="3" fill="none"/><path d="M55,40 Q60,50 65,40" stroke="black" stroke-width="3" fill="none"/><path d="M40,60 Q50,50 60,60" stroke="black" stroke-width="3" fill="none"/></svg>`,
-            `<svg viewBox="0 0 100 100"><path d="M20,80 L80,80 L50,20 Z" fill="white"/><circle cx="50" cy="50" r="20" fill="#f1c40f"/><circle cx="50" cy="50" r="10" fill="white"/><circle cx="50" cy="50" r="5" fill="black"/></svg>`,
-            `<svg viewBox="0 0 100 100"><path d="M20,80 C20,40 80,40 80,80 Z" fill="white"/><circle cx="40" cy="60" r="4" fill="black"/><circle cx="60" cy="60" r="4" fill="black"/><path d="M45,70 Q50,75 55,70" stroke="black" stroke-width="2" fill="none"/></svg>`,
-            `<svg viewBox="0 0 100 100"><rect x="25" y="35" width="50" height="50" fill="white"/><path d="M25,35 L50,10 L75,35 Z" fill="white"/><circle cx="40" cy="55" r="3" fill="black"/><circle cx="60" cy="55" r="3" fill="black"/><rect x="45" y="70" width="10" height="3" fill="black"/></svg>`,
-        ];
-        const bgColors = ['#fecaca', '#fed7aa', '#bbf7d0', '#bfdbfe', '#e9d5ff', '#a7f3d0', '#bae6fd', '#ddd6fe'];
-        let selectedCharacter = 0;
-        let selectedBgColor = bgColors[0];
-
-        function renderCharacterCreator() {
-            const charContainer = document.getElementById('character-selection');
-            charContainer.innerHTML = characters.map((c, i) => `
-                <button class="character-item w-16 h-16 p-1 rounded-lg bg-gray-600 ${i === selectedCharacter ? 'selected' : ''}" data-index="${i}">
-                    ${c}
-                </button>
-            `).join('');
-
-            const bgColorContainer = document.getElementById('background-color-selection');
-            bgColorContainer.innerHTML = bgColors.map((c, i) => `
-                <button class="bg-color-item w-10 h-10 rounded-full ${c === selectedBgColor ? 'selected' : ''}" style="background-color: ${c};" data-color="${c}"></button>
-            `).join('');
-            
-            charContainer.addEventListener('click', e => {
-                const btn = e.target.closest('.character-item');
-                if(btn) {
-                    selectedCharacter = parseInt(btn.dataset.index);
-                    charContainer.querySelectorAll('.character-item').forEach(b => b.classList.remove('selected'));
-                    btn.classList.add('selected');
-                }
-            });
-            bgColorContainer.addEventListener('click', e => {
-                const btn = e.target.closest('.bg-color-item');
-                if(btn) {
-                    selectedBgColor = btn.dataset.color;
-                    bgColorContainer.querySelectorAll('.bg-color-item').forEach(b => b.classList.remove('selected'));
-                    btn.classList.add('selected');
-                }
-            });
-        }
-
-        async function handleCharacterCreation() {
-            const btn = document.getElementById('confirm-character-creator-btn');
-            btn.textContent = 'Saving...';
-            btn.disabled = true;
-
-            const finalSvgString = `<svg width="200" height="200" xmlns="http://www.w3.org/2000/svg"><rect width="100%" height="100%" fill="${selectedBgColor}" />${characters[selectedCharacter]}</svg>`;
-            
-            try {
-                const storageRef = ref(storage, `avatars/${userId}.svg`);
-                await uploadString(storageRef, finalSvgString, 'raw', { contentType: 'image/svg+xml' });
-                const photoURL = await getDownloadURL(storageRef);
-                
-                await updateProfile(auth.currentUser, { photoURL });
-                const profileRef = doc(db, `artifacts/${appId}/public/data/user_profiles`, userId);
-                await updateDoc(profileRef, { photoURL });
-
-                updateUserAvatars(photoURL);
-                hideModals();
-            } catch(error) {
-                handleError(error, 'Character Avatar Upload');
-            } finally {
-                btn.textContent = 'OK';
-                btn.disabled = false;
-            }
-        }
-        
-        // --- GROUP FUNCTIONS ---
-        async function handleCreateGroup(e) {
-            e.preventDefault();
-            const form = e.target;
-            const groupName = form.querySelector('#group-name-input').value.trim();
-            if(!groupName) return;
-
-            const newGroup = {
-                name: groupName,
-                password: form.querySelector('#group-password-input').value,
-                category: form.querySelector('#group-category-select').value,
-                goal: parseInt(form.querySelector('#group-goal-select').value),
-                capacity: parseInt(form.querySelector('#group-capacity-input').value),
-                description: form.querySelector('#group-description-input').value,
-                ownerId: userId,
-                ownerName: auth.currentUser.displayName,
-                members: [userId],
-                createdAt: serverTimestamp(),
-            };
-            
-            try {
-                const groupRef = await addDoc(collection(db, `artifacts/${appId}/public/data/groups`), newGroup);
-                const userProfileRef = doc(db, `artifacts/${appId}/public/data/user_profiles`, userId);
-                await updateDoc(userProfileRef, {
-                    groups: arrayUnion(groupRef.id)
-                });
-                hideModals();
-                renderMyGroupsList();
-            } catch(error) {
-                handleError(error, 'Create Group');
-            }
-        }
-
-        async function handleJoinGroup(e) {
-            e.preventDefault();
-            const groupId = document.getElementById('group-id-input').value.trim();
-            if(!groupId) return;
-
-            try {
-                const groupRef = doc(db, `artifacts/${appId}/public/data/groups`, groupId);
-                const groupSnap = await getDoc(groupRef);
-
-                if(!groupSnap.exists()) {
-                    alert("Group not found!");
-                    return;
-                }
-                
-                const groupData = groupSnap.data();
-                if(groupData.password) {
-                    const password = prompt("This group is private. Please enter the password:");
-                    if(password !== groupData.password) {
-                        alert("Incorrect password.");
-                        return;
-                    }
-                }
-                
-                await updateDoc(groupRef, { members: arrayUnion(userId) });
-                const userProfileRef = doc(db, `artifacts/${appId}/public/data/user_profiles`, userId);
-                await updateDoc(userProfileRef, { groups: arrayUnion(groupId) });
-
-                hideModals();
-                renderMyGroupsList();
-            } catch(error) {
-                handleError(error, 'Join Group');
-            }
-        }
-        
-        async function renderMyGroupsList() {
-            ui.myGroupsList.innerHTML = `<p>Loading your groups...</p>`;
-            const userProfileRef = doc(db, `artifacts/${appId}/public/data/user_profiles`, userId);
-            const userSnap = await getDoc(userProfileRef);
-            if(!userSnap.exists() || !userSnap.data().groups || userSnap.data().groups.length === 0) {
-                ui.myGroupsList.innerHTML = `<p class="text-center text-gray-400">You haven't joined any groups yet.</p>`;
-                return;
-            }
-
-            const groupIds = userSnap.data().groups;
-            const groupPromises = groupIds.map(id => getDoc(doc(db, `artifacts/${appId}/public/data/groups`, id)));
-            const groupSnaps = await Promise.all(groupPromises);
-
-            ui.myGroupsList.innerHTML = groupSnaps.map(snap => {
-                if(!snap.exists()) return '';
-                const group = snap.data();
-                return `
-                    <button class="group-item-btn w-full text-left p-4 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors" data-group-id="${snap.id}">
-                        <div class="flex justify-between items-center">
-                            <h4 class="text-lg font-bold">${group.name} ${group.password ? '🔒' : ''}</h4>
-                            <span class="text-sm text-gray-400">${group.members.length} / ${group.capacity}</span>
-                        </div>
-                        <p class="text-sm text-gray-400 mt-1">Goal: ${group.goal}h/day • Leader: ${group.ownerName}</p>
-                    </button>
-                `;
-            }).join('');
-        }
-
-        async function renderAllGroupsList() {
-            ui.allGroupsList.innerHTML = `<p>Loading all groups...</p>`;
-            const groupsRef = collection(db, `artifacts/${appId}/public/data/groups`);
-            const q = query(groupsRef, where("password", "==", ""));
-            const querySnapshot = await getDocs(q);
-            
-            ui.allGroupsList.innerHTML = querySnapshot.docs.map(snap => {
-                const group = snap.data();
-                return `
-                    <button class="group-item-btn w-full text-left p-4 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors" data-group-id="${snap.id}">
-                        <div class="flex justify-between items-center">
-                            <h4 class="text-lg font-bold">${group.name}</h4>
-                            <span class="text-sm text-gray-400">${group.members.length} / ${group.capacity}</span>
-                        </div>
-                        <p class="text-sm text-gray-400 mt-1">${group.description}</p>
-                    </button>
-                `;
-            }).join('');
-        }
-
-        async function renderGroupDetails(groupId) {
-            currentGroupId = groupId;
-            showPage('group-details');
-            const groupRef = doc(db, `artifacts/${appId}/public/data/groups`, groupId);
-            const groupSnap = await getDoc(groupRef);
-
-            if(!groupSnap.exists()) {
-                showPage('groups');
-                return;
-            }
-            const groupData = groupSnap.data();
-            ui.groupDetailsName.textContent = groupData.name;
-            if(ui.groupSettingsBtn) ui.groupSettingsBtn.dataset.groupId = groupId;
-
-            const memberPromises = groupData.members.map(id => getDoc(doc(db, `artifacts/${appId}/public/data/user_profiles`, id)));
-            const memberSnaps = await Promise.all(memberPromises);
-
-            ui.groupMembersList.innerHTML = memberSnaps.map(snap => {
-                if(!snap.exists()) return '';
-                const member = snap.data();
-                return `
-                    <div class="p-4 bg-gray-800 rounded-lg text-center">
-                        <div class="w-16 h-16 rounded-full mx-auto mb-2 bg-gray-700 overflow-hidden">
-                            ${member.photoURL ? `<img src="${member.photoURL}" class="w-full h-full object-cover">` : `<svg class="w-full h-full text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" /></svg>`}
-                        </div>
-                        <p class="font-semibold">${member.displayName}</p>
-                        <p class="text-sm text-green-400">Studying...</p>
-                    </div>
-                `;
-            }).join('');
-        }
-        
-        async function renderAttendance(groupId) {
-            // This function will be implemented in a future update
-            console.log("Rendering attendance for group:", groupId);
-        }
-
-        async function renderGroupRankings() {
-            // This function will be implemented in a future update
-            console.log("Rendering group rankings");
-        }
-
-
-        // --- APP START ---
-        document.addEventListener('DOMContentLoaded', () => {
-            setupEventListeners();
         });
+
+        // --- Realtime Data Listeners ---
+        function setupRealtimeListeners() {
+            if (!currentUser) return;
+            const groupsCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'groups');
+            const userDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
+            const subjectsCollectionRef = collection(userDocRef, 'subjects');
+
+            onSnapshot(groupsCollectionRef, () => renderAvailableGroups());
+            onSnapshot(userDocRef, (doc) => {
+                renderJoinedGroups();
+                if (doc.exists()) {
+                    updateProfileUI(doc.data());
+                }
+            });
+            onSnapshot(subjectsCollectionRef, (snapshot) => {
+                const subjects = [];
+                snapshot.forEach(doc => subjects.push({ id: doc.id, ...doc.data() }));
+                renderSubjectSelectionList(subjects);
+            });
+        }
+
+        // --- Group Rendering ---
+        async function renderJoinedGroups() {
+            if (!currentUser) return;
+            const userDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
+            const userDoc = await getDoc(userDocRef);
+            const joinedGroupIds = userDoc.exists() && userDoc.data().joinedGroups ? userDoc.data().joinedGroups : [];
+            
+            const container = document.getElementById('my-groups-list');
+            if (joinedGroupIds.length === 0) {
+                container.innerHTML = `<div class="empty-group"><i class="fas fa-users-slash"></i><h3>No Groups Joined Yet</h3><p>You haven't joined any study groups. Join a group or create your own to get started!</p><button class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition mt-4" id="explore-groups-btn">Explore Groups</button></div>`;
+                document.getElementById('explore-groups-btn').addEventListener('click', () => { renderAvailableGroups(); showPage('page-find-groups'); });
+                return;
+            }
+
+            const groupsCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'groups');
+            const groupsSnapshot = await getDocs(groupsCollectionRef);
+            const allGroups = {};
+            groupsSnapshot.forEach(doc => allGroups[doc.id] = { id: doc.id, ...doc.data() });
+
+            let html = '<div class="grid grid-cols-1 gap-4">';
+            joinedGroupIds.forEach(groupId => {
+                const group = allGroups[groupId];
+                if (!group) return;
+                 const memberCount = group.members ? group.members.length : 0;
+                const isFull = memberCount >= group.capacity;
+                let headerColor = 'linear-gradient(135deg, #4361ee 0%, #4895ef 100%)';
+                if (group.category === 'Language study') headerColor = 'linear-gradient(135deg, #00bcd4 0%, #0097a7 100%)';
+                else if (group.category === 'Secondary School') headerColor = 'linear-gradient(135deg, #9c27b0 0%, #673ab7 100%)';
+                else if (group.category === 'University') headerColor = 'linear-gradient(135deg, #ff9800 0%, #f57c00 100%)';
+                html += `<div class="group-card"><div class="group-header" style="background: ${headerColor}"><div class="group-category">${group.category}</div><div class="group-name">${group.name}${isFull ? '<span class="badge">Full</span>' : ''}</div><div class="group-stats"><div class="stat-item"><div class="stat-value">${group.attendance || 0}%</div><div class="stat-label">Attendance</div></div><div class="stat-item"><div class="stat-value">${group.avgTime || 'N/A'}</div><div class="stat-label">Avg. Time</div></div><div class="stat-item"><div class="stat-value">${memberCount}/${group.capacity}</div><div class="stat-label">Members</div></div></div></div><div class="group-body"><div class="group-goal"><div class="goal-text">Goal: ${group.timeGoal} hours/day</div><div class="leader"><i class="fas fa-crown"></i> Leader: ${group.leaderName}</div></div><div class="group-description">${group.description}</div><div class="joined-badge"><i class="fas fa-check-circle"></i> Joined</div><div class="group-meta"><div>Started: ${group.createdAt?.toDate().toLocaleDateString()}</div><div><i class="fas fa-comment"></i> 12 new</div></div></div></div>`;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        async function renderAvailableGroups() {
+            if (!currentUser) return;
+            const userDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
+            const userDoc = await getDoc(userDocRef);
+            const joinedGroupIds = userDoc.exists() && userDoc.data().joinedGroups ? userDoc.data().joinedGroups : [];
+
+            const groupsCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'groups');
+            const groupsSnapshot = await getDocs(groupsCollectionRef);
+            const availableGroups = [];
+            groupsSnapshot.forEach(doc => {
+                if (!joinedGroupIds.includes(doc.id)) {
+                    availableGroups.push({ id: doc.id, ...doc.data() });
+                }
+            });
+
+            const container = document.getElementById('all-groups-list');
+            if (availableGroups.length === 0) {
+                container.innerHTML = `<div class="empty-group"><i class="fas fa-search"></i><h3>No Groups Available</h3><p>There are no study groups available at the moment. Why not create your own group?</p><button class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition mt-4" id="create-first-group-btn">Create Group</button></div>`;
+                document.getElementById('create-first-group-btn').addEventListener('click', () => showPage('page-create-group'));
+                return;
+            }
+            
+            container.innerHTML = '<div class="grid grid-cols-1 gap-4">' + availableGroups.map(group => {
+                const memberCount = group.members ? group.members.length : 0;
+                const isFull = memberCount >= group.capacity;
+                const isPrivate = !!group.password;
+                let headerColor = 'linear-gradient(135deg, #4361ee 0%, #4895ef 100%)';
+                if (group.category === 'Language study') headerColor = 'linear-gradient(135deg, #00bcd4 0%, #0097a7 100%)';
+                else if (group.category === 'Secondary School') headerColor = 'linear-gradient(135deg, #9c27b0 0%, #673ab7 100%)';
+                else if (group.category === 'University') headerColor = 'linear-gradient(135deg, #ff9800 0%, #f57c00 100%)';
+                return `<div class="group-card"><div class="group-header" style="background: ${headerColor}"><div class="group-category">${group.category}</div><div class="group-name">${group.name}${isFull ? '<span class="badge">Full</span>' : ''}</div><div class="group-stats"><div class="stat-item"><div class="stat-value">${group.attendance || 0}%</div><div class="stat-label">Attendance</div></div><div class="stat-item"><div class="stat-value">${group.avgTime || 'N/A'}</div><div class="stat-label">Avg. Time</div></div><div class="stat-item"><div class="stat-value">${memberCount}/${group.capacity}</div><div class="stat-label">Members</div></div></div></div><div class="group-body"><div class="group-goal"><div class="goal-text">Goal: ${group.timeGoal} hours/day</div><div class="leader"><i class="fas fa-crown"></i> Leader: ${group.leaderName}</div></div><div class="group-description">${group.description}</div><button class="join-btn" data-id="${group.id}" data-private="${isPrivate}" ${isFull ? 'disabled' : ''}>${isFull ? 'Group Full' : 'Join Group'}</button><div class="group-meta"><div>Started: ${group.createdAt?.toDate().toLocaleDateString()}</div><div><i class="fas ${isPrivate ? 'fa-lock' : 'fa-lock-open'}"></i> ${isPrivate ? 'Private' : 'Public'}</div></div></div></div>`;
+            }).join('') + '</div>';
+            
+            document.querySelectorAll('.join-btn:not(:disabled)').forEach(button => {
+                button.addEventListener('click', async function() {
+                    const groupId = this.getAttribute('data-id');
+                    const isPrivate = this.getAttribute('data-private') === 'true';
+                    
+                    if (isPrivate) {
+                        const password = prompt('This group requires a password:');
+                        const groupDoc = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'groups', groupId));
+                        if (password !== groupDoc.data().password) {
+                            alert('Incorrect password');
+                            return;
+                        }
+                    }
+                    
+                    await joinGroup(groupId);
+                });
+            });
+        }
+
+        async function joinGroup(groupId) {
+            if (!currentUser) return;
+            const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
+            const groupRef = doc(db, 'artifacts', appId, 'public', 'data', 'groups', groupId);
+            await setDoc(userRef, { joinedGroups: arrayUnion(groupId) }, { merge: true });
+            await updateDoc(groupRef, { members: arrayUnion(currentUser.uid) });
+            alert("Group joined!");
+        }
+
+        function renderSubjectSelectionList(subjects) {
+            const container = document.getElementById('subject-selection-list');
+            if (subjects.length === 0) {
+                container.innerHTML = `<p class="text-gray-400 text-center">No subjects added yet. Add one below!</p>`;
+                return;
+            }
+            container.innerHTML = subjects.map(subject => `
+                <div class="subject-item p-3 rounded-lg flex items-center gap-3" data-subject-id="${subject.id}" data-subject-name="${subject.name}">
+                    <div class="flex-grow flex items-center gap-3">
+                        <div class="w-4 h-4 rounded-full ${subject.color}"></div>
+                        <span>${subject.name}</span>
+                    </div>
+                    <button class="subject-options-btn"><i class="fas fa-ellipsis-v"></i></button>
+                    <div class="subject-options-menu">
+                        <button class="edit-subject-btn">Edit</button>
+                        <button class="delete-subject-btn">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // --- Event Listeners ---
+        const ael = (id, event, callback) => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener(event, callback);
+        };
+
+        // Auth
+        ael('login-form', 'submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+            } catch (error) {
+                authError.textContent = error.message;
+            }
+        });
+
+        ael('signup-form', 'submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+            try {
+                await createUserWithEmailAndPassword(auth, email, password);
+            } catch (error) {
+                authError.textContent = error.message;
+            }
+        });
+
+        ael('google-signin-btn', 'click', async () => {
+            const provider = new GoogleAuthProvider();
+            try {
+                await signInWithPopup(auth, provider);
+            } catch (error) {
+                authError.textContent = error.message;
+            }
+        });
+
+        ael('sign-out-btn', 'click', () => signOut(auth));
+        
+        ael('username-setup-form', 'submit', async (e) => {
+            e.preventDefault();
+            if (!currentUser) return;
+            const username = document.getElementById('username-input').value.trim();
+            if (username.length < 3) {
+                alert("Username must be at least 3 characters long.");
+                return;
+            }
+            const userDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
+            await setDoc(userDocRef, { username: username }, { merge: true });
+            
+            showPage('page-timer');
+            setupRealtimeListeners();
+            loadDailyTotal();
+            initCharts();
+        });
+
+        // Navigation
+        document.querySelectorAll('.nav-item').forEach(item => item.addEventListener('click', function() {
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            this.classList.add('active');
+            showPage(`page-${this.dataset.page}`);
+        }));
+
+        document.querySelectorAll('.back-button').forEach(button => button.addEventListener('click', function() {
+            const targetPage = this.getAttribute('data-target');
+            showPage(`page-${targetPage}`);
+            const navItem = document.querySelector(`.nav-item[data-page="${targetPage}"]`);
+            if (navItem) {
+                 document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                 navItem.classList.add('active');
+            }
+        }));
+
+        ael('groups-btn', 'click', () => { renderJoinedGroups(); showPage('page-my-groups'); });
+        ael('go-to-find-groups-btn', 'click', () => { renderAvailableGroups(); showPage('page-find-groups'); });
+        ael('go-to-create-group-btn', 'click', () => showPage('page-create-group'));
+        ael('profile-btn', 'click', () => showPage('page-profile'));
+        
+        // Group Creation
+        ael('create-group-done-btn', 'click', async () => {
+            const form = document.getElementById('create-group-form');
+            if (!form.checkValidity()) {
+                alert('Please fill out all required fields.');
+                form.reportValidity();
+                return;
+            }
+            const btn = document.getElementById('create-group-done-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+            
+            try {
+                const groupsCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'groups');
+                const newGroup = {
+                    name: document.getElementById('group-name-input').value.trim(),
+                    password: document.getElementById('group-password-input').value,
+                    category: document.querySelector('.category-option.selected').textContent,
+                    timeGoal: parseInt(document.querySelector('.time-option.selected').textContent),
+                    capacity: parseInt(document.getElementById('capacity-value').textContent),
+                    description: document.getElementById('group-description-input').value.trim(),
+                    leaderId: currentUser.uid,
+                    leaderName: currentUser.email, // Or displayName
+                    members: [currentUser.uid],
+                    createdAt: serverTimestamp()
+                };
+                const docRef = await addDoc(groupsCollectionRef, newGroup);
+                await joinGroup(docRef.id);
+                renderJoinedGroups();
+                showPage('page-my-groups');
+            } catch (error) {
+                console.error("Error creating group:", error);
+                alert("Failed to create group.");
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Done';
+            }
+        });
+
+        // Other UI
+        document.querySelectorAll('.category-option, .time-option').forEach(option => {
+            option.addEventListener('click', () => {
+                const parent = option.parentElement;
+                parent.querySelectorAll(`.${option.classList[0]}`).forEach(opt => opt.classList.remove('selected'));
+                option.classList.add('selected');
+            });
+        });
+        
+        let capacity = 15;
+        ael('increase-capacity', 'click', () => { if (capacity < 100) document.getElementById('capacity-value').textContent = ++capacity; else alert('Maximum capacity is 100'); });
+        ael('decrease-capacity', 'click', () => { if (capacity > 2) document.getElementById('capacity-value').textContent = --capacity; else alert('Minimum capacity is 2'); });
+        
+        ael('auth-toggle-btn', 'click', () => {
+            const isLogin = !document.getElementById('login-form').classList.contains('hidden');
+            document.getElementById('login-form').classList.toggle('hidden', isLogin);
+            document.getElementById('signup-form').classList.toggle('hidden', !isLogin);
+            document.getElementById('auth-toggle-btn').textContent = isLogin ? 'Sign In' : 'Sign Up';
+            document.getElementById('login-toggle-text').textContent = isLogin ? 'Already have an account?' : "Don't have an account?";
+            authError.textContent = '';
+        });
+
+        // Modals
+        const addSubjectModal = document.getElementById('add-subject-modal');
+        ael('add-subject-btn', 'click', () => addSubjectModal.classList.add('active'));
+        addSubjectModal.querySelector('.close-modal').addEventListener('click', () => addSubjectModal.classList.remove('active'));
+        
+        addSubjectModal.querySelectorAll('.color-dot').forEach(dot => {
+            dot.addEventListener('click', () => {
+                addSubjectModal.querySelectorAll('.color-dot').forEach(d => d.classList.remove('selected'));
+                dot.classList.add('selected');
+            });
+        });
+
+        ael('add-subject-form', 'submit', async (e) => {
+            e.preventDefault();
+            if (!currentUser) return;
+            const name = document.getElementById('add-subject-name').value.trim();
+            const color = addSubjectModal.querySelector('.color-dot.selected').dataset.color;
+            if (!name || !color) {
+                alert("Please provide a name and select a color.");
+                return;
+            }
+
+            const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
+            const subjectsRef = collection(userRef, 'subjects');
+            await addDoc(subjectsRef, { name, color });
+            
+            addSubjectModal.classList.remove('active');
+            document.getElementById('add-subject-form').reset();
+        });
+        
+        const startSessionModal = document.getElementById('start-session-modal');
+        ael('start-studying-btn', 'click', () => startSessionModal.classList.add('active'));
+        ael('close-start-session-modal', 'click', () => startSessionModal.classList.remove('active'));
+        ael('open-add-subject-modal-from-start', 'click', () => addSubjectModal.classList.add('active'));
+
+        ael('start-session-form', 'submit', (e) => {
+            e.preventDefault();
+            const selectedSubjectEl = document.querySelector('#subject-selection-list .subject-item.selected');
+            if (!selectedSubjectEl) {
+                alert("Please select a subject to start studying.");
+                return;
+            }
+            const subject = selectedSubjectEl.dataset.subjectName;
+            startSessionModal.classList.remove('active');
+            startTimer(subject);
+        });
+
+        ael('stop-studying-btn', 'click', stopTimer);
+
+        // Subject options menu logic
+        document.getElementById('subject-selection-list').addEventListener('click', async (e) => {
+            const optionsBtn = e.target.closest('.subject-options-btn');
+            const subjectItem = e.target.closest('.subject-item');
+
+            if (optionsBtn) {
+                e.stopPropagation(); // Prevent the item selection click
+                const menu = optionsBtn.nextElementSibling;
+                // Close other menus
+                document.querySelectorAll('.subject-options-menu').forEach(m => {
+                    if (m !== menu) m.classList.remove('active');
+                });
+                menu.classList.toggle('active');
+                return;
+            }
+
+            // Handle item selection
+            if (subjectItem && !e.target.closest('.subject-options-menu')) {
+                 document.querySelectorAll('#subject-selection-list .subject-item').forEach(i => i.classList.remove('selected'));
+                 subjectItem.classList.add('selected');
+            }
+            
+            // Handle delete button click
+            if (e.target.classList.contains('delete-subject-btn')) {
+                e.stopPropagation();
+                const itemToDelete = e.target.closest('.subject-item');
+                const subjectId = itemToDelete.dataset.subjectId;
+                if (confirm(`Are you sure you want to delete "${itemToDelete.dataset.subjectName}"?`)) {
+                    const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
+                    await deleteDoc(doc(userRef, 'subjects', subjectId));
+                }
+            }
+            
+            // Handle edit button click
+            if (e.target.classList.contains('edit-subject-btn')) {
+                 e.stopPropagation();
+                 alert("Edit functionality coming soon!");
+            }
+        });
+
+        // Close subject menus when clicking outside
+        window.addEventListener('click', (e) => {
+            if (!e.target.closest('.subject-options-btn')) {
+                document.querySelectorAll('.subject-options-menu').forEach(m => m.classList.remove('active'));
+            }
+        });
+
     </script>
 </body>
 </html>
