@@ -763,7 +763,7 @@
         async function saveSession(subject, durationSeconds) {
             if (!currentUser) return;
             try {
-                const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
+                const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
                 const sessionsRef = collection(userRef, 'sessions');
 
                 await addDoc(sessionsRef, {
@@ -774,7 +774,7 @@
 
                 await setDoc(userRef, {
                     totalTimeToday: {
-                        date: new Date().toISOString().split('T')[0], // YYYY-MM-DD
+                        date: new Date().toISOString().split('T')[0],
                         seconds: totalTimeTodayInSeconds
                     }
                 }, { merge: true });
@@ -786,7 +786,7 @@
 
         async function loadDailyTotal() {
             if (!currentUser) return;
-            const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
+            const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
             const userDoc = await getDoc(userRef);
 
             if (userDoc.exists()) {
@@ -804,7 +804,7 @@
         }
 
         async function getOrCreateUserDocument(user) {
-            const userDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', user.uid);
+            const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid);
             const userDoc = await getDoc(userDocRef);
 
             if (!userDoc.exists()) {
@@ -853,7 +853,7 @@
         function setupRealtimeListeners() {
             if (!currentUser) return;
             const groupsCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'groups');
-            const userDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
+            const userDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
             const subjectsCollectionRef = collection(userDocRef, 'subjects');
 
             onSnapshot(groupsCollectionRef, () => renderAvailableGroups());
@@ -873,7 +873,7 @@
         // --- Group Rendering ---
         async function renderJoinedGroups() {
             if (!currentUser) return;
-            const userDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
+            const userDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
             const userDoc = await getDoc(userDocRef);
             const joinedGroupIds = userDoc.exists() && userDoc.data().joinedGroups ? userDoc.data().joinedGroups : [];
             
@@ -907,7 +907,7 @@
 
         async function renderAvailableGroups() {
             if (!currentUser) return;
-            const userDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
+            const userDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
             const userDoc = await getDoc(userDocRef);
             const joinedGroupIds = userDoc.exists() && userDoc.data().joinedGroups ? userDoc.data().joinedGroups : [];
 
@@ -959,7 +959,7 @@
 
         async function joinGroup(groupId) {
             if (!currentUser) return;
-            const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
+            const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
             const groupRef = doc(db, 'artifacts', appId, 'public', 'data', 'groups', groupId);
             await setDoc(userRef, { joinedGroups: arrayUnion(groupId) }, { merge: true });
             await updateDoc(groupRef, { members: arrayUnion(currentUser.uid) });
@@ -1035,7 +1035,7 @@
                 alert("Username must be at least 3 characters long.");
                 return;
             }
-            const userDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
+            const userDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
             await setDoc(userDocRef, { username: username }, { merge: true });
             
             showPage('page-timer');
@@ -1149,7 +1149,7 @@
                 return;
             }
 
-            const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
+            const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
             const subjectsRef = collection(userRef, 'subjects');
             await addDoc(subjectsRef, { name, color });
             
@@ -1204,7 +1204,7 @@
                 const itemToDelete = e.target.closest('.subject-item');
                 const subjectId = itemToDelete.dataset.subjectId;
                 if (confirm(`Are you sure you want to delete "${itemToDelete.dataset.subjectName}"?`)) {
-                    const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
+                    const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
                     await deleteDoc(doc(userRef, 'subjects', subjectId));
                 }
             }
