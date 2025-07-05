@@ -16,8 +16,8 @@
         .nav-item.active svg, .nav-item.active p, .group-nav-item.active i, .group-nav-item.active p { color: #3B82F6; }
 
         /* Page and container visibility */
-        #auth-screen, .page, #app-container, .modal { display: none; }
-        #auth-screen.active, .page.active, #app-container.active, .modal.active { display: flex; }
+        #loader-screen, #auth-screen, .page, #app-container, .modal { display: none; }
+        #loader-screen.active, #auth-screen.active, .page.active, #app-container.active, .modal.active { display: flex; }
         .fade-in { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
 
@@ -158,7 +158,7 @@
         }
         .create-group-btn {
             position: fixed;
-            bottom: 20px;
+            bottom: 80px; /* Adjusted for main nav */
             right: 20px;
             width: 56px;
             height: 56px;
@@ -467,49 +467,219 @@
             color: #9CA3AF;
             margin-bottom: 0.25rem;
         }
+
+        /* Attendance Page Styles */
+        .attendance-container {
+            padding: 16px;
+        }
+        .attendance-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .attendance-nav-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #374151;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .attendance-nav-btn:hover {
+            background: #4B5563;
+        }
+        .attendance-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            text-align: center;
+        }
+        .attendance-calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+        }
+        .calendar-header {
+            text-align: center;
+            padding: 8px;
+            font-size: 0.8rem;
+            color: #9CA3AF;
+        }
+        .calendar-day {
+            aspect-ratio: 1/1;
+            background: #1F2937;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .calendar-day.empty {
+            background: transparent;
+        }
+        .day-number {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .day-time {
+            font-size: 0.7rem;
+            color: #10B981;
+        }
+        .calendar-day.today .day-number {
+            color: #3B82F6;
+            font-weight: 700;
+        }
+        .calendar-day.active {
+            background: #3B82F6;
+        }
+        .calendar-day.active .day-number {
+            color: white;
+        }
+        .calendar-day.active .day-time {
+            color: white;
+        }
+        .attendance-stats {
+            margin-top: 20px;
+            padding: 16px;
+            background: #1F2937;
+            border-radius: 12px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-top: 12px;
+        }
+        .stat-box {
+            background: #111827;
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .stat-label {
+            font-size: 0.8rem;
+            color: #9CA3AF;
+        }
+        .attendance-member-list {
+            margin-top: 20px;
+        }
+        .member-row {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: #1F2937;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+        .member-avatar-sm {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #4B5563;
+            margin-right: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+        .member-info {
+            flex-grow: 1;
+        }
+        .member-name-sm {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        .member-time-sm {
+            font-size: 0.8rem;
+            color: #9CA3AF;
+        }
+        .attendance-progress {
+            height: 6px;
+            background: #374151;
+            border-radius: 3px;
+            margin-top: 4px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            background: #3B82F6;
+            border-radius: 3px;
+        }
+        
+        /* Toast Notification */
+        #toast-container {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        .toast {
+            padding: 12px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .toast.info { background-color: #3B82F6; }
+        .toast.success { background-color: #10B981; }
+        .toast.error { background-color: #EF4444; }
+
+        /* Confirmation Modal */
+        #confirmation-modal .modal-content {
+            text-align: center;
+        }
+        #confirmation-modal-message {
+            margin-bottom: 20px;
+            color: #D1D5DB;
+        }
+        #confirmation-modal-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        #confirmation-modal-buttons button {
+            flex-grow: 1;
+            padding: 10px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        #confirm-btn { background-color: #EF4444; color: white; }
+        #confirm-btn:hover { background-color: #DC2626; }
+        #cancel-btn { background-color: #4B5563; color: white; }
+        #cancel-btn:hover { background-color: #6B7280; }
     </style>
 </head>
 <body class="bg-gray-900 text-white flex flex-col h-screen antialiased">
 
-    <!-- Authentication Screen -->
-    <div id="auth-screen" class="active flex-col items-center justify-center h-full p-4 fade-in">
-        <div class="w-full max-w-sm text-center">
-            <h1 class="text-4xl font-bold text-white mb-2">FocusFlow</h1>
-            <p class="text-gray-400 mb-8">Your Ultimate Study Companion</p>
-            <div id="auth-form-container" class="bg-gray-800 p-8 rounded-2xl shadow-lg">
-                <form id="login-form" class="space-y-4">
-                    <h2 class="text-2xl font-bold text-white mb-4">Login</h2>
-                    <input type="email" id="login-email" placeholder="Email" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                    <input type="password" id="login-password" placeholder="Password" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Sign In</button>
-                </form>
-                <form id="signup-form" class="hidden space-y-4">
-                    <h2 class="text-2xl font-bold text-white mb-4">Create Account</h2>
-                    <input type="email" id="signup-email" placeholder="Email" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                    <input type="password" id="signup-password" placeholder="Password (min. 6 characters)" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required minlength="6">
-                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Sign Up</button>
-                </form>
-                <p id="auth-error" class="text-red-400 text-sm mt-4 h-5"></p>
-                <div class="flex items-center my-6">
-                    <hr class="flex-grow border-gray-600">
-                    <span class="mx-4 text-gray-500">OR</span>
-                    <hr class="flex-grow border-gray-600">
-                </div>
-                <button id="google-signin-btn" class="w-full bg-white text-gray-800 font-semibold py-3 rounded-lg flex items-center justify-center transition hover:bg-gray-200">
-                    <svg class="w-6 h-6 mr-3" viewBox="0 0 48 48">
-                        <path fill="#4285F4" d="M43.611 20.083H24v8.838h11.002c-0.463 2.878-2.18 5.424-4.852 7.199l7.217 5.626C43.02 37.21 46 29.54 46 20.083z"/>
-                        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.897-5.781l-7.217-5.626c-2.13 1.442-4.852 2.308-7.68 2.308-5.878 0-10.845-3.965-12.624-9.26l-7.42 5.781C6.383 39.04 14.46 48 24 48z"/>
-                        <path fill="#FBBC05" d="M11.376 28.71c-0.565-1.71-0.565-3.526 0-5.236l-7.42-5.781C1.678 21.24 0 26.52 0 32.14c0 5.62 1.678 10.9 4.053 14.18l7.323-5.61z"/>
-                        <path fill="#EA4335" d="M24 10.73c3.52 0 6.565 1.218 9.015 3.655l6.345-6.345C35.93 2.13 30.48 0 24 0 14.46 0 6.383 8.96 2.053 17.71l7.42 5.781c1.779-5.295 6.746-9.26 12.624-9.26z"/>
-                    </svg>
-                    Sign in with Google
-                </button>
-                <p class="mt-8 text-sm text-gray-400">
-                    <span id="login-toggle-text">Don't have an account?</span>
-                    <button id="auth-toggle-btn" class="font-semibold text-blue-400 hover:text-blue-300">Sign Up</button>
-                </p>
-            </div>
-        </div>
+    <!-- Loading Screen -->
+    <div id="loader-screen" class="active flex-col items-center justify-center h-full p-4 fade-in">
+        <i class="fas fa-spinner fa-spin fa-3x text-blue-500"></i>
+        <p class="mt-4 text-gray-400">Connecting...</p>
     </div>
 
     <!-- Username Setup Screen -->
@@ -520,6 +690,7 @@
             <div class="bg-gray-800 p-8 rounded-2xl shadow-lg">
                 <form id="username-setup-form" class="space-y-4">
                     <input type="text" id="username-input" placeholder="Enter your username" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required minlength="3">
+                    <p id="username-error" class="text-red-400 text-sm h-5"></p>
                     <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Save Username</button>
                 </form>
             </div>
@@ -603,7 +774,7 @@
                     </div>
                 </div>
                 <div id="ranking-list" class="ranking-list">
-                     <!-- Realtime leaderboard will be rendered here -->
+                       <!-- Realtime leaderboard will be rendered here -->
                 </div>
             </div>
             
@@ -745,9 +916,13 @@
     </div>
 
     <!-- Modals -->
+    <div id="toast-container"></div>
     <div id="add-subject-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Add New Subject</div><button class="close-modal">&times;</button></div><form id="add-subject-form"><div class="mb-4"><label for="add-subject-name" class="block text-gray-300 mb-2">Subject Name</label><input type="text" id="add-subject-name" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required></div><div class="mb-4"><label class="block text-gray-300 mb-2">Color</label><div class="flex space-x-2 subject-color-picker"><div class="w-8 h-8 rounded-full bg-red-500 cursor-pointer color-dot" data-color="bg-red-500"></div><div class="w-8 h-8 rounded-full bg-blue-500 cursor-pointer color-dot selected" data-color="bg-blue-500"></div><div class="w-8 h-8 rounded-full bg-green-500 cursor-pointer color-dot" data-color="bg-green-500"></div><div class="w-8 h-8 rounded-full bg-yellow-500 cursor-pointer color-dot" data-color="bg-yellow-500"></div><div class="w-8 h-8 rounded-full bg-purple-500 cursor-pointer color-dot" data-color="bg-purple-500"></div></div></div><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Add Subject</button></form></div></div>
     <div id="start-session-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Start New Session</div><button id="close-start-session-modal" class="close-modal">&times;</button></div><form id="start-session-form"><div id="subject-selection-list" class="mb-4 max-h-60 overflow-y-auto space-y-2"></div><div class="flex items-center gap-4 mt-4"><button type="button" id="open-add-subject-modal-from-start" class="w-full text-center py-3 bg-gray-600 hover:bg-gray-500 rounded-lg font-medium transition">Add New Subject</button><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Start Timer</button></div></form></div></div>
     <div id="add-task-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Add New Task</div><button class="close-modal">&times;</button></div><form id="add-task-form"><div class="mb-4"><label for="add-task-name" class="block text-gray-300 mb-2">Task Description</label><input type="text" id="add-task-name" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required></div><div class="mb-4"><label for="add-task-date" class="block text-gray-300 mb-2">Date</label><input type="date" id="add-task-date" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required></div><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Add Task</button></form></div></div>
+    <div id="password-prompt-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Enter Group Password</div><button class="close-modal">&times;</button></div><form id="password-prompt-form"><input type="password" id="group-password-prompt-input" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required><div class="flex gap-2 mt-4"><button type="button" class="close-modal w-full py-2 bg-gray-600 rounded-lg">Cancel</button><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-lg transition">Submit</button></div></form></div></div>
+    <div id="confirmation-modal" class="modal"><div class="modal-content"><div class="modal-header"><h2 id="confirmation-modal-title" class="modal-title">Are you sure?</h2><button class="close-modal">&times;</button></div><p id="confirmation-modal-message">This action cannot be undone.</p><div id="confirmation-modal-buttons"><button id="cancel-btn">Cancel</button><button id="confirm-btn">Confirm</button></div></div></div>
+
 
     <!-- Firebase SDK -->
     <script type="module">
@@ -755,12 +930,9 @@
         import { 
             getAuth, 
             onAuthStateChanged, 
-            createUserWithEmailAndPassword, 
-            signInWithEmailAndPassword, 
-            signInWithPopup, 
-            GoogleAuthProvider,
             signOut,
-            signInWithCustomToken
+            signInWithCustomToken,
+            signInAnonymously
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { 
             getFirestore, 
@@ -797,38 +969,127 @@
         let memberTimerIntervals = [];
         let currentGroupId = null;
 
-        // --- Firebase Initialization ---
-        try {
-            const firebaseConfig = {
-                apiKey: "AIzaSyBSCrL6ravOzFnwOa7A0Jl_W68vEfZVcNw",
-                authDomain: "focus-flow-34c07.firebaseapp.com",
-                projectId: "focus-flow-34c07",
-                storageBucket: "focus-flow-34c07.appspot.com",
-                messagingSenderId: "473980178825",
-                appId: "1:473980178825:web:164566ec8b068da3281158",
-                measurementId: "G-RRFK3LY0E4"
-            };
-
-            const app = initializeApp(firebaseConfig);
-            auth = getAuth(app);
-            db = getFirestore(app);
-            console.log("Firebase initialized successfully.");
-        } catch (e) {
-            console.error("Firebase initialization failed:", e);
-            alert("Could not connect to the backend. Please ensure your Firebase config is correct.");
-        }
+        // Attendance State
+        let attendanceMonth = new Date().getMonth();
+        let attendanceYear = new Date().getFullYear();
 
         // --- UI Elements ---
-        const authError = document.getElementById('auth-error');
         const sessionTimerDisplay = document.getElementById('session-timer');
         const totalTimeDisplay = document.getElementById('total-time-display');
         const activeSubjectDisplay = document.getElementById('active-subject-display');
-        
+
+        // --- UI Helper Functions ---
+        function showToast(message, type = 'info', duration = 3000) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.add('show');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => {
+                    container.removeChild(toast);
+                }, 300);
+            }, duration);
+        }
+
+        function showConfirmationModal(title, message, onConfirm) {
+            const modal = document.getElementById('confirmation-modal');
+            modal.querySelector('#confirmation-modal-title').textContent = title;
+            modal.querySelector('#confirmation-modal-message').textContent = message;
+            modal.classList.add('active');
+
+            const confirmBtn = modal.querySelector('#confirm-btn');
+            const cancelBtn = modal.querySelector('#cancel-btn');
+            const closeModalBtns = modal.querySelectorAll('.close-modal');
+
+            const cleanup = () => {
+                modal.classList.remove('active');
+                confirmBtn.replaceWith(confirmBtn.cloneNode(true));
+                cancelBtn.replaceWith(cancelBtn.cloneNode(true));
+            };
+
+            confirmBtn.onclick = () => {
+                onConfirm();
+                cleanup();
+            };
+            cancelBtn.onclick = cleanup;
+            closeModalBtns.forEach(btn => btn.onclick = cleanup);
+        }
+
+        // --- Firebase Initialization ---
+        async function initializeFirebase() {
+            try {
+                // Use the dynamically provided Firebase config
+                const firebaseConfigStr = typeof __firebase_config !== 'undefined' ? __firebase_config : '{}';
+                const firebaseConfig = JSON.parse(firebaseConfigStr);
+
+                if (!firebaseConfig.apiKey) {
+                    document.getElementById('loader-screen').innerHTML = '<p class="text-red-400">Firebase configuration is missing. App cannot start.</p>';
+                    return;
+                }
+
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                console.log("Firebase initialized successfully.");
+
+                // Set up the authentication state listener
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        currentUser = user;
+                        const userDoc = await getOrCreateUserDocument(user);
+                        const userData = userDoc.data();
+                        
+                        if (!userData || !userData.username) {
+                            showPage('page-username-setup');
+                        } else {
+                            updateProfileUI(userData);
+                            showPage('page-timer');
+                            setupRealtimeListeners();
+                            loadDailyTotal();
+                        }
+                    } else {
+                        currentUser = null;
+                        showPage('loader-screen'); // Or an error screen
+                    }
+                });
+
+                // Start authentication process
+                await initializeAuth();
+
+            } catch (e) {
+                console.error("Firebase initialization failed:", e);
+                document.getElementById('loader-screen').innerHTML = `<p class="text-red-400">Could not connect to the backend: ${e.message}</p>`;
+            }
+        }
+
+        async function initializeAuth() {
+            try {
+                const token = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+                if (token) {
+                    await signInWithCustomToken(auth, token);
+                    console.log("Signed in with custom token.");
+                } else {
+                    await signInAnonymously(auth);
+                    console.log("Signed in anonymously.");
+                }
+            } catch (error) {
+                console.error("Authentication failed:", error);
+                showToast("Authentication failed. Please refresh.", "error");
+            }
+        }
+
         // --- Page Navigation ---
         function showPage(pageId) {
             if (!pageId) return;
             // Hide all top-level containers and pages
-            document.getElementById('auth-screen').classList.remove('active');
+            document.getElementById('loader-screen').classList.remove('active');
             document.getElementById('app-container').classList.remove('active', 'flex');
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             
@@ -841,12 +1102,13 @@
             memberTimerIntervals = [];
 
             // Show the correct container/page
-            if (pageId === 'auth-screen') {
-                document.getElementById('auth-screen').classList.add('active');
-            } else {
+            if (pageId.startsWith('page-')) {
                  document.getElementById('app-container').classList.add('active', 'flex');
                  const targetPage = document.getElementById(pageId);
                  if(targetPage) targetPage.classList.add('active');
+            } else {
+                 const targetScreen = document.getElementById(pageId);
+                 if(targetScreen) targetScreen.classList.add('active');
             }
             
             const mainNav = document.getElementById('main-nav');
@@ -948,6 +1210,7 @@
                 console.log('Session saved successfully');
             } catch (error) {
                 console.error("Error saving session: ", error);
+                showToast("Error saving session.", "error");
             }
         }
 
@@ -976,8 +1239,8 @@
 
             if (!userDoc.exists()) {
                 const initialData = {
-                    email: user.email,
-                    username: user.displayName,
+                    email: user.email || `anon-${user.uid.substring(0,6)}@focus.flow`,
+                    username: null, // Force username setup
                     joinedGroups: [],
                     createdAt: serverTimestamp(),
                     totalStudySeconds: 0,
@@ -985,8 +1248,8 @@
                 };
                 await setDoc(userDocRef, initialData);
                 await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', user.uid), {
-                    username: user.displayName || user.email,
-                    email: user.email,
+                    username: null,
+                    email: initialData.email,
                     totalStudySeconds: 0
                 });
             }
@@ -995,32 +1258,14 @@
 
         function updateProfileUI(userData) {
             if (!userData) return;
-            document.getElementById('profile-page-name').textContent = userData.username || 'User';
-            document.getElementById('profile-page-email').textContent = userData.email || '';
-            const avatarChar = (userData.username || 'U').charAt(0).toUpperCase();
+            const username = userData.username || 'Anonymous';
+            const email = userData.email || '';
+            document.getElementById('profile-page-name').textContent = username;
+            document.getElementById('profile-page-email').textContent = email;
+            const avatarChar = username.charAt(0).toUpperCase();
             document.getElementById('header-avatar').textContent = avatarChar;
             document.getElementById('profile-page-avatar').textContent = avatarChar;
         }
-
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                currentUser = user;
-                const userDoc = await getOrCreateUserDocument(user);
-                const userData = userDoc.data();
-                
-                if (!userData || !userData.username) {
-                    showPage('page-username-setup');
-                } else {
-                    updateProfileUI(userData);
-                    showPage('page-timer');
-                    setupRealtimeListeners();
-                    loadDailyTotal();
-                }
-            } else {
-                currentUser = null;
-                showPage('auth-screen');
-            }
-        });
 
         function setupRealtimeListeners() {
             if (!currentUser) return;
@@ -1090,17 +1335,18 @@
                 let startDate;
                 switch (period) {
                     case 'daily':
-                        startDate = new Date(now.setHours(0, 0, 0, 0));
+                        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
                         break;
                     case 'monthly':
                         startDate = new Date(now.getFullYear(), now.getMonth(), 1);
                         break;
                     case 'weekly':
                     default:
-                        startDate = new Date();
-                        startDate.setDate(startDate.getDate() - 7);
+                        const dayOfWeek = now.getDay(); // 0 (Sun) - 6 (Sat)
+                        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek);
                         break;
                 }
+                startDate.setHours(0,0,0,0);
 
                 const q = query(sessionsRef, where("endedAt", ">=", startDate));
                 const sessionsSnapshot = await getDocs(q);
@@ -1111,8 +1357,8 @@
                 });
                 
                 return {
+                    id: userDoc.id,
                     username: userData.username || 'Anonymous',
-                    email: userData.email,
                     totalStudySeconds: totalSeconds
                 };
             });
@@ -1128,16 +1374,16 @@
                 if (rank === 3) rankClass = 'rank-3';
 
                 return `
-                    <div class="ranking-item ${currentUser.email === user.email ? 'bg-blue-900/30' : ''}">
+                    <div class="ranking-item ${currentUser.uid === user.id ? 'bg-blue-900/30' : ''}">
                         <div class="rank ${rankClass}">${rank}</div>
                         <div class="user-avatar bg-gray-600">${(user.username || 'U').charAt(0).toUpperCase()}</div>
                         <div class="user-info">
                             <div class="user-name">${user.username}</div>
-                            <div class="user-time">${formatTime(user.totalStudySeconds, false)} this ${period}</div>
+                            <div class="user-time">${formatTime(user.totalStudySeconds, false)} this ${period.slice(0,-2)}</div>
                         </div>
                     </div>
                 `;
-            }).join('');
+            }).join('') || `<div class="empty-group"><i class="fas fa-trophy"></i><h3>Leaderboard is Empty</h3><p>Start studying to see your rank!</p></div>`;
         }
 
         function renderStatsPage(sessions) {
@@ -1149,15 +1395,16 @@
             let totalSecondsThisWeek = 0;
 
             const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const oneWeekAgo = new Date(today);
-            oneWeekAgo.setDate(today.getDate() - 7);
+            const dayOfWeek = today.getDay(); // 0 (Sun) - 6 (Sat)
+            const firstDayOfWeek = new Date(today);
+            firstDayOfWeek.setDate(today.getDate() - dayOfWeek);
+            firstDayOfWeek.setHours(0,0,0,0);
 
             sessions.forEach(session => {
                 const sessionDate = session.endedAt?.toDate();
-                if (sessionDate && sessionDate >= oneWeekAgo) {
-                    const dayIndex = (sessionDate.getDay() + 6) % 7; // Monday = 0
-                    weeklyData[dayIndex] += session.durationSeconds;
+                if (sessionDate && sessionDate >= firstDayOfWeek) {
+                    const sessionDayOfWeek = sessionDate.getDay();
+                    weeklyData[sessionDayOfWeek] += session.durationSeconds;
                     totalSecondsThisWeek += session.durationSeconds;
                 }
                 if (session.subject) {
@@ -1167,7 +1414,7 @@
 
             if (charts.weekly) charts.weekly.destroy();
             const weeklyCtx = weeklyChartEl.getContext('2d');
-            charts.weekly = new Chart(weeklyCtx, { type: 'bar', data: { labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], datasets: [{ label: 'Study Time (hours)', data: weeklyData.map(s => s / 3600), backgroundColor: '#3B82F6' }] }, options: { scales: { y: { beginAtZero: true, ticks: { color: '#9CA3AF' }, grid: { color: '#374151' } }, x: { ticks: { color: '#9CA3AF' }, grid: { color: '#374151' } } }, plugins: { legend: { display: false } } } });
+            charts.weekly = new Chart(weeklyCtx, { type: 'bar', data: { labels: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'], datasets: [{ label: 'Study Time (hours)', data: weeklyData.map(s => s / 3600), backgroundColor: '#3B82F6' }] }, options: { scales: { y: { beginAtZero: true, ticks: { color: '#9CA3AF' }, grid: { color: '#374151' } }, x: { ticks: { color: '#9CA3AF' }, grid: { color: '#374151' } } }, plugins: { legend: { display: false } } } });
 
             if (charts.subject) charts.subject.destroy();
             const subjectCtx = document.getElementById('subjectChart').getContext('2d');
@@ -1201,7 +1448,7 @@
             joinedGroupIds.forEach(groupId => {
                 const group = allGroups[groupId];
                 if (!group) return;
-                 const memberCount = group.members ? group.members.length : 0;
+                const memberCount = group.members ? group.members.length : 0;
                 const isFull = memberCount >= group.capacity;
                 let headerColor = 'linear-gradient(135deg, #4361ee 0%, #4895ef 100%)';
                 if (group.category === 'Language study') headerColor = 'linear-gradient(135deg, #00bcd4 0%, #0097a7 100%)';
@@ -1254,15 +1501,22 @@
                     const isPrivate = this.getAttribute('data-private') === 'true';
                     
                     if (isPrivate) {
-                        const password = prompt('This group requires a password:');
-                        const groupDoc = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'groups', groupId));
-                        if (password !== groupDoc.data().password) {
-                            alert('Incorrect password');
-                            return;
-                        }
+                        const modal = document.getElementById('password-prompt-modal');
+                        modal.classList.add('active');
+                        document.getElementById('password-prompt-form').onsubmit = async (e) => {
+                            e.preventDefault();
+                            const password = document.getElementById('group-password-prompt-input').value;
+                            const groupDoc = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'groups', groupId));
+                            if (password !== groupDoc.data().password) {
+                                showToast('Incorrect password', 'error');
+                                return;
+                            }
+                            modal.classList.remove('active');
+                            await joinGroup(groupId);
+                        };
+                    } else {
+                        await joinGroup(groupId);
                     }
-                    
-                    await joinGroup(groupId);
                 });
             });
         }
@@ -1273,7 +1527,7 @@
             const groupRef = doc(db, 'artifacts', appId, 'public', 'data', 'groups', groupId);
             await setDoc(userRef, { joinedGroups: arrayUnion(groupId) }, { merge: true });
             await updateDoc(groupRef, { members: arrayUnion(currentUser.uid) });
-            alert("Group joined!");
+            showToast("Group joined successfully!", "success");
         }
 
         function renderSubjectSelectionList(subjects) {
@@ -1292,7 +1546,7 @@
                     <button class="subject-options-btn"><i class="fas fa-ellipsis-v"></i></button>
                     <div class="subject-options-menu">
                         <button class="edit-subject-btn">Edit</button>
-                        <button class="delete-subject-btn">Delete</button>
+                        <button class="delete-subject-btn delete-btn">Delete</button>
                     </div>
                 </div>
             `).join('');
@@ -1326,7 +1580,7 @@
 
                 const tasksHtml = groupedTasks[dateStr].map(task => `
                     <div class="planner-task">
-                        <input type="checkbox" class="task-checkbox" data-task-id="${task.id}" ${task.completed ? 'checked' : ''}>
+                        <input type="checkbox" class="task-checkbox w-5 h-5 bg-gray-700 rounded text-blue-500 focus:ring-blue-500" data-task-id="${task.id}" ${task.completed ? 'checked' : ''}>
                         <div class="task-name ${task.completed ? 'completed' : ''}">${task.name}</div>
                     </div>
                 `).join('');
@@ -1366,7 +1620,7 @@
                  renderGroupMembers(currentGroupId);
             } else if (subpage === 'invite') {
                 const inviteLink = `${window.location.origin}${window.location.pathname}?groupId=${currentGroupId}`;
-                container.innerHTML = `<div class="p-8 text-center"><img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(inviteLink)}" class="mx-auto mb-4"><p class="text-blue-400 break-all">${inviteLink}</p><div class="flex gap-4 mt-4"><button id="copy-link-btn" class="w-full py-2 bg-gray-700 rounded-lg">Copy Link</button><button class="w-full py-2 bg-orange-500 rounded-lg">Share Link</button></div><p class="text-gray-500 mt-4 text-sm">Share this link to invite a friend or organization to study with you.</p></div>`;
+                container.innerHTML = `<div class="p-8 text-center"><img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(inviteLink)}" class="mx-auto mb-4 rounded-lg"><p class="text-blue-400 break-all">${inviteLink}</p><div class="flex gap-4 mt-4"><button id="copy-link-btn" class="w-full py-2 bg-gray-700 rounded-lg">Copy Link</button><button class="w-full py-2 bg-orange-500 rounded-lg">Share Link</button></div><p class="text-gray-500 mt-4 text-sm">Share this link to invite a friend or organization to study with you.</p></div>`;
                 document.getElementById('copy-link-btn').addEventListener('click', () => {
                     const tempInput = document.createElement('input');
                     document.body.appendChild(tempInput);
@@ -1374,11 +1628,67 @@
                     tempInput.select();
                     document.execCommand('copy');
                     document.body.removeChild(tempInput);
-                    alert('Link copied to clipboard!');
+                    showToast('Link copied to clipboard!', 'success');
                 });
             } else if (subpage === 'chat') {
                 container.innerHTML = `<div class="p-4 flex flex-col h-full"><div id="chat-messages" class="flex-grow overflow-y-auto"></div><form id="chat-form" class="flex gap-2 mt-4"><input id="chat-input" class="flex-grow bg-gray-700 rounded-lg p-3" placeholder="Type a message..."><button type="submit" class="bg-blue-600 px-4 rounded-lg"><i class="fas fa-paper-plane"></i></button></form></div>`;
                 setupGroupChat(currentGroupId);
+            } else if (subpage === 'rankings') {
+                 container.innerHTML = `<div class="px-4 pt-4 border-b border-gray-800">
+                    <div class="flex space-x-1" id="group-ranking-period-tabs">
+                        <button class="ranking-tab-btn flex-1 py-2 px-4 rounded-t-lg font-semibold text-sm" data-period="daily">Daily</button>
+                        <button class="ranking-tab-btn flex-1 py-2 px-4 rounded-t-lg font-semibold text-sm active" data-period="weekly">Weekly</button>
+                        <button class="ranking-tab-btn flex-1 py-2 px-4 rounded-t-lg font-semibold text-sm" data-period="monthly">Monthly</button>
+                    </div>
+                </div>
+                <div id="group-ranking-list" class="ranking-list"></div>`;
+                renderGroupLeaderboard(currentGroupId, 'weekly');
+                document.getElementById('group-ranking-period-tabs').addEventListener('click', (e) => {
+                    if (e.target.classList.contains('ranking-tab-btn')) {
+                        const period = e.target.dataset.period;
+                        renderGroupLeaderboard(currentGroupId, period);
+                    }
+                });
+            } else if (subpage === 'attendance') {
+                container.innerHTML = `<div id="attendance-container" class="attendance-container">
+                    <div class="attendance-header">
+                        <button id="prev-month-btn" class="attendance-nav-btn"><i class="fas fa-chevron-left"></i></button>
+                        <h2 id="current-month-display" class="attendance-title">Loading...</h2>
+                        <button id="next-month-btn" class="attendance-nav-btn"><i class="fas fa-chevron-right"></i></button>
+                    </div>
+                    <div class="attendance-calendar">
+                        <div class="calendar-header">Sun</div>
+                        <div class="calendar-header">Mon</div>
+                        <div class="calendar-header">Tue</div>
+                        <div class="calendar-header">Wed</div>
+                        <div class="calendar-header">Thu</div>
+                        <div class="calendar-header">Fri</div>
+                        <div class="calendar-header">Sat</div>
+                        <div id="calendar-grid" class="col-span-7 grid grid-cols-7 gap-1"></div>
+                    </div>
+                    <div class="attendance-stats">
+                        <h3 class="text-lg font-semibold">Attendance Stats</h3>
+                        <div class="stats-grid">
+                            <div class="stat-box">
+                                <div id="total-hours" class="stat-value">0h 0m</div>
+                                <div class="stat-label">Total Hours</div>
+                            </div>
+                            <div class="stat-box">
+                                <div id="days-studied" class="stat-value">0</div>
+                                <div class="stat-label">Days Studied</div>
+                            </div>
+                            <div class="stat-box">
+                                <div id="attendance-rate" class="stat-value">0%</div>
+                                <div class="stat-label">Attendance Rate</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="attendance-member-list">
+                        <h3 class="text-lg font-semibold mb-4">Member Attendance</h3>
+                        <div id="attendance-member-grid"></div>
+                    </div>
+                </div>`;
+                renderGroupAttendance(currentGroupId);
             } else {
                  container.innerHTML = `<div class="p-8 text-center text-gray-400">${subpage.charAt(0).toUpperCase() + subpage.slice(1)} page is coming soon!</div>`;
             }
@@ -1400,14 +1710,14 @@
                  const memberData = memberDoc.data();
                  const isStudying = memberData.studying;
                  return `
-                     <div class="member-card">
-                         <div class="member-avatar ${isStudying ? 'studying' : ''}">
-                             ${(memberData.username || 'U').charAt(0).toUpperCase()}
-                             ${isStudying ? '<div class="member-status-icon"></div>' : ''}
-                         </div>
-                         <div class="member-name">${memberData.username || 'Anonymous'}</div>
-                         <div class="member-time" id="member-time-${memberDoc.id}">${isStudying ? '00:00:00' : ''}</div>
-                     </div>
+                      <div class="member-card">
+                           <div class="member-avatar ${isStudying ? 'studying' : ''}">
+                                ${(memberData.username || 'U').charAt(0).toUpperCase()}
+                                ${isStudying ? '<div class="member-status-icon"></div>' : ''}
+                           </div>
+                           <div class="member-name">${memberData.username || 'Anonymous'}</div>
+                           <div class="member-time" id="member-time-${memberDoc.id}">${isStudying ? '00:00:00' : ''}</div>
+                      </div>
                  `;
              }).join('');
              
@@ -1425,6 +1735,249 @@
                      memberTimerIntervals.push(interval);
                  }
              });
+        }
+        
+        async function renderGroupLeaderboard(groupId, period) {
+            const container = document.getElementById('group-ranking-list');
+            if (!container) return;
+            
+            document.querySelectorAll('#group-ranking-period-tabs .ranking-tab-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.period === period);
+            });
+
+            container.innerHTML = '<div class="text-center text-gray-500 py-8"><i class="fas fa-spinner fa-spin fa-2x"></i></div>';
+            
+            const groupDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'groups', groupId);
+            const groupDoc = await getDoc(groupDocRef);
+            if (!groupDoc.exists()) return;
+            
+            const memberIds = groupDoc.data().members;
+
+            const userPromises = memberIds.map(async (userId) => {
+                const userRef = doc(db, 'artifacts', appId, 'users', userId);
+                const sessionsRef = collection(userRef, 'sessions');
+                const userPublicRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', userId);
+                const userPublicDoc = await getDoc(userPublicRef);
+                const userData = userPublicDoc.data();
+
+                const now = new Date();
+                let startDate;
+                switch (period) {
+                    case 'daily':
+                        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                        break;
+                    case 'monthly':
+                        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                        break;
+                    case 'weekly':
+                    default:
+                        const dayOfWeek = now.getDay();
+                        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek);
+                        break;
+                }
+                startDate.setHours(0,0,0,0);
+
+                const q = query(sessionsRef, where("endedAt", ">=", startDate));
+                const sessionsSnapshot = await getDocs(q);
+                
+                let totalSeconds = 0;
+                sessionsSnapshot.forEach(sessionDoc => {
+                    totalSeconds += sessionDoc.data().durationSeconds;
+                });
+                
+                return {
+                    id: userId,
+                    username: userData.username || 'Anonymous',
+                    totalStudySeconds: totalSeconds
+                };
+            });
+
+            const userScores = await Promise.all(userPromises);
+            userScores.sort((a, b) => b.totalStudySeconds - a.totalStudySeconds);
+
+            container.innerHTML = userScores.map((user, index) => {
+                const rank = index + 1;
+                let rankClass = '';
+                if (rank === 1) rankClass = 'rank-1';
+                if (rank === 2) rankClass = 'rank-2';
+                if (rank === 3) rankClass = 'rank-3';
+
+                return `
+                    <div class="ranking-item ${currentUser.uid === user.id ? 'bg-blue-900/30' : ''}">
+                        <div class="rank ${rankClass}">${rank}</div>
+                        <div class="user-avatar bg-gray-600">${(user.username || 'U').charAt(0).toUpperCase()}</div>
+                        <div class="user-info">
+                            <div class="user-name">${user.username}</div>
+                            <div class="user-time">${formatTime(user.totalStudySeconds, false)} this ${period.slice(0,-2)}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('') || `<div class="empty-group"><i class="fas fa-trophy"></i><h3>Leaderboard is Empty</h3><p>Start studying to see your rank!</p></div>`;
+        }
+
+        async function renderGroupAttendance(groupId) {
+            const container = document.getElementById('calendar-grid');
+            if (!container) return;
+            
+            container.innerHTML = '<div class="col-span-7 text-center py-4"><i class="fas fa-spinner fa-spin"></i> Loading attendance...</div>';
+            
+            const groupDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'groups', groupId);
+            const groupDoc = await getDoc(groupDocRef);
+            if (!groupDoc.exists()) return;
+            
+            const memberIds = groupDoc.data().members;
+            
+            // Update month display
+            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            document.getElementById('current-month-display').textContent = `${monthNames[attendanceMonth]} ${attendanceYear}`;
+            
+            // Calculate calendar days
+            const firstDayOfMonth = new Date(attendanceYear, attendanceMonth, 1);
+            const lastDayOfMonth = new Date(attendanceYear, attendanceMonth + 1, 0);
+            const daysInMonth = lastDayOfMonth.getDate();
+            
+            const startDay = firstDayOfMonth.getDay();
+            
+            container.innerHTML = '';
+            
+            for (let i = 0; i < startDay; i++) {
+                container.innerHTML += `<div class="calendar-day empty"></div>`;
+            }
+            
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateStr = `${attendanceYear}-${(attendanceMonth+1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                container.innerHTML += `
+                    <div class="calendar-day ${isToday(attendanceYear, attendanceMonth, day) ? 'today' : ''}" data-date="${dateStr}">
+                        <div class="day-number">${day}</div>
+                        <div class="day-time">0h 0m</div>
+                    </div>
+                `;
+            }
+            
+            const attendanceData = {};
+            const memberPromises = memberIds.map(async (memberId) => {
+                const userRef = doc(db, 'artifacts', appId, 'users', memberId);
+                const sessionsRef = collection(userRef, 'sessions');
+                
+                const startDate = new Date(attendanceYear, attendanceMonth, 1);
+                const endDate = new Date(attendanceYear, attendanceMonth + 1, 0);
+                endDate.setHours(23, 59, 59, 999);
+                
+                const q = query(
+                    sessionsRef, 
+                    where("endedAt", ">=", startDate),
+                    where("endedAt", "<=", endDate)
+                );
+                
+                const sessionsSnapshot = await getDocs(q);
+                const memberAttendance = {};
+                
+                sessionsSnapshot.forEach(doc => {
+                    const session = doc.data();
+                    const sessionDate = session.endedAt.toDate().toISOString().split('T')[0];
+                    if (!memberAttendance[sessionDate]) {
+                        memberAttendance[sessionDate] = 0;
+                    }
+                    memberAttendance[sessionDate] += session.durationSeconds;
+                });
+                
+                for (const [date, seconds] of Object.entries(memberAttendance)) {
+                    if (!attendanceData[date]) {
+                        attendanceData[date] = 0;
+                    }
+                    attendanceData[date] += seconds;
+                }
+                
+                return { memberId, memberAttendance };
+            });
+            
+            const memberAttendanceData = await Promise.all(memberPromises);
+            
+            const calendarDays = document.querySelectorAll('.calendar-day:not(.empty)');
+            let totalGroupTime = 0;
+            let daysWithStudy = 0;
+            
+            calendarDays.forEach(dayEl => {
+                const date = dayEl.dataset.date;
+                const daySeconds = attendanceData[date] || 0;
+                totalGroupTime += daySeconds;
+                
+                if (daySeconds > 0) {
+                    daysWithStudy++;
+                    dayEl.classList.add('active');
+                }
+                
+                const hours = Math.floor(daySeconds / 3600);
+                const minutes = Math.floor((daySeconds % 3600) / 60);
+                dayEl.querySelector('.day-time').textContent = `${hours}h ${minutes}m`;
+            });
+            
+            document.getElementById('total-hours').textContent = formatTime(totalGroupTime, false);
+            document.getElementById('days-studied').textContent = daysWithStudy;
+            const attendanceRate = Math.round((daysWithStudy / daysInMonth) * 100);
+            document.getElementById('attendance-rate').textContent = `${attendanceRate}%`;
+            
+            const memberGrid = document.getElementById('attendance-member-grid');
+            if (memberGrid) {
+                memberGrid.innerHTML = '';
+                
+                for (const member of memberAttendanceData) {
+                    const userDoc = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', member.memberId));
+                    const userData = userDoc.data();
+                    
+                    let totalMemberTime = 0;
+                    let memberDaysStudied = 0;
+                    
+                    for (const seconds of Object.values(member.memberAttendance)) {
+                        totalMemberTime += seconds;
+                        if (seconds > 0) memberDaysStudied++;
+                    }
+                    
+                    const memberAttendanceRate = Math.round((memberDaysStudied / daysInMonth) * 100);
+                    
+                    memberGrid.innerHTML += `
+                        <div class="member-row">
+                            <div class="member-avatar-sm">${(userData.username || 'U').charAt(0).toUpperCase()}</div>
+                            <div class="member-info">
+                                <div class="member-name-sm">${userData.username || 'Anonymous'}</div>
+                                <div class="member-time-sm">${formatTime(totalMemberTime, false)} total</div>
+                                <div class="attendance-progress">
+                                    <div class="progress-bar" style="width: ${memberAttendanceRate}%"></div>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-sm font-semibold">${memberAttendanceRate}%</div>
+                                <div class="text-xs text-gray-500">${memberDaysStudied}/${daysInMonth} days</div>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+            
+            document.getElementById('prev-month-btn').onclick = () => {
+                attendanceMonth--;
+                if (attendanceMonth < 0) {
+                    attendanceMonth = 11;
+                    attendanceYear--;
+                }
+                renderGroupAttendance(groupId);
+            };
+            
+            document.getElementById('next-month-btn').onclick = () => {
+                attendanceMonth++;
+                if (attendanceMonth > 11) {
+                    attendanceMonth = 0;
+                    attendanceYear++;
+                }
+                renderGroupAttendance(groupId);
+            };
+        }
+        
+        function isToday(year, month, day) {
+            const today = new Date();
+            return today.getFullYear() === year && 
+                   today.getMonth() === month && 
+                   today.getDate() === day;
         }
         
         function setupGroupChat(groupId) {
@@ -1477,53 +2030,31 @@
         };
 
         // Auth
-        ael('login-form', 'submit', async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('login-email').value;
-            const password = document.getElementById('login-password').value;
-            try {
-                await signInWithEmailAndPassword(auth, email, password);
-            } catch (error) {
-                authError.textContent = error.message;
-            }
+        ael('sign-out-btn', () => {
+            signOut(auth).catch(error => showToast(`Sign out failed: ${error.message}`, 'error'));
         });
-
-        ael('signup-form', 'submit', async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('signup-email').value;
-            const password = document.getElementById('signup-password').value;
-            try {
-                await createUserWithEmailAndPassword(auth, email, password);
-            } catch (error) {
-                authError.textContent = error.message;
-            }
-        });
-
-        ael('google-signin-btn', 'click', async () => {
-            const provider = new GoogleAuthProvider();
-            try {
-                await signInWithPopup(auth, provider);
-            } catch (error) {
-                authError.textContent = error.message;
-            }
-        });
-
-        ael('sign-out-btn', 'click', () => signOut(auth));
         
         ael('username-setup-form', 'submit', async (e) => {
             e.preventDefault();
             if (!currentUser) return;
-            const username = document.getElementById('username-input').value.trim();
+            const usernameInput = document.getElementById('username-input');
+            const usernameError = document.getElementById('username-error');
+            const username = usernameInput.value.trim();
+            
             if (username.length < 3) {
-                alert("Username must be at least 3 characters long.");
+                usernameError.textContent = "Username must be at least 3 characters.";
                 return;
             }
+            usernameError.textContent = '';
+
             const userDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
             await setDoc(userDocRef, { username: username }, { merge: true });
             
             const publicUserDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
             await setDoc(publicUserDocRef, { username: username }, { merge: true });
             
+            const userData = (await getDoc(userDocRef)).data();
+            updateProfileUI(userData);
             showPage('page-timer');
             setupRealtimeListeners();
             loadDailyTotal();
@@ -1555,7 +2086,7 @@
         ael('create-group-done-btn', 'click', async () => {
             const form = document.getElementById('create-group-form');
             if (!form.checkValidity()) {
-                alert('Please fill out all required fields.');
+                showToast('Please fill out all required fields.', 'error');
                 form.reportValidity();
                 return;
             }
@@ -1564,6 +2095,9 @@
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
             
             try {
+                const userDoc = await getDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid));
+                const username = userDoc.data().username;
+
                 const groupsCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'groups');
                 const newGroup = {
                     name: document.getElementById('group-name-input').value.trim(),
@@ -1573,7 +2107,7 @@
                     capacity: parseInt(document.getElementById('capacity-value').textContent),
                     description: document.getElementById('group-description-input').value.trim(),
                     leaderId: currentUser.uid,
-                    leaderName: currentUser.email, // Or displayName
+                    leaderName: username,
                     members: [currentUser.uid],
                     createdAt: serverTimestamp()
                 };
@@ -1583,7 +2117,7 @@
                 showPage('page-my-groups');
             } catch (error) {
                 console.error("Error creating group:", error);
-                alert("Failed to create group.");
+                showToast("Failed to create group.", "error");
             } finally {
                 btn.disabled = false;
                 btn.textContent = 'Done';
@@ -1600,18 +2134,9 @@
         });
         
         let capacity = 15;
-        ael('increase-capacity', 'click', () => { if (capacity < 100) document.getElementById('capacity-value').textContent = ++capacity; else alert('Maximum capacity is 100'); });
-        ael('decrease-capacity', 'click', () => { if (capacity > 2) document.getElementById('capacity-value').textContent = --capacity; else alert('Minimum capacity is 2'); });
+        ael('increase-capacity', 'click', () => { if (capacity < 100) document.getElementById('capacity-value').textContent = ++capacity; else showToast('Maximum capacity is 100', 'info'); });
+        ael('decrease-capacity', 'click', () => { if (capacity > 2) document.getElementById('capacity-value').textContent = --capacity; else showToast('Minimum capacity is 2', 'info'); });
         
-        ael('auth-toggle-btn', 'click', () => {
-            const isLogin = !document.getElementById('login-form').classList.contains('hidden');
-            document.getElementById('login-form').classList.toggle('hidden', isLogin);
-            document.getElementById('signup-form').classList.toggle('hidden', !isLogin);
-            document.getElementById('auth-toggle-btn').textContent = isLogin ? 'Sign In' : 'Sign Up';
-            document.getElementById('login-toggle-text').textContent = isLogin ? 'Already have an account?' : "Don't have an account?";
-            authError.textContent = '';
-        });
-
         // Modals
         const addSubjectModal = document.getElementById('add-subject-modal');
         ael('add-subject-btn', 'click', () => addSubjectModal.classList.add('active'));
@@ -1630,7 +2155,7 @@
             const name = document.getElementById('add-subject-name').value.trim();
             const color = addSubjectModal.querySelector('.color-dot.selected').dataset.color;
             if (!name || !color) {
-                alert("Please provide a name and select a color.");
+                showToast("Please provide a name and select a color.", "error");
                 return;
             }
 
@@ -1640,6 +2165,7 @@
             
             addSubjectModal.classList.remove('active');
             document.getElementById('add-subject-form').reset();
+            showToast("Subject added!", "success");
         });
         
         const startSessionModal = document.getElementById('start-session-modal');
@@ -1651,7 +2177,7 @@
             e.preventDefault();
             const selectedSubjectEl = document.querySelector('#subject-selection-list .subject-item.selected');
             if (!selectedSubjectEl) {
-                alert("Please select a subject to start studying.");
+                showToast("Please select a subject to start studying.", "error");
                 return;
             }
             const subject = selectedSubjectEl.dataset.subjectName;
@@ -1684,14 +2210,20 @@
             if (e.target.classList.contains('delete-subject-btn')) {
                 const itemToDelete = e.target.closest('.subject-item');
                 const subjectId = itemToDelete.dataset.subjectId;
-                if (confirm(`Are you sure you want to delete "${itemToDelete.dataset.subjectName}"?`)) {
-                    const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
-                    await deleteDoc(doc(userRef, 'subjects', subjectId));
-                }
+                const subjectName = itemToDelete.dataset.subjectName;
+                showConfirmationModal(
+                    'Delete Subject?', 
+                    `Are you sure you want to delete "${subjectName}"? This cannot be undone.`,
+                    async () => {
+                        const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
+                        await deleteDoc(doc(userRef, 'subjects', subjectId));
+                        showToast(`Deleted "${subjectName}"`, 'success');
+                    }
+                );
             }
             
             if (e.target.classList.contains('edit-subject-btn')) {
-                 alert("Edit functionality coming soon!");
+                 showToast("Edit functionality coming soon!", "info");
             }
         });
         
@@ -1705,7 +2237,7 @@
             const name = document.getElementById('add-task-name').value.trim();
             const date = document.getElementById('add-task-date').value;
             if (!name || !date) {
-                alert("Please provide a name and date for the task.");
+                showToast("Please provide a name and date for the task.", "error");
                 return;
             }
             const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
@@ -1714,6 +2246,7 @@
             
             addTaskModal.classList.remove('active');
             document.getElementById('add-task-form').reset();
+            showToast("Task added!", "success");
         });
 
         document.getElementById('planner-list').addEventListener('change', async (e) => {
@@ -1755,6 +2288,21 @@
                 document.querySelectorAll('.subject-options-menu').forEach(m => m.classList.remove('active'));
             }
         });
+        
+        // Close modals
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('active');
+                }
+            });
+            modal.querySelectorAll('.close-modal').forEach(btn => {
+                btn.addEventListener('click', () => modal.classList.remove('active'));
+            });
+        });
+
+        // --- Initial Load ---
+        window.onload = initializeFirebase;
 
     </script>
 </body>
