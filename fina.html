@@ -10,10 +10,44 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* Base styles */
-        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        :root {
+            --bg-primary: #111827;
+            --bg-secondary: #1F2937;
+            --bg-tertiary: #374151;
+            --text-primary: #F9FAFB;
+            --text-secondary: #9CA3AF;
+            --accent-color: #3B82F6;
+            --accent-color-hover: #2563EB;
+        }
+
+        html.light {
+            --bg-primary: #F9FAFB;
+            --bg-secondary: #F3F4F6;
+            --bg-tertiary: #E5E7EB;
+            --text-primary: #111827;
+            --text-secondary: #6B7280;
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            -webkit-tap-highlight-color: transparent;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .bg-primary { background-color: var(--bg-primary); }
+        .bg-secondary { background-color: var(--bg-secondary); }
+        .text-primary { color: var(--text-primary); }
+        .text-secondary { color: var(--text-secondary); }
+        .accent-text { color: var(--accent-color); }
+        .accent-bg { background-color: var(--accent-color); }
+        .accent-bg-hover:hover { background-color: var(--accent-color-hover); }
+        .accent-border { border-color: var(--accent-color); }
+
+
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .nav-item.active svg, .nav-item.active p, .group-nav-item.active i, .group-nav-item.active p { color: #3B82F6; }
+        .nav-item.active svg, .nav-item.active p, .group-nav-item.active i, .group-nav-item.active p { color: var(--accent-color); }
 
         /* Page and container visibility */
         #auth-screen, .page, #app-container, .modal { display: none; }
@@ -26,7 +60,7 @@
         
         /* Group study styles */
         .group-card {
-            background: #1f2937;
+            background: var(--bg-secondary);
             border-radius: 12px;
             overflow: hidden;
             transition: all 0.3s ease;
@@ -39,7 +73,7 @@
         }
         .group-header {
             padding: 16px;
-            background: linear-gradient(135deg, #4361ee 0%, #4895ef 100%);
+            background: var(--accent-color);
             color: white;
         }
         .group-category {
@@ -78,15 +112,15 @@
         .group-goal {
             margin-bottom: 12px;
             padding-bottom: 12px;
-            border-bottom: 1px solid #374151;
+            border-bottom: 1px solid var(--bg-tertiary);
         }
-        .goal-text { font-weight: 600; color: white; margin-bottom: 6px; }
+        .goal-text { font-weight: 600; color: var(--text-primary); margin-bottom: 6px; }
         .leader {
             display: flex;
             align-items: center;
             gap: 6px;
             font-weight: 600;
-            color: #3B82F6;
+            color: var(--accent-color);
         }
         .leader i { color: gold; }
         .group-description {
@@ -101,7 +135,7 @@
         .group-meta {
             display: flex;
             justify-content: space-between;
-            color: #9CA3AF;
+            color: var(--text-secondary);
             font-size: 0.8rem;
             margin-top: 12px;
         }
@@ -124,7 +158,7 @@
             display: block;
             width: 100%;
             padding: 10px;
-            background: #3B82F6;
+            background: var(--accent-color);
             color: white;
             border: none;
             border-radius: 8px;
@@ -135,26 +169,26 @@
         .empty-group {
             text-align: center;
             padding: 40px 20px;
-            color: #9CA3AF;
+            color: var(--text-secondary);
         }
-        .empty-group i { font-size: 3rem; color: #374151; margin-bottom: 16px; }
-        .empty-group h3 { font-size: 1.5rem; margin-bottom: 12px; color: white; }
+        .empty-group i { font-size: 3rem; color: var(--bg-tertiary); margin-bottom: 16px; }
+        .empty-group h3 { font-size: 1.5rem; margin-bottom: 12px; color: var(--text-primary); }
         .empty-group p { font-size: 1rem; max-width: 500px; margin: 0 auto 20px; }
-        .category-option, .time-option {
+        .category-option, .time-option, .theme-option {
             padding: 12px;
             text-align: center;
-            background: #374151;
+            background: var(--bg-tertiary);
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.3s ease;
             border: 2px solid transparent;
             font-weight: 600;
         }
-        .category-option:hover, .time-option:hover { background: #4B5563; }
-        .category-option.selected, .time-option.selected {
-            background: #3B82F6;
+        .category-option:hover, .time-option:hover, .theme-option:hover { background: #4B5563; }
+        .category-option.selected, .time-option.selected, .theme-option.selected {
+            background: var(--accent-color);
             color: white;
-            border-color: #2563EB;
+            border-color: var(--accent-color-hover);
         }
         .create-group-btn {
             position: fixed;
@@ -162,7 +196,6 @@
             right: 20px;
             width: 56px;
             height: 56px;
-            background: #3B82F6;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -173,12 +206,12 @@
             transition: all 0.3s ease;
             z-index: 30;
         }
-        .create-group-btn:hover { background: #2563EB; transform: scale(1.05); }
+        .create-group-btn:hover { transform: scale(1.05); }
         
         /* Stats page styles */
         .stats-container { padding: 20px; }
         .stat-card {
-            background: #1F2937;
+            background: var(--bg-secondary);
             border-radius: 12px;
             padding: 20px;
             margin-bottom: 20px;
@@ -187,7 +220,7 @@
             font-size: 1.2rem;
             font-weight: 600;
             margin-bottom: 15px;
-            color: #E5E7EB;
+            color: var(--text-primary);
         }
         
         /* Ranking page styles */
@@ -196,7 +229,7 @@
             display: flex;
             align-items: center;
             padding: 15px;
-            background: #1F2937;
+            background: var(--bg-secondary);
             border-radius: 10px;
             margin-bottom: 10px;
         }
@@ -213,7 +246,7 @@
             width: 40px;
             height: 40px;
             border-radius: 50%;
-            background: #374151;
+            background: var(--bg-tertiary);
             margin-right: 15px;
             display: flex;
             align-items: center;
@@ -222,22 +255,22 @@
         }
         .user-info { flex-grow: 1; }
         .user-name { font-weight: 600; }
-        .user-time { color: #9CA3AF; font-size: 0.9rem; }
+        .user-time { color: var(--text-secondary); font-size: 0.9rem; }
         .ranking-tab-btn {
-            background-color: #374151;
-            color: #9CA3AF;
+            background-color: var(--bg-tertiary);
+            color: var(--text-secondary);
             transition: all 0.2s;
         }
         .ranking-tab-btn.active {
-            background-color: #1F2937;
-            color: white;
-            border-bottom: 2px solid #3B82F6;
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            border-bottom: 2px solid var(--accent-color);
         }
         
         /* Planner page styles */
         .planner-container { padding: 20px; }
         .planner-day {
-            background: #1F2937;
+            background: var(--bg-secondary);
             border-radius: 12px;
             padding: 15px;
             margin-bottom: 15px;
@@ -252,7 +285,7 @@
             display: flex;
             align-items: center;
             padding: 10px 0;
-            border-bottom: 1px solid #374151;
+            border-bottom: 1px solid var(--bg-tertiary);
         }
         .task-checkbox { margin-right: 10px; }
         .task-name { flex-grow: 1; }
@@ -270,7 +303,7 @@
         }
         .modal.active { display: flex; }
         .modal-content {
-            background: #1F2937;
+            background: var(--bg-secondary);
             border-radius: 12px;
             padding: 25px;
             width: 90%;
@@ -286,7 +319,7 @@
         .close-modal {
             background: none;
             border: none;
-            color: #9CA3AF;
+            color: var(--text-secondary);
             font-size: 1.5rem;
             cursor: pointer;
         }
@@ -302,7 +335,7 @@
             width: 80px;
             height: 80px;
             border-radius: 50%;
-            background: #374151;
+            background: var(--bg-tertiary);
             margin-right: 20px;
             display: flex;
             align-items: center;
@@ -311,13 +344,13 @@
             font-weight: bold;
         }
         .profile-name { font-size: 1.3rem; font-weight: 600; }
-        .profile-email { color: #9CA3AF; }
+        .profile-email { color: var(--text-secondary); }
         .settings-item {
             padding: 15px 0;
-            border-bottom: 1px solid #374151;
+            border-bottom: 1px solid var(--bg-tertiary);
         }
         .settings-label { font-weight: 600; margin-bottom: 5px; }
-        .settings-value { color: #9CA3AF; }
+        .settings-value { color: var(--text-secondary); }
         
         /* Loading spinner */
         .fa-spinner { animation: spin 1s linear infinite; }
@@ -339,15 +372,15 @@
             transition: outline-color 0.2s;
         }
         .subject-color-picker .color-dot.selected {
-            outline-color: #3B82F6;
+            outline-color: var(--accent-color);
         }
         .subject-item {
             cursor: pointer;
-            border: 2px solid #374151;
+            border: 2px solid var(--bg-tertiary);
             position: relative; /* For options menu positioning */
         }
         .subject-item.selected {
-            border-color: #3B82F6;
+            border-color: var(--accent-color);
             background-color: #2563eb30;
         }
         .subject-options-btn {
@@ -355,7 +388,7 @@
             right: 10px;
             top: 50%;
             transform: translateY(-50%);
-            color: #9CA3AF;
+            color: var(--text-secondary);
             padding: 5px;
         }
         .subject-options-menu {
@@ -363,8 +396,8 @@
             position: absolute;
             right: 25px;
             top: 25px;
-            background-color: #111827;
-            border: 1px solid #374151;
+            background-color: var(--bg-primary);
+            border: 1px solid var(--bg-tertiary);
             border-radius: 0.5rem;
             box-shadow: 0 4px 6px rgba(0,0,0,0.2);
             z-index: 10;
@@ -379,11 +412,11 @@
             text-align: left;
             background: none;
             border: none;
-            color: white;
+            color: var(--text-primary);
             cursor: pointer;
         }
         .subject-options-menu button:hover {
-            background-color: #374151;
+            background-color: var(--bg-tertiary);
         }
         .subject-options-menu .delete-btn:hover {
             background-color: #ef4444;
@@ -393,7 +426,7 @@
             display: flex;
             align-items: center;
             padding: 1rem;
-            background-color: #1F2937;
+            background-color: var(--bg-secondary);
             border-radius: 0.75rem;
             width: 100%;
         }
@@ -423,7 +456,7 @@
             height: 20px;
             background-color: #10B981;
             border-radius: 50%;
-            border: 3px solid #1F2937;
+            border: 3px solid var(--bg-secondary);
         }
         .member-name {
             font-weight: 600;
@@ -432,7 +465,7 @@
             text-overflow: ellipsis;
         }
         .member-time {
-            color: #9CA3AF;
+            color: var(--text-secondary);
             font-size: 0.9rem;
         }
         #group-detail-nav {
@@ -451,18 +484,18 @@
             border-radius: 1rem;
         }
         .chat-bubble.sent {
-            background-color: #3B82F6;
+            background-color: var(--accent-color);
             color: white;
             border-bottom-right-radius: 0.25rem;
         }
         .chat-bubble.received {
-            background-color: #374151;
-            color: white;
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
             border-bottom-left-radius: 0.25rem;
         }
         .chat-sender {
             font-size: 0.75rem;
-            color: #9CA3AF;
+            color: var(--text-secondary);
             margin-bottom: 0.25rem;
         }
 
@@ -480,7 +513,7 @@
             width: 36px;
             height: 36px;
             border-radius: 50%;
-            background: #374151;
+            background: var(--bg-tertiary);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -504,11 +537,11 @@
             text-align: center;
             padding: 8px;
             font-size: 0.8rem;
-            color: #9CA3AF;
+            color: var(--text-secondary);
         }
         .calendar-day {
             aspect-ratio: 1/1;
-            background: #1F2937;
+            background: var(--bg-secondary);
             border-radius: 8px;
             display: flex;
             flex-direction: column;
@@ -529,11 +562,11 @@
             color: #10B981;
         }
         .calendar-day.today .day-number {
-            color: #3B82F6;
+            color: var(--accent-color);
             font-weight: 700;
         }
         .calendar-day.active {
-            background: #3B82F6;
+            background: var(--accent-color);
         }
         .calendar-day.active .day-number {
             color: white;
@@ -544,7 +577,7 @@
         .attendance-stats {
             margin-top: 20px;
             padding: 16px;
-            background: #1F2937;
+            background: var(--bg-secondary);
             border-radius: 12px;
         }
         .stats-grid {
@@ -554,7 +587,7 @@
             margin-top: 12px;
         }
         .stat-box {
-            background: #111827;
+            background: var(--bg-primary);
             border-radius: 8px;
             padding: 12px;
             text-align: center;
@@ -566,7 +599,7 @@
         }
         .stat-label {
             font-size: 0.8rem;
-            color: #9CA3AF;
+            color: var(--text-secondary);
         }
         .attendance-member-list {
             margin-top: 20px;
@@ -575,7 +608,7 @@
             display: flex;
             align-items: center;
             padding: 12px;
-            background: #1F2937;
+            background: var(--bg-secondary);
             border-radius: 8px;
             margin-bottom: 8px;
         }
@@ -600,18 +633,18 @@
         }
         .member-time-sm {
             font-size: 0.8rem;
-            color: #9CA3AF;
+            color: var(--text-secondary);
         }
         .attendance-progress {
             height: 6px;
-            background: #374151;
+            background: var(--bg-tertiary);
             border-radius: 3px;
             margin-top: 4px;
             overflow: hidden;
         }
         .progress-bar {
             height: 100%;
-            background: #3B82F6;
+            background: var(--accent-color);
             border-radius: 3px;
         }
         
@@ -670,31 +703,55 @@
         #confirm-btn:hover { background-color: #DC2626; }
         #cancel-btn { background-color: #4B5563; color: white; }
         #cancel-btn:hover { background-color: #6B7280; }
+        .color-circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: border-color 0.2s;
+            position: relative;
+        }
+        .color-circle.selected {
+            border-color: var(--text-primary);
+        }
+        .color-circle.custom {
+            background: conic-gradient(from 180deg at 50% 50%, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000);
+        }
+        .color-circle input[type="color"] {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
     </style>
 </head>
-<body class="bg-gray-900 text-white flex flex-col h-screen antialiased">
+<body class="bg-primary text-primary flex flex-col h-screen antialiased">
 
     <div id="auth-screen" class="active flex-col items-center justify-center h-full p-4 fade-in">
         <div class="w-full max-w-sm text-center">
-            <h1 class="text-4xl font-bold text-white mb-2">FocusFlow</h1>
-            <p class="text-gray-400 mb-8">Your Ultimate Study Companion</p>
-            <div id="auth-form-container" class="bg-gray-800 p-8 rounded-2xl shadow-lg">
+            <h1 class="text-4xl font-bold mb-2">FocusFlow</h1>
+            <p class="text-secondary mb-8">Your Ultimate Study Companion</p>
+            <div id="auth-form-container" class="bg-secondary p-8 rounded-2xl shadow-lg">
                 <form id="login-form" class="space-y-4">
-                    <h2 class="text-2xl font-bold text-white mb-4">Login</h2>
-                    <input type="email" id="login-email" placeholder="Email" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                    <input type="password" id="login-password" placeholder="Password" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Sign In</button>
+                    <h2 class="text-2xl font-bold mb-4">Login</h2>
+                    <input type="email" id="login-email" placeholder="Email" class="w-full bg-tertiary border-2 border-gray-600 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    <input type="password" id="login-password" placeholder="Password" class="w-full bg-tertiary border-2 border-gray-600 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    <button type="submit" class="w-full accent-bg accent-bg-hover text-white font-bold py-3 rounded-lg transition">Sign In</button>
                 </form>
                 <form id="signup-form" class="hidden space-y-4">
-                    <h2 class="text-2xl font-bold text-white mb-4">Create Account</h2>
-                    <input type="email" id="signup-email" placeholder="Email" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                    <input type="password" id="signup-password" placeholder="Password (min. 6 characters)" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required minlength="6">
-                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Sign Up</button>
+                    <h2 class="text-2xl font-bold mb-4">Create Account</h2>
+                    <input type="email" id="signup-email" placeholder="Email" class="w-full bg-tertiary border-2 border-gray-600 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    <input type="password" id="signup-password" placeholder="Password (min. 6 characters)" class="w-full bg-tertiary border-2 border-gray-600 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500" required minlength="6">
+                    <button type="submit" class="w-full accent-bg accent-bg-hover text-white font-bold py-3 rounded-lg transition">Sign Up</button>
                 </form>
                 <p id="auth-error" class="text-red-400 text-sm mt-4 h-5"></p>
                 <div class="flex items-center my-6">
                     <hr class="flex-grow border-gray-600">
-                    <span class="mx-4 text-gray-500">OR</span>
+                    <span class="mx-4 text-secondary">OR</span>
                     <hr class="flex-grow border-gray-600">
                 </div>
                 <button id="google-signin-btn" class="w-full bg-white text-gray-800 font-semibold py-3 rounded-lg flex items-center justify-center transition hover:bg-gray-200">
@@ -706,9 +763,9 @@
                     </svg>
                     Sign in with Google
                 </button>
-                <p class="mt-8 text-sm text-gray-400">
+                <p class="mt-8 text-sm text-secondary">
                     <span id="login-toggle-text">Don't have an account?</span>
-                    <button id="auth-toggle-btn" class="font-semibold text-blue-400 hover:text-blue-300">Sign Up</button>
+                    <button id="auth-toggle-btn" class="font-semibold accent-text hover:text-blue-300">Sign Up</button>
                 </p>
             </div>
         </div>
@@ -716,13 +773,13 @@
 
     <div id="page-username-setup" class="page flex-col items-center justify-center h-full p-4 fade-in">
         <div class="w-full max-w-sm text-center">
-            <h1 class="text-3xl font-bold text-white mb-2">Welcome to FocusFlow!</h1>
-            <p class="text-gray-400 mb-8">Let's set up your username.</p>
-            <div class="bg-gray-800 p-8 rounded-2xl shadow-lg">
+            <h1 class="text-3xl font-bold mb-2">Welcome to FocusFlow!</h1>
+            <p class="text-secondary mb-8">Let's set up your username.</p>
+            <div class="bg-secondary p-8 rounded-2xl shadow-lg">
                 <form id="username-setup-form" class="space-y-4">
-                    <input type="text" id="username-input" placeholder="Enter your username" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required minlength="3">
+                    <input type="text" id="username-input" placeholder="Enter your username" class="w-full bg-tertiary border-2 border-gray-600 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500" required minlength="3">
                     <p id="username-error" class="text-red-400 text-sm h-5"></p>
-                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Save Username</button>
+                    <button type="submit" class="w-full accent-bg accent-bg-hover text-white font-bold py-3 rounded-lg transition">Save Username</button>
                 </form>
             </div>
         </div>
@@ -732,25 +789,25 @@
         <main class="flex-grow overflow-y-auto no-scrollbar">
             <div id="page-timer" class="page active flex-col h-full">
                 <header class="p-4 md:p-6 flex items-center justify-between z-20">
-                    <h1 class="text-2xl font-bold text-white">FocusFlow</h1>
+                    <h1 class="text-2xl font-bold">FocusFlow</h1>
                     <div class="flex items-center space-x-4">
-                        <button id="groups-btn" class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-gray-400 hover:bg-gray-600 transition">
+                        <button id="groups-btn" class="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-secondary hover:bg-tertiary transition">
                             <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                 <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
                             </svg>
                         </button>
-                        <button id="profile-btn" class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-gray-400 hover:bg-gray-600 transition overflow-hidden">
-                            <div id="header-avatar" class="w-full h-full flex items-center justify-center bg-blue-500 text-white font-bold">U</div>
+                        <button id="profile-btn" class="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-secondary hover:bg-tertiary transition overflow-hidden">
+                            <div id="header-avatar" class="w-full h-full flex items-center justify-center accent-bg text-white font-bold">U</div>
                         </button>
                     </div>
                 </header>
                 <div class="relative flex-grow flex items-center justify-center -mt-16">
-                    <div class="relative text-center z-10 bg-gray-900/50 backdrop-blur-sm p-8 rounded-full">
-                        <p id="active-subject-display" class="text-xl font-semibold text-blue-400 h-7 mb-2"></p>
-                        <h2 id="session-timer" class="text-7xl md:text-8xl timer-text text-white">00:00:00</h2>
-                        <p id="total-time-display" class="text-gray-400 mt-2">Total Today: 00:00:00</p>
+                    <div class="relative text-center z-10 bg-primary/50 backdrop-blur-sm p-8 rounded-full">
+                        <p id="active-subject-display" class="text-xl font-semibold accent-text h-7 mb-2"></p>
+                        <h2 id="session-timer" class="text-7xl md:text-8xl timer-text">00:00:00</h2>
+                        <p id="total-time-display" class="text-secondary mt-2">Total Today: 00:00:00</p>
                         <div id="timer-controls" class="mt-8">
-                            <button id="start-studying-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-full text-lg transition-transform transform hover:scale-105">Start Studying</button>
+                            <button id="start-studying-btn" class="accent-bg accent-bg-hover text-white font-bold py-4 px-8 rounded-full text-lg transition-transform transform hover:scale-105">Start Studying</button>
                             <button id="stop-studying-btn" class="hidden bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-10 rounded-full text-lg transition-transform transform hover:scale-105">Stop</button>
                         </div>
                     </div>
@@ -758,13 +815,13 @@
             </div>
             
             <div id="page-stats" class="page flex-col h-full overflow-y-auto no-scrollbar">
-                <header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-gray-800 sticky top-0 bg-gray-900">
-                    <button class="back-button text-gray-400 hover:text-white" data-target="timer">
+                <header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-tertiary sticky top-0 bg-primary">
+                    <button class="back-button text-secondary hover:text-primary" data-target="timer">
                         <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                         </svg>
                     </button>
-                    <h1 class="text-xl font-bold text-gray-100">Your Stats</h1>
+                    <h1 class="text-xl font-bold">Your Stats</h1>
                     <div class="w-6"></div> </header>
                 <div class="stats-container">
                     <div class="stat-card">
@@ -777,21 +834,21 @@
                     </div>
                     <div class="stat-card">
                         <div class="stat-title">Daily Average</div>
-                        <div id="daily-average" class="text-3xl font-bold text-blue-400">0h 0m</div>
+                        <div id="daily-average" class="text-3xl font-bold accent-text">0h 0m</div>
                     </div>
                 </div>
             </div>
             
             <div id="page-ranking" class="page flex-col h-full overflow-y-auto no-scrollbar">
-                <header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-gray-800 sticky top-0 bg-gray-900">
-                    <button class="back-button text-gray-400 hover:text-white" data-target="timer">
+                <header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-tertiary sticky top-0 bg-primary">
+                    <button class="back-button text-secondary hover:text-primary" data-target="timer">
                         <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                         </svg>
                     </button>
-                    <h1 class="text-xl font-bold text-gray-100">Leaderboard</h1>
+                    <h1 class="text-xl font-bold">Leaderboard</h1>
                     <div class="w-6"></div> </header>
-                <div class="px-4 pt-4 border-b border-gray-800">
+                <div class="px-4 pt-4 border-b border-tertiary">
                     <div class="flex space-x-1" id="ranking-period-tabs">
                         <button class="ranking-tab-btn flex-1 py-2 px-4 rounded-t-lg font-semibold text-sm" data-period="daily">Daily</button>
                         <button class="ranking-tab-btn flex-1 py-2 px-4 rounded-t-lg font-semibold text-sm active" data-period="weekly">Weekly</button>
@@ -803,33 +860,32 @@
             </div>
             
             <div id="page-planner" class="page flex-col h-full overflow-y-auto no-scrollbar">
-                <header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-gray-800 sticky top-0 bg-gray-900">
-                    <button class="back-button text-gray-400 hover:text-white" data-target="timer">
+                <header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-tertiary sticky top-0 bg-primary">
+                    <button class="back-button text-secondary hover:text-primary" data-target="timer">
                         <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                         </svg>
                     </button>
-                    <h1 class="text-xl font-bold text-gray-100">Study Planner</h1>
-                    <button id="add-task-btn" class="text-blue-500 font-semibold">Add Task</button>
+                    <h1 class="text-xl font-bold">Study Planner</h1>
+                    <button id="add-task-btn" class="accent-text font-semibold">Add Task</button>
                 </header>
                 <div id="planner-list" class="planner-container">
                     </div>
             </div>
 
             <div id="page-profile" class="page flex-col h-full overflow-y-auto no-scrollbar">
-                <header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-gray-800 sticky top-0 bg-gray-900">
-                    <button class="back-button text-gray-400 hover:text-white" data-target="timer">
+                <header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-tertiary sticky top-0 bg-primary">
+                    <button class="back-button text-secondary hover:text-primary" data-target="timer">
                         <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                         </svg>
                     </button>
-                    <h1 class="text-xl font-bold text-gray-100">Profile Settings</h1>
+                    <h1 class="text-xl font-bold">Profile Settings</h1>
                     <div class="w-6"></div> </header>
                 <div class="profile-container">
                     <div class="profile-header"><div id="profile-page-avatar" class="profile-avatar">U</div><div><div id="profile-page-name" class="profile-name">User Name</div><div id="profile-page-email" class="profile-email">user@example.com</div></div></div>
                     <div class="settings-item"><div class="settings-label">Account</div><div class="settings-value">Edit profile information</div></div>
-                    <div class="settings-item"><div class="settings-label">Notifications</div><div class="settings-value">Enabled</div></div>
-                    <div class="settings-item"><div class="settings-label">Appearance</div><div class="settings-value">Dark Mode</div></div>
+                    <div id="appearance-setting" class="settings-item cursor-pointer"><div class="settings-label">Appearance</div><div id="appearance-value" class="settings-value">Dark</div></div>
                     <div class="settings-item"><div class="settings-label">Study Goals</div><div class="settings-value">4 hours/day</div></div>
                     <div class="settings-item"><div class="settings-label">About FocusFlow</div><div class="settings-value">Version 1.0.0</div></div>
                     <button id="sign-out-btn" class="w-full mt-8 py-3 bg-red-600 hover:bg-red-700 rounded-lg font-medium transition">Sign Out</button>
@@ -837,105 +893,106 @@
             </div>
             
             <div id="page-my-groups" class="page flex-col h-full overflow-y-auto no-scrollbar">
-                <header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-gray-800 sticky top-0 bg-gray-900">
-                    <button class="back-button text-gray-400 hover:text-white" data-target="timer">
+                <header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-tertiary sticky top-0 bg-primary">
+                    <button class="back-button text-secondary hover:text-primary" data-target="timer">
                         <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                         </svg>
                     </button>
-                    <h1 class="text-xl font-bold text-gray-100">My Groups</h1>
-                    <button id="notification-btn" class="text-gray-400 hover:text-white">
+                    <h1 class="text-xl font-bold">My Groups</h1>
+                    <button id="notification-btn" class="text-secondary hover:text-primary">
                         <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
                     </button>
                 </header>
                 <div id="my-groups-list" class="p-4 md:p-6 space-y-3 flex-grow"></div>
-                <button id="go-to-find-groups-btn" class="create-group-btn"><i class="fas fa-plus text-xl"></i></button>
+                <button id="go-to-find-groups-btn" class="create-group-btn accent-bg accent-bg-hover"><i class="fas fa-plus text-xl"></i></button>
             </div>
             
             <div id="page-find-groups" class="page flex-col h-full overflow-y-auto no-scrollbar">
-                <header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-gray-800 sticky top-0 bg-gray-900">
-                    <button class="back-button text-gray-400 hover:text-white" data-target="my-groups">
+                <header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-tertiary sticky top-0 bg-primary">
+                    <button class="back-button text-secondary hover:text-primary" data-target="my-groups">
                         <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
                     </button>
-                    <h1 class="text-xl font-bold text-gray-100">Study Groups</h1>
-                    <button id="search-groups-btn" class="text-gray-400 hover:text-white">
+                    <h1 class="text-xl font-bold">Study Groups</h1>
+                    <button id="search-groups-btn" class="text-secondary hover:text-primary">
                         <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                     </button>
                 </header>
                 <div id="all-groups-list" class="p-4 md:p-6 space-y-3 flex-grow"></div>
-                <button id="go-to-create-group-btn" class="create-group-btn"><i class="fas fa-plus text-xl"></i></button>
+                <button id="go-to-create-group-btn" class="create-group-btn accent-bg accent-bg-hover"><i class="fas fa-plus text-xl"></i></button>
             </div>
             
             <div id="page-create-group" class="page flex-col h-full overflow-y-auto no-scrollbar">
-                <header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-gray-800 sticky top-0 bg-gray-900">
-                    <button class="back-button text-gray-400 hover:text-white" data-target="find-groups">
+                <header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-tertiary sticky top-0 bg-primary">
+                    <button class="back-button text-secondary hover:text-primary" data-target="find-groups">
                         <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
                     </button>
-                    <h1 class="text-xl font-bold text-gray-100">Create Group</h1>
-                    <button id="create-group-done-btn" class="font-semibold text-blue-500 hover:text-blue-400">Done</button>
+                    <h1 class="text-xl font-bold">Create Group</h1>
+                    <button id="create-group-done-btn" class="font-semibold accent-text hover:text-blue-400">Done</button>
                 </header>
                 <div class="p-4 md:p-6">
                     <form id="create-group-form" class="space-y-4">
-                        <div class="form-group"><label for="group-name-input" class="block mb-2 font-medium">Group Name</label><input type="text" id="group-name-input" placeholder="Enter group name" class="w-full bg-gray-800 border-2 border-gray-700 rounded-lg p-3 text-white focus:outline-none focus:border-blue-500" required></div>
-                        <div class="form-group"><label for="group-password-input" class="block mb-2 font-medium">Password (Optional)</label><input type="password" id="group-password-input" placeholder="Set a password for private groups" class="w-full bg-gray-800 border-2 border-gray-700 rounded-lg p-3 text-white focus:outline-none focus:border-blue-500"></div>
+                        <div class="form-group"><label for="group-name-input" class="block mb-2 font-medium">Group Name</label><input type="text" id="group-name-input" placeholder="Enter group name" class="w-full bg-secondary border-2 border-tertiary rounded-lg p-3 focus:outline-none focus:border-blue-500" required></div>
+                        <div class="form-group"><label for="group-password-input" class="block mb-2 font-medium">Password (Optional)</label><input type="password" id="group-password-input" placeholder="Set a password for private groups" class="w-full bg-secondary border-2 border-tertiary rounded-lg p-3 focus:outline-none focus:border-blue-500"></div>
                         <div class="form-group"><label class="block mb-2 font-medium">Category</label><div class="grid grid-cols-2 gap-3"><div class="category-option">Primary school</div><div class="category-option selected">Secondary School</div><div class="category-option">Sixth Form</div><div class="category-option">University</div><div class="category-option">Language study</div><div class="category-option">Others</div></div></div>
                         <div class="form-group"><label class="block mb-2 font-medium">Daily Time Goal</label><div class="grid grid-cols-3 gap-2"><div class="time-option">1 hour</div><div class="time-option">2 hours</div><div class="time-option selected">3 hours</div><div class="time-option">4 hours</div><div class="time-option">5 hours</div><div class="time-option">6 hours</div><div class="time-option">7 hours</div><div class="time-option">8 hours</div><div class="time-option">9 hours</div><div class="time-option">10 hours</div><div class="time-option">11 hours</div><div class="time-option">12 hours</div></div></div>
-                        <div class="form-group"><label class="block mb-2 font-medium">Capacity</label><div class="flex items-center space-x-3"><button id="decrease-capacity" type="button" class="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center text-xl">-</button><div id="capacity-value" class="text-xl font-bold w-12 text-center">15</div><button id="increase-capacity" type="button" class="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center text-xl">+</button><span class="text-gray-400">people</span></div></div>
-                        <div class="form-group"><label for="group-description-input" class="block mb-2 font-medium">Group Description</label><textarea id="group-description-input" placeholder="Describe your group, include any joining criteria or motivational messages to welcome new members" class="w-full bg-gray-800 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" rows="4" required></textarea></div>
+                        <div class="form-group"><label class="block mb-2 font-medium">Capacity</label><div class="flex items-center space-x-3"><button id="decrease-capacity" type="button" class="w-10 h-10 bg-secondary rounded-lg flex items-center justify-center text-xl">-</button><div id="capacity-value" class="text-xl font-bold w-12 text-center">15</div><button id="increase-capacity" type="button" class="w-10 h-10 bg-secondary rounded-lg flex items-center justify-center text-xl">+</button><span class="text-secondary">people</span></div></div>
+                        <div class="form-group"><label for="group-description-input" class="block mb-2 font-medium">Group Description</label><textarea id="group-description-input" placeholder="Describe your group, include any joining criteria or motivational messages to welcome new members" class="w-full bg-secondary rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500" rows="4" required></textarea></div>
                     </form>
                 </div>
             </div>
              <div id="page-group-detail" class="page flex-col h-full">
-                <header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-gray-800 sticky top-0 bg-gray-900">
-                    <button class="back-button text-gray-400 hover:text-white" data-target="my-groups">
+                <header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-tertiary sticky top-0 bg-primary">
+                    <button class="back-button text-secondary hover:text-primary" data-target="my-groups">
                         <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                         </svg>
                     </button>
-                    <h1 id="group-detail-name" class="text-xl font-bold text-gray-100">Group Name</h1>
+                    <h1 id="group-detail-name" class="text-xl font-bold">Group Name</h1>
                     <div class="w-6"></div>
                 </header>
                 <div id="group-detail-content" class="flex-grow overflow-y-auto no-scrollbar">
                     </div>
-                <nav id="group-detail-nav" class="bg-gray-800 border-t border-gray-700 grid grid-cols-5 sticky bottom-0">
-                    <button class="group-nav-item p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors active" data-subpage="home">
+                <nav id="group-detail-nav" class="bg-secondary border-t border-tertiary grid grid-cols-5 sticky bottom-0">
+                    <button class="group-nav-item p-3 flex flex-col items-center justify-center text-secondary hover:bg-tertiary transition-colors active" data-subpage="home">
                         <i class="fas fa-home"></i>
                         <p class="text-xs mt-1">Home</p>
                     </button>
-                    <button class="group-nav-item p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors" data-subpage="attendance">
+                    <button class="group-nav-item p-3 flex flex-col items-center justify-center text-secondary hover:bg-tertiary transition-colors" data-subpage="attendance">
                         <i class="fas fa-calendar-check"></i>
                         <p class="text-xs mt-1">Attendance</p>
                     </button>
-                    <button class="group-nav-item p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors" data-subpage="rankings">
+                    <button class="group-nav-item p-3 flex flex-col items-center justify-center text-secondary hover:bg-tertiary transition-colors" data-subpage="rankings">
                         <i class="fas fa-chart-bar"></i>
                         <p class="text-xs mt-1">Rankings</p>
                     </button>
-                    <button class="group-nav-item p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors" data-subpage="invite">
+                    <button class="group-nav-item p-3 flex flex-col items-center justify-center text-secondary hover:bg-tertiary transition-colors" data-subpage="invite">
                         <i class="fas fa-user-plus"></i>
                         <p class="text-xs mt-1">Invite</p>
                     </button>
-                    <button class="group-nav-item p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors" data-subpage="chat">
+                    <button class="group-nav-item p-3 flex flex-col items-center justify-center text-secondary hover:bg-tertiary transition-colors" data-subpage="chat">
                         <i class="fas fa-comments"></i>
                         <p class="text-xs mt-1">Chat</p>
                     </button>
                 </nav>
             </div>
         </main>
-        <nav id="main-nav" class="bg-gray-800 border-t border-gray-700 grid grid-cols-5 sticky bottom-0">
-            <button class="nav-item p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors active" data-page="timer"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg><p class="text-xs mt-1">Timer</p></button>
-            <button class="nav-item p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors" data-page="stats"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg><p class="text-xs mt-1">Stats</p></button>
-            <button class="nav-item p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors" data-page="ranking"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg><p class="text-xs mt-1">Ranking</p></button>
-            <button class="nav-item p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors" data-page="planner"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg><p class="text-xs mt-1">Planner</p></button>
-            <button id="add-subject-btn" class="p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors"><svg class="w-6 h-6 text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg><p class="text-xs mt-1 text-blue-400">Add Subject</p></button>
+        <nav id="main-nav" class="bg-secondary border-t border-tertiary grid grid-cols-5 sticky bottom-0">
+            <button class="nav-item p-3 flex flex-col items-center justify-center text-secondary hover:bg-tertiary transition-colors active" data-page="timer"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg><p class="text-xs mt-1">Timer</p></button>
+            <button class="nav-item p-3 flex flex-col items-center justify-center text-secondary hover:bg-tertiary transition-colors" data-page="stats"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg><p class="text-xs mt-1">Stats</p></button>
+            <button class="nav-item p-3 flex flex-col items-center justify-center text-secondary hover:bg-tertiary transition-colors" data-page="ranking"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg><p class="text-xs mt-1">Ranking</p></button>
+            <button class="nav-item p-3 flex flex-col items-center justify-center text-secondary hover:bg-tertiary transition-colors" data-page="planner"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg><p class="text-xs mt-1">Planner</p></button>
+            <button id="add-subject-btn" class="p-3 flex flex-col items-center justify-center text-secondary hover:bg-tertiary transition-colors"><svg class="w-6 h-6 accent-text" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg><p class="text-xs mt-1 accent-text">Add Subject</p></button>
         </nav>
     </div>
 
     <div id="toast-container"></div>
-    <div id="add-subject-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Add New Subject</div><button class="close-modal">&times;</button></div><form id="add-subject-form"><div class="mb-4"><label for="add-subject-name" class="block text-gray-300 mb-2">Subject Name</label><input type="text" id="add-subject-name" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required></div><div class="mb-4"><label class="block text-gray-300 mb-2">Color</label><div class="flex space-x-2 subject-color-picker"><div class="w-8 h-8 rounded-full bg-red-500 cursor-pointer color-dot" data-color="bg-red-500"></div><div class="w-8 h-8 rounded-full bg-blue-500 cursor-pointer color-dot selected" data-color="bg-blue-500"></div><div class="w-8 h-8 rounded-full bg-green-500 cursor-pointer color-dot" data-color="bg-green-500"></div><div class="w-8 h-8 rounded-full bg-yellow-500 cursor-pointer color-dot" data-color="bg-yellow-500"></div><div class="w-8 h-8 rounded-full bg-purple-500 cursor-pointer color-dot" data-color="bg-purple-500"></div></div></div><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Add Subject</button></form></div></div>
-    <div id="start-session-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Start New Session</div><button id="close-start-session-modal" class="close-modal">&times;</button></div><form id="start-session-form"><div id="subject-selection-list" class="mb-4 max-h-60 overflow-y-auto space-y-2"></div><div class="flex items-center gap-4 mt-4"><button type="button" id="open-add-subject-modal-from-start" class="w-full text-center py-3 bg-gray-600 hover:bg-gray-500 rounded-lg font-medium transition">Add New Subject</button><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Start Timer</button></div></form></div></div>
-    <div id="add-task-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Add New Task</div><button class="close-modal">&times;</button></div><form id="add-task-form"><div class="mb-4"><label for="add-task-name" class="block text-gray-300 mb-2">Task Description</label><input type="text" id="add-task-name" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required></div><div class="mb-4"><label for="add-task-date" class="block text-gray-300 mb-2">Date</label><input type="date" id="add-task-date" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required></div><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Add Task</button></form></div></div>
-    <div id="password-prompt-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Enter Group Password</div><button class="close-modal">&times;</button></div><form id="password-prompt-form"><input type="password" id="group-password-prompt-input" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required><div class="flex gap-2 mt-4"><button type="button" class="close-modal w-full py-2 bg-gray-600 rounded-lg">Cancel</button><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-lg transition">Submit</button></div></form></div></div>
+    <div id="add-subject-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Add New Subject</div><button class="close-modal">&times;</button></div><form id="add-subject-form"><div class="mb-4"><label for="add-subject-name" class="block text-secondary mb-2">Subject Name</label><input type="text" id="add-subject-name" class="w-full bg-tertiary rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500" required></div><div class="mb-4"><label class="block text-secondary mb-2">Color</label><div class="flex space-x-2 subject-color-picker"><div class="w-8 h-8 rounded-full bg-red-500 cursor-pointer color-dot" data-color="bg-red-500"></div><div class="w-8 h-8 rounded-full bg-blue-500 cursor-pointer color-dot selected" data-color="bg-blue-500"></div><div class="w-8 h-8 rounded-full bg-green-500 cursor-pointer color-dot" data-color="bg-green-500"></div><div class="w-8 h-8 rounded-full bg-yellow-500 cursor-pointer color-dot" data-color="bg-yellow-500"></div><div class="w-8 h-8 rounded-full bg-purple-500 cursor-pointer color-dot" data-color="bg-purple-500"></div></div></div><button type="submit" class="w-full accent-bg accent-bg-hover text-white font-bold py-3 rounded-lg transition">Add Subject</button></form></div></div>
+    <div id="start-session-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Start New Session</div><button id="close-start-session-modal" class="close-modal">&times;</button></div><form id="start-session-form"><div id="subject-selection-list" class="mb-4 max-h-60 overflow-y-auto space-y-2"></div><div class="flex items-center gap-4 mt-4"><button type="button" id="open-add-subject-modal-from-start" class="w-full text-center py-3 bg-tertiary hover:bg-gray-500 rounded-lg font-medium transition">Add New Subject</button><button type="submit" class="w-full accent-bg accent-bg-hover text-white font-bold py-3 rounded-lg transition">Start Timer</button></div></form></div></div>
+    <div id="add-task-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Add New Task</div><button class="close-modal">&times;</button></div><form id="add-task-form"><div class="mb-4"><label for="add-task-name" class="block text-secondary mb-2">Task Description</label><input type="text" id="add-task-name" class="w-full bg-tertiary rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500" required></div><div class="mb-4"><label for="add-task-date" class="block text-secondary mb-2">Date</label><input type="date" id="add-task-date" class="w-full bg-tertiary rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500" required></div><button type="submit" class="w-full accent-bg accent-bg-hover text-white font-bold py-3 rounded-lg transition">Add Task</button></form></div></div>
+    <div id="password-prompt-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Enter Group Password</div><button class="close-modal">&times;</button></div><form id="password-prompt-form"><input type="password" id="group-password-prompt-input" class="w-full bg-tertiary rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500" required><div class="flex gap-2 mt-4"><button type="button" class="close-modal w-full py-2 bg-tertiary rounded-lg">Cancel</button><button type="submit" class="w-full accent-bg accent-bg-hover text-white font-bold py-2 rounded-lg transition">Submit</button></div></form></div></div>
     <div id="confirmation-modal" class="modal"><div class="modal-content"><div class="modal-header"><h2 id="confirmation-modal-title" class="modal-title">Are you sure?</h2><button class="close-modal">&times;</button></div><p id="confirmation-modal-message">This action cannot be undone.</p><div id="confirmation-modal-buttons"><button id="cancel-btn">Cancel</button><button id="confirm-btn">Confirm</button></div></div></div>
+    <div id="appearance-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Appearance</div><button class="close-modal">&times;</button></div><div class="space-y-4"><div class="space-y-2"><h3 class="font-semibold">Theme</h3><div class="grid grid-cols-3 gap-2"><button data-theme="light" class="theme-option">Light</button><button data-theme="dark" class="theme-option">Dark</button><button data-theme="system" class="theme-option">System</button></div></div><div class="space-y-2"><h3 class="font-semibold">Accent Color</h3><div id="color-palette" class="grid grid-cols-6 gap-2"><div class="color-circle" style="background-color: #3B82F6;" data-color="#3B82F6"></div><div class="color-circle" style="background-color: #EF4444;" data-color="#EF4444"></div><div class="color-circle" style="background-color: #10B981;" data-color="#10B981"></div><div class="color-circle" style="background-color: #F59E0B;" data-color="#F59E0B"></div><div class="color-circle" style="background-color: #8B5CF6;" data-color="#8B5CF6"></div><div class="color-circle custom"><input type="color" id="custom-color-input" value="#3B82F6"></div></div></div><div class="space-y-2"><h3 class="font-semibold">Background Color</h3><div id="background-color-palette" class="grid grid-cols-6 gap-2"><div class="color-circle" style="background-color: #111827;" data-color="#111827"></div><div class="color-circle" style="background-color: #F9FAFB;" data-color="#F9FAFB"></div><div class="color-circle" style="background-color: #000000;" data-color="#000000"></div><div class="color-circle" style="background-color: #FFFFFF;" data-color="#FFFFFF"></div><div class="color-circle" style="background-color: #1E293B;" data-color="#1E293B"></div><div class="color-circle custom"><input type="color" id="custom-background-color-input" value="#111827"></div></div></div><button id="save-appearance-btn" class="w-full accent-bg accent-bg-hover text-white font-bold py-3 rounded-lg transition mt-4">Save</button></div></div></div>
 
 
     <script type="module">
@@ -1068,6 +1125,10 @@
                         const userDoc = await getOrCreateUserDocument(user);
                         const userData = userDoc.data();
                         
+                        if (userData.settings) {
+                            applyTheme(userData.settings.theme, userData.settings.accentColor, userData.settings.backgroundColor);
+                        }
+
                         if (!userData || !userData.username) {
                             showPage('page-username-setup');
                         } else {
@@ -1249,7 +1310,12 @@
                     joinedGroups: [],
                     createdAt: serverTimestamp(),
                     totalStudySeconds: 0,
-                    studying: null
+                    studying: null,
+                    settings: {
+                        theme: 'dark',
+                        accentColor: '#3B82F6',
+                        backgroundColor: '#111827'
+                    }
                 };
                 await setDoc(userDocRef, initialData);
                 await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', user.uid), {
@@ -1270,6 +1336,9 @@
             const avatarChar = username ? username.charAt(0).toUpperCase() : 'U';
             document.getElementById('header-avatar').textContent = avatarChar;
             document.getElementById('profile-page-avatar').textContent = avatarChar;
+            
+            const theme = userData.settings?.theme || 'dark';
+            document.getElementById('appearance-value').textContent = theme.charAt(0).toUpperCase() + theme.slice(1);
         }
 
         function setupRealtimeListeners() {
@@ -1325,7 +1394,7 @@
                 btn.classList.toggle('active', btn.dataset.period === period);
             });
 
-            container.innerHTML = '<div class="text-center text-gray-500 py-8"><i class="fas fa-spinner fa-spin fa-2x"></i></div>';
+            container.innerHTML = '<div class="text-center text-secondary py-8"><i class="fas fa-spinner fa-spin fa-2x"></i></div>';
 
             const usersCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'users');
             const usersSnapshot = await getDocs(usersCollectionRef);
@@ -1380,7 +1449,7 @@
                 return `
                     <div class="ranking-item ${currentUser.uid === user.id ? 'bg-blue-900/30' : ''}">
                         <div class="rank ${rankClass}">${rank}</div>
-                        <div class="user-avatar bg-gray-600">${(user.username || 'U').charAt(0).toUpperCase()}</div>
+                        <div class="user-avatar bg-tertiary">${(user.username || 'U').charAt(0).toUpperCase()}</div>
                         <div class="user-info">
                             <div class="user-name">${user.username}</div>
                             <div class="user-time">${formatTime(user.totalStudySeconds, false)} this ${period.slice(0,-2)}</div>
@@ -1538,7 +1607,7 @@
             const container = document.getElementById('subject-selection-list');
             if (!container) return;
             if (subjects.length === 0) {
-                container.innerHTML = `<p class="text-gray-400 text-center">No subjects added yet. Add one below!</p>`;
+                container.innerHTML = `<p class="text-secondary text-center">No subjects added yet. Add one below!</p>`;
                 return;
             }
             container.innerHTML = subjects.map(subject => `
@@ -1560,7 +1629,7 @@
             const container = document.getElementById('planner-list');
             if (!container) return;
             if (tasks.length === 0) {
-                container.innerHTML = `<div class="text-center text-gray-500 py-8">No tasks scheduled. Add one to get started!</div>`;
+                container.innerHTML = `<div class="text-center text-secondary py-8">No tasks scheduled. Add one to get started!</div>`;
                 return;
             }
 
@@ -1584,7 +1653,7 @@
 
                 const tasksHtml = groupedTasks[dateStr].map(task => `
                     <div class="planner-task">
-                        <input type="checkbox" class="task-checkbox w-5 h-5 bg-gray-700 rounded text-blue-500 focus:ring-blue-500" data-task-id="${task.id}" ${task.completed ? 'checked' : ''}>
+                        <input type="checkbox" class="task-checkbox w-5 h-5 bg-tertiary rounded text-blue-500 focus:ring-blue-500" data-task-id="${task.id}" ${task.completed ? 'checked' : ''}>
                         <div class="task-name ${task.completed ? 'completed' : ''}">${task.name}</div>
                     </div>
                 `).join('');
@@ -1661,17 +1730,17 @@
                  renderGroupMembers();
             } else if (subpage === 'invite') {
                 const inviteLink = `${window.location.origin}${window.location.pathname}?groupId=${currentGroupId}`;
-                container.innerHTML = `<div class="p-8 text-center"><img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(inviteLink)}" class="mx-auto mb-4 rounded-lg"><p class="text-blue-400 break-all">${inviteLink}</p><div class="flex gap-4 mt-4"><button id="copy-link-btn" class="w-full py-2 bg-gray-700 rounded-lg">Copy Link</button><button class="w-full py-2 bg-orange-500 rounded-lg">Share Link</button></div><p class="text-gray-500 mt-4 text-sm">Share this link to invite a friend or organization to study with you.</p></div>`;
+                container.innerHTML = `<div class="p-8 text-center"><img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(inviteLink)}" class="mx-auto mb-4 rounded-lg"><p class="accent-text break-all">${inviteLink}</p><div class="flex gap-4 mt-4"><button id="copy-link-btn" class="w-full py-2 bg-tertiary rounded-lg">Copy Link</button><button class="w-full py-2 bg-orange-500 rounded-lg">Share Link</button></div><p class="text-secondary mt-4 text-sm">Share this link to invite a friend or organization to study with you.</p></div>`;
                 document.getElementById('copy-link-btn').addEventListener('click', () => {
                     navigator.clipboard.writeText(inviteLink).then(() => {
                         showToast('Link copied to clipboard!', 'success');
                     });
                 });
             } else if (subpage === 'chat') {
-                container.innerHTML = `<div class="p-4 flex flex-col h-full"><div id="chat-messages" class="flex-grow overflow-y-auto"></div><form id="chat-form" class="flex gap-2 mt-4"><input id="chat-input" class="flex-grow bg-gray-700 rounded-lg p-3" placeholder="Type a message..."><button type="submit" class="bg-blue-600 px-4 rounded-lg"><i class="fas fa-paper-plane"></i></button></form></div>`;
+                container.innerHTML = `<div class="p-4 flex flex-col h-full"><div id="chat-messages" class="flex-grow overflow-y-auto"></div><form id="chat-form" class="flex gap-2 mt-4"><input id="chat-input" class="flex-grow bg-tertiary rounded-lg p-3" placeholder="Type a message..."><button type="submit" class="accent-bg px-4 rounded-lg"><i class="fas fa-paper-plane"></i></button></form></div>`;
                 setupGroupChat(currentGroupId);
             } else if (subpage === 'rankings') {
-                 container.innerHTML = `<div class="px-4 pt-4 border-b border-gray-800">
+                 container.innerHTML = `<div class="px-4 pt-4 border-b border-tertiary">
                     <div class="flex space-x-1" id="group-ranking-period-tabs">
                         <button class="ranking-tab-btn flex-1 py-2 px-4 rounded-t-lg font-semibold text-sm" data-period="daily">Daily</button>
                         <button class="ranking-tab-btn flex-1 py-2 px-4 rounded-t-lg font-semibold text-sm active" data-period="weekly">Weekly</button>
@@ -1726,7 +1795,7 @@
                 </div>`;
                 renderGroupAttendance();
             } else {
-                 container.innerHTML = `<div class="p-8 text-center text-gray-400">${subpage.charAt(0).toUpperCase() + subpage.slice(1)} page is coming soon!</div>`;
+                 container.innerHTML = `<div class="p-8 text-center text-secondary">${subpage.charAt(0).toUpperCase() + subpage.slice(1)} page is coming soon!</div>`;
             }
         }
         
@@ -1760,16 +1829,16 @@
                             ${isStudying ? '<div class="member-status-icon"></div>' : ''}
                         </div>
                         <div class="flex-grow">
-                            <div class="font-bold text-white">${memberData.username || 'Anonymous'}</div>
-                            <div class="text-sm ${isStudying ? 'text-green-400' : 'text-gray-400'}" id="member-subject-${memberId}">
+                            <div class="font-bold">${memberData.username || 'Anonymous'}</div>
+                            <div class="text-sm ${isStudying ? 'text-green-400' : 'text-secondary'}" id="member-subject-${memberId}">
                                 ${isStudying ? `Studying: ${memberData.studying.subject}` : 'Idle'}
                             </div>
                         </div>
                         <div class="text-right">
-                            <div class="text-xl font-semibold text-white" id="member-time-${memberId}" data-base-time="${totalTodaySeconds}" data-start-time="${isStudying ? memberData.studying.startTime.toDate().getTime() : 0}">
+                            <div class="text-xl font-semibold" id="member-time-${memberId}" data-base-time="${totalTodaySeconds}" data-start-time="${isStudying ? memberData.studying.startTime.toDate().getTime() : 0}">
                                 ${formatTime(initialDisplayTime)}
                             </div>
-                            <div class="text-xs text-gray-500">Total Today</div>
+                            <div class="text-xs text-secondary">Total Today</div>
                         </div>
                     </div>
                 `;
@@ -1843,7 +1912,7 @@
                 return `
                     <div class="ranking-item ${currentUser.uid === user.id ? 'bg-blue-900/30' : ''}">
                         <div class="rank ${rankClass}">${rank}</div>
-                        <div class="user-avatar bg-gray-600">${(user.username || 'U').charAt(0).toUpperCase()}</div>
+                        <div class="user-avatar bg-tertiary">${(user.username || 'U').charAt(0).toUpperCase()}</div>
                         <div class="user-info">
                             <div class="user-name">${user.username}</div>
                             <div class="user-time">${formatTime(user.totalStudySeconds, false)} this ${period.slice(0,-2)}</div>
@@ -2334,6 +2403,110 @@
                 btn.addEventListener('click', () => modal.classList.remove('active'));
             });
         });
+        
+        ael('appearance-setting', 'click', () => {
+            document.getElementById('appearance-modal').classList.add('active');
+        });
+
+        const appearanceModal = document.getElementById('appearance-modal');
+        appearanceModal.querySelectorAll('.theme-option').forEach(button => {
+            button.addEventListener('click', () => {
+                appearanceModal.querySelectorAll('.theme-option').forEach(btn => btn.classList.remove('selected'));
+                button.classList.add('selected');
+            });
+        });
+        appearanceModal.querySelectorAll('#color-palette .color-circle:not(.custom)').forEach(circle => {
+            circle.addEventListener('click', () => {
+                appearanceModal.querySelectorAll('#color-palette .color-circle').forEach(c => c.classList.remove('selected'));
+                circle.classList.add('selected');
+                document.getElementById('custom-color-input').value = circle.dataset.color;
+            });
+        });
+        appearanceModal.querySelectorAll('#background-color-palette .color-circle:not(.custom)').forEach(circle => {
+            circle.addEventListener('click', () => {
+                appearanceModal.querySelectorAll('#background-color-palette .color-circle').forEach(c => c.classList.remove('selected'));
+                circle.classList.add('selected');
+                document.getElementById('custom-background-color-input').value = circle.dataset.color;
+            });
+        });
+        
+        ael('custom-color-input', 'input', (e) => {
+            appearanceModal.querySelectorAll('#color-palette .color-circle').forEach(c => c.classList.remove('selected'));
+            e.target.parentElement.classList.add('selected');
+        });
+        
+        ael('custom-background-color-input', 'input', (e) => {
+            appearanceModal.querySelectorAll('#background-color-palette .color-circle').forEach(c => c.classList.remove('selected'));
+            e.target.parentElement.classList.add('selected');
+        });
+
+        ael('save-appearance-btn', 'click', async () => {
+            const selectedTheme = appearanceModal.querySelector('.theme-option.selected')?.dataset.theme || 'dark';
+            
+            let selectedAccentColor;
+            const selectedAccentCircle = appearanceModal.querySelector('#color-palette .color-circle.selected');
+            if (selectedAccentCircle && !selectedAccentCircle.classList.contains('custom')) {
+                selectedAccentColor = selectedAccentCircle.dataset.color;
+            } else {
+                selectedAccentColor = document.getElementById('custom-color-input').value;
+            }
+
+            let selectedBgColor;
+            const selectedBgCircle = appearanceModal.querySelector('#background-color-palette .color-circle.selected');
+            if (selectedBgCircle && !selectedBgCircle.classList.contains('custom')) {
+                selectedBgColor = selectedBgCircle.dataset.color;
+            } else {
+                selectedBgColor = document.getElementById('custom-background-color-input').value;
+            }
+            
+            applyTheme(selectedTheme, selectedAccentColor, selectedBgColor);
+
+            const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
+            await setDoc(userRef, { settings: { theme: selectedTheme, accentColor: selectedAccentColor, backgroundColor: selectedBgColor } }, { merge: true });
+            
+            showToast('Appearance saved!', 'success');
+            appearanceModal.classList.remove('active');
+        });
+
+        function adjustColor(hex, amount) {
+            let color = hex.startsWith('#') ? hex.slice(1) : hex;
+            let r = parseInt(color.substring(0, 2), 16);
+            let g = parseInt(color.substring(2, 4), 16);
+            let b = parseInt(color.substring(4, 6), 16);
+            r = Math.max(0, Math.min(255, r + amount));
+            g = Math.max(0, Math.min(255, g + amount));
+            b = Math.max(0, Math.min(255, b + amount));
+            return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+        }
+
+        function applyTheme(theme, accentColor, backgroundColor) {
+            const root = document.documentElement;
+            
+            let finalTheme = theme;
+            if (theme === 'system') {
+                finalTheme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
+            
+            root.classList.toggle('dark', finalTheme === 'dark');
+            root.classList.toggle('light', finalTheme === 'light');
+
+            if (backgroundColor) {
+                root.style.setProperty('--bg-primary', backgroundColor);
+                if (finalTheme === 'dark') {
+                    root.style.setProperty('--bg-secondary', adjustColor(backgroundColor, 15));
+                    root.style.setProperty('--bg-tertiary', adjustColor(backgroundColor, 30));
+                } else {
+                    root.style.setProperty('--bg-secondary', adjustColor(backgroundColor, -10));
+                    root.style.setProperty('--bg-tertiary', adjustColor(backgroundColor, -20));
+                }
+            }
+            
+            root.style.setProperty('--accent-color', accentColor);
+            const hoverColor = adjustColor(accentColor, -20);
+            root.style.setProperty('--accent-color-hover', hoverColor);
+            
+            document.getElementById('appearance-value').textContent = theme.charAt(0).toUpperCase() + theme.slice(1);
+        }
 
         // --- Initial Load ---
         window.onload = initializeFirebase;
