@@ -389,43 +389,41 @@
             background-color: #ef4444;
         }
         /* Group Detail Page */
-        .member-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            gap: 16px;
-            padding: 20px;
-        }
-        .member-card {
+        .member-list-card {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
             background-color: #1F2937;
-            border-radius: 12px;
-            padding: 15px;
-            text-align: center;
+            border-radius: 0.75rem;
+            width: 100%;
         }
         .member-avatar {
-            width: 60px;
-            height: 60px;
+            width: 48px;
+            height: 48px;
             border-radius: 50%;
             background-color: #4B5563;
-            margin: 0 auto 10px;
+            margin-right: 1rem;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 1.5rem;
             font-weight: bold;
             position: relative;
+            flex-shrink: 0;
         }
         .member-avatar.studying {
             outline: 3px solid #10B981;
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.5);
         }
         .member-status-icon {
             position: absolute;
-            bottom: 0;
-            right: 0;
+            bottom: -2px;
+            right: -2px;
             width: 20px;
             height: 20px;
             background-color: #10B981;
             border-radius: 50%;
-            border: 2px solid #1F2937;
+            border: 3px solid #1F2937;
         }
         .member-name {
             font-weight: 600;
@@ -676,7 +674,6 @@
 </head>
 <body class="bg-gray-900 text-white flex flex-col h-screen antialiased">
 
-    <!-- Authentication Screen -->
     <div id="auth-screen" class="active flex-col items-center justify-center h-full p-4 fade-in">
         <div class="w-full max-w-sm text-center">
             <h1 class="text-4xl font-bold text-white mb-2">FocusFlow</h1>
@@ -717,7 +714,6 @@
         </div>
     </div>
 
-    <!-- Username Setup Screen -->
     <div id="page-username-setup" class="page flex-col items-center justify-center h-full p-4 fade-in">
         <div class="w-full max-w-sm text-center">
             <h1 class="text-3xl font-bold text-white mb-2">Welcome to FocusFlow!</h1>
@@ -732,10 +728,8 @@
         </div>
     </div>
 
-    <!-- Main App Container -->
     <div id="app-container" class="flex-col h-screen">
         <main class="flex-grow overflow-y-auto no-scrollbar">
-            <!-- Timer/Home Page -->
             <div id="page-timer" class="page active flex-col h-full">
                 <header class="p-4 md:p-6 flex items-center justify-between z-20">
                     <h1 class="text-2xl font-bold text-white">FocusFlow</h1>
@@ -763,7 +757,6 @@
                 </div>
             </div>
             
-            <!-- Stats Page -->
             <div id="page-stats" class="page flex-col h-full overflow-y-auto no-scrollbar">
                 <header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-gray-800 sticky top-0 bg-gray-900">
                     <button class="back-button text-gray-400 hover:text-white" data-target="timer">
@@ -772,8 +765,7 @@
                         </svg>
                     </button>
                     <h1 class="text-xl font-bold text-gray-100">Your Stats</h1>
-                    <div class="w-6"></div> <!-- Empty div for balance -->
-                </header>
+                    <div class="w-6"></div> </header>
                 <div class="stats-container">
                     <div class="stat-card">
                         <div class="stat-title">Study Time This Week</div>
@@ -790,7 +782,6 @@
                 </div>
             </div>
             
-            <!-- Ranking Page -->
             <div id="page-ranking" class="page flex-col h-full overflow-y-auto no-scrollbar">
                 <header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-gray-800 sticky top-0 bg-gray-900">
                     <button class="back-button text-gray-400 hover:text-white" data-target="timer">
@@ -799,8 +790,7 @@
                         </svg>
                     </button>
                     <h1 class="text-xl font-bold text-gray-100">Leaderboard</h1>
-                    <div class="w-6"></div> <!-- Empty div for balance -->
-                </header>
+                    <div class="w-6"></div> </header>
                 <div class="px-4 pt-4 border-b border-gray-800">
                     <div class="flex space-x-1" id="ranking-period-tabs">
                         <button class="ranking-tab-btn flex-1 py-2 px-4 rounded-t-lg font-semibold text-sm" data-period="daily">Daily</button>
@@ -809,11 +799,9 @@
                     </div>
                 </div>
                 <div id="ranking-list" class="ranking-list">
-                       <!-- Realtime leaderboard will be rendered here -->
-                </div>
+                       </div>
             </div>
             
-            <!-- Planner Page -->
             <div id="page-planner" class="page flex-col h-full overflow-y-auto no-scrollbar">
                 <header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-gray-800 sticky top-0 bg-gray-900">
                     <button class="back-button text-gray-400 hover:text-white" data-target="timer">
@@ -825,11 +813,9 @@
                     <button id="add-task-btn" class="text-blue-500 font-semibold">Add Task</button>
                 </header>
                 <div id="planner-list" class="planner-container">
-                    <!-- Realtime planner tasks will be rendered here -->
-                </div>
+                    </div>
             </div>
 
-            <!-- Profile Settings Page -->
             <div id="page-profile" class="page flex-col h-full overflow-y-auto no-scrollbar">
                 <header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-gray-800 sticky top-0 bg-gray-900">
                     <button class="back-button text-gray-400 hover:text-white" data-target="timer">
@@ -838,8 +824,7 @@
                         </svg>
                     </button>
                     <h1 class="text-xl font-bold text-gray-100">Profile Settings</h1>
-                    <div class="w-6"></div> <!-- Empty div for balance -->
-                </header>
+                    <div class="w-6"></div> </header>
                 <div class="profile-container">
                     <div class="profile-header"><div id="profile-page-avatar" class="profile-avatar">U</div><div><div id="profile-page-name" class="profile-name">User Name</div><div id="profile-page-email" class="profile-email">user@example.com</div></div></div>
                     <div class="settings-item"><div class="settings-label">Account</div><div class="settings-value">Edit profile information</div></div>
@@ -851,7 +836,6 @@
                 </div>
             </div>
             
-            <!-- My Groups Page -->
             <div id="page-my-groups" class="page flex-col h-full overflow-y-auto no-scrollbar">
                 <header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-gray-800 sticky top-0 bg-gray-900">
                     <button class="back-button text-gray-400 hover:text-white" data-target="timer">
@@ -868,7 +852,6 @@
                 <button id="go-to-find-groups-btn" class="create-group-btn"><i class="fas fa-plus text-xl"></i></button>
             </div>
             
-            <!-- Find Groups Page -->
             <div id="page-find-groups" class="page flex-col h-full overflow-y-auto no-scrollbar">
                 <header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-gray-800 sticky top-0 bg-gray-900">
                     <button class="back-button text-gray-400 hover:text-white" data-target="my-groups">
@@ -883,7 +866,6 @@
                 <button id="go-to-create-group-btn" class="create-group-btn"><i class="fas fa-plus text-xl"></i></button>
             </div>
             
-            <!-- Create Group Page -->
             <div id="page-create-group" class="page flex-col h-full overflow-y-auto no-scrollbar">
                 <header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-gray-800 sticky top-0 bg-gray-900">
                     <button class="back-button text-gray-400 hover:text-white" data-target="find-groups">
@@ -903,8 +885,7 @@
                     </form>
                 </div>
             </div>
-             <!-- Group Detail Page -->
-            <div id="page-group-detail" class="page flex-col h-full">
+             <div id="page-group-detail" class="page flex-col h-full">
                 <header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-gray-800 sticky top-0 bg-gray-900">
                     <button class="back-button text-gray-400 hover:text-white" data-target="my-groups">
                         <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -915,8 +896,7 @@
                     <div class="w-6"></div>
                 </header>
                 <div id="group-detail-content" class="flex-grow overflow-y-auto no-scrollbar">
-                    <!-- Content for group detail sub-pages will be rendered here -->
-                </div>
+                    </div>
                 <nav id="group-detail-nav" class="bg-gray-800 border-t border-gray-700 grid grid-cols-5 sticky bottom-0">
                     <button class="group-nav-item p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors active" data-subpage="home">
                         <i class="fas fa-home"></i>
@@ -950,7 +930,6 @@
         </nav>
     </div>
 
-    <!-- Modals -->
     <div id="toast-container"></div>
     <div id="add-subject-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Add New Subject</div><button class="close-modal">&times;</button></div><form id="add-subject-form"><div class="mb-4"><label for="add-subject-name" class="block text-gray-300 mb-2">Subject Name</label><input type="text" id="add-subject-name" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required></div><div class="mb-4"><label class="block text-gray-300 mb-2">Color</label><div class="flex space-x-2 subject-color-picker"><div class="w-8 h-8 rounded-full bg-red-500 cursor-pointer color-dot" data-color="bg-red-500"></div><div class="w-8 h-8 rounded-full bg-blue-500 cursor-pointer color-dot selected" data-color="bg-blue-500"></div><div class="w-8 h-8 rounded-full bg-green-500 cursor-pointer color-dot" data-color="bg-green-500"></div><div class="w-8 h-8 rounded-full bg-yellow-500 cursor-pointer color-dot" data-color="bg-yellow-500"></div><div class="w-8 h-8 rounded-full bg-purple-500 cursor-pointer color-dot" data-color="bg-purple-500"></div></div></div><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Add Subject</button></form></div></div>
     <div id="start-session-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Start New Session</div><button id="close-start-session-modal" class="close-modal">&times;</button></div><form id="start-session-form"><div id="subject-selection-list" class="mb-4 max-h-60 overflow-y-auto space-y-2"></div><div class="flex items-center gap-4 mt-4"><button type="button" id="open-add-subject-modal-from-start" class="w-full text-center py-3 bg-gray-600 hover:bg-gray-500 rounded-lg font-medium transition">Add New Subject</button><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Start Timer</button></div></form></div></div>
@@ -959,7 +938,6 @@
     <div id="confirmation-modal" class="modal"><div class="modal-content"><div class="modal-header"><h2 id="confirmation-modal-title" class="modal-title">Are you sure?</h2><button class="close-modal">&times;</button></div><p id="confirmation-modal-message">This action cannot be undone.</p><div id="confirmation-modal-buttons"><button id="cancel-btn">Cancel</button><button id="confirm-btn">Confirm</button></div></div></div>
 
 
-    <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { 
@@ -996,6 +974,7 @@
         let currentUser = null;
         let charts = { weekly: null, subject: null };
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        let userSessions = [];
 
         // Timer State
         let timerInterval = null;
@@ -1324,10 +1303,9 @@
                 }
             });
             onSnapshot(query(sessionsCollectionRef, orderBy("endedAt", "desc")), (snapshot) => {
+                userSessions = snapshot.docs.map(doc => doc.data());
                 if (document.getElementById('page-stats').classList.contains('active')) {
-                    const sessions = [];
-                    snapshot.forEach(doc => sessions.push(doc.data()));
-                    renderStatsPage(sessions);
+                    renderStatsPage(userSessions);
                 }
             });
             onSnapshot(query(plannerTasksRef, orderBy("date")), (snapshot) => {
@@ -1679,19 +1657,15 @@
             document.querySelector(`.group-nav-item[data-subpage="${subpage}"]`).classList.add('active');
             
             if (subpage === 'home') {
-                 container.innerHTML = '<div class="member-grid" id="group-member-grid"><div class="text-center text-gray-500 py-8 col-span-full"><i class="fas fa-spinner fa-spin fa-2x"></i></div></div>';
+                 container.innerHTML = '<div id="group-member-list" class="p-4 flex flex-col gap-3"></div>';
                  renderGroupMembers();
             } else if (subpage === 'invite') {
                 const inviteLink = `${window.location.origin}${window.location.pathname}?groupId=${currentGroupId}`;
                 container.innerHTML = `<div class="p-8 text-center"><img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(inviteLink)}" class="mx-auto mb-4 rounded-lg"><p class="text-blue-400 break-all">${inviteLink}</p><div class="flex gap-4 mt-4"><button id="copy-link-btn" class="w-full py-2 bg-gray-700 rounded-lg">Copy Link</button><button class="w-full py-2 bg-orange-500 rounded-lg">Share Link</button></div><p class="text-gray-500 mt-4 text-sm">Share this link to invite a friend or organization to study with you.</p></div>`;
                 document.getElementById('copy-link-btn').addEventListener('click', () => {
-                    const tempInput = document.createElement('input');
-                    document.body.appendChild(tempInput);
-                    tempInput.value = inviteLink;
-                    tempInput.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(tempInput);
-                    showToast('Link copied to clipboard!', 'success');
+                    navigator.clipboard.writeText(inviteLink).then(() => {
+                        showToast('Link copied to clipboard!', 'success');
+                    });
                 });
             } else if (subpage === 'chat') {
                 container.innerHTML = `<div class="p-4 flex flex-col h-full"><div id="chat-messages" class="flex-grow overflow-y-auto"></div><form id="chat-form" class="flex gap-2 mt-4"><input id="chat-input" class="flex-grow bg-gray-700 rounded-lg p-3" placeholder="Type a message..."><button type="submit" class="bg-blue-600 px-4 rounded-lg"><i class="fas fa-paper-plane"></i></button></form></div>`;
@@ -1757,39 +1731,65 @@
         }
         
         function renderGroupMembers() {
-             const memberGrid = document.getElementById('group-member-grid');
-             if (!memberGrid) return;
-             
-             memberGrid.innerHTML = Object.keys(groupRealtimeData.members).map(memberId => {
-                 const memberData = groupRealtimeData.members[memberId];
-                 if (!memberData) return '';
-                 const isStudying = memberData.studying;
-                 return `
-                      <div class="member-card">
-                           <div class="member-avatar ${isStudying ? 'studying' : ''}">
-                                ${(memberData.username || 'U').charAt(0).toUpperCase()}
-                                ${isStudying ? '<div class="member-status-icon"></div>' : ''}
-                           </div>
-                           <div class="member-name">${memberData.username || 'Anonymous'}</div>
-                           <div class="member-time" id="member-time-${memberId}">${isStudying ? '00:00:00' : ''}</div>
-                      </div>
-                 `;
-             }).join('');
-             
-             memberTimerIntervals.forEach(clearInterval);
-             memberTimerIntervals = [];
+            const memberList = document.getElementById('group-member-list');
+            if (!memberList) return;
 
-             Object.keys(groupRealtimeData.members).forEach(memberId => {
-                 const memberData = groupRealtimeData.members[memberId];
-                 if (memberData && memberData.studying && memberData.studying.startTime) {
-                     const memberTimeEl = document.getElementById(`member-time-${memberId}`);
-                     const interval = setInterval(() => {
-                         const elapsed = Math.floor((Date.now() - memberData.studying.startTime.toDate()) / 1000);
-                         if(memberTimeEl) memberTimeEl.textContent = formatTime(elapsed);
-                     }, 1000);
-                     memberTimerIntervals.push(interval);
-                 }
-             });
+            memberTimerIntervals.forEach(clearInterval);
+            memberTimerIntervals = [];
+            
+            const todayStr = new Date().toISOString().split('T')[0];
+
+            memberList.innerHTML = Object.keys(groupRealtimeData.members).map(memberId => {
+                const memberData = groupRealtimeData.members[memberId];
+                if (!memberData) return '';
+
+                let totalTodaySeconds = 0;
+                if (memberData.totalTimeToday && memberData.totalTimeToday.date === todayStr) {
+                    totalTodaySeconds = memberData.totalTimeToday.seconds;
+                }
+
+                const isStudying = memberData.studying;
+                const initialDisplayTime = isStudying
+                    ? totalTodaySeconds + (Date.now() - memberData.studying.startTime.toDate()) / 1000
+                    : totalTodaySeconds;
+
+                return `
+                    <div class="member-list-card">
+                        <div class="member-avatar ${isStudying ? 'studying' : ''}">
+                            ${(memberData.username || 'U').charAt(0).toUpperCase()}
+                            ${isStudying ? '<div class="member-status-icon"></div>' : ''}
+                        </div>
+                        <div class="flex-grow">
+                            <div class="font-bold text-white">${memberData.username || 'Anonymous'}</div>
+                            <div class="text-sm ${isStudying ? 'text-green-400' : 'text-gray-400'}" id="member-subject-${memberId}">
+                                ${isStudying ? `Studying: ${memberData.studying.subject}` : 'Idle'}
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xl font-semibold text-white" id="member-time-${memberId}" data-base-time="${totalTodaySeconds}" data-start-time="${isStudying ? memberData.studying.startTime.toDate().getTime() : 0}">
+                                ${formatTime(initialDisplayTime)}
+                            </div>
+                            <div class="text-xs text-gray-500">Total Today</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            Object.keys(groupRealtimeData.members).forEach(memberId => {
+                const memberData = groupRealtimeData.members[memberId];
+                const timeEl = document.getElementById(`member-time-${memberId}`);
+                if (memberData && memberData.studying && timeEl) {
+                    const baseTime = parseInt(timeEl.dataset.baseTime, 10);
+                    const startTime = parseInt(timeEl.dataset.startTime, 10);
+                    if (startTime > 0) {
+                       const interval = setInterval(() => {
+                           const ongoingSeconds = (Date.now() - startTime) / 1000;
+                           timeEl.textContent = formatTime(baseTime + ongoingSeconds);
+                       }, 1000);
+                       memberTimerIntervals.push(interval);
+                    }
+                }
+            });
         }
         
         function renderGroupLeaderboard(period) {
@@ -2094,7 +2094,11 @@
         document.querySelectorAll('.nav-item').forEach(item => item.addEventListener('click', function() {
             document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
             this.classList.add('active');
-            showPage(`page-${this.dataset.page}`);
+            const pageName = this.dataset.page;
+            showPage(`page-${pageName}`);
+            if (pageName === 'stats') {
+                renderStatsPage(userSessions);
+            }
         }));
 
         document.querySelectorAll('.back-button').forEach(button => button.addEventListener('click', function() {
