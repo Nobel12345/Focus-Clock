@@ -1002,9 +1002,13 @@
         let sessionStartTime = 0;
         let totalTimeTodayInSeconds = 0;
         let activeSubject = '';
-        let groupDetailUnsubscribe = null;
+        let groupDetailUnsubscribers = [];
         let memberTimerIntervals = [];
         let currentGroupId = null;
+        let groupRealtimeData = {
+            members: {},
+            sessions: {}
+        };
 
         // Attendance State
         let attendanceMonth = new Date().getMonth();
@@ -1108,19 +1112,21 @@
         // --- Page Navigation ---
         function showPage(pageId) {
             if (!pageId) return;
+            
+            // Cleanup from previous page
+            if (pageId !== 'page-group-detail') {
+                groupDetailUnsubscribers.forEach(unsub => unsub());
+                groupDetailUnsubscribers = [];
+                memberTimerIntervals.forEach(clearInterval);
+                memberTimerIntervals = [];
+                groupRealtimeData = { members: {}, sessions: {} };
+            }
+
             // Hide all top-level containers and pages
             document.getElementById('auth-screen').classList.remove('active');
             document.getElementById('app-container').classList.remove('active', 'flex');
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             
-            // Cleanup from previous page
-            if (groupDetailUnsubscribe) {
-                groupDetailUnsubscribe();
-                groupDetailUnsubscribe = null;
-            }
-            memberTimerIntervals.forEach(clearInterval);
-            memberTimerIntervals = [];
-
             // Show the correct container/page
             if (pageId.startsWith('page-')) {
                  document.getElementById('app-container').classList.add('active', 'flex');
@@ -1282,7 +1288,7 @@
             const email = userData.email || '';
             document.getElementById('profile-page-name').textContent = username;
             document.getElementById('profile-page-email').textContent = email;
-            const avatarChar = username.charAt(0).toUpperCase();
+            const avatarChar = username ? username.charAt(0).toUpperCase() : 'U';
             document.getElementById('header-avatar').textContent = avatarChar;
             document.getElementById('profile-page-avatar').textContent = avatarChar;
         }
@@ -1613,9 +1619,7 @@
             currentGroupId = groupId;
             const groupDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'groups', groupId);
             
-            if (groupDetailUnsubscribe) groupDetailUnsubscribe();
-
-            groupDetailUnsubscribe = onSnapshot(groupDocRef, async (groupDoc) => {
+            const groupUnsub = onSnapshot(groupDocRef, async (groupDoc) => {
                 const container = document.getElementById('group-detail-content');
                 if (!container || !groupDoc.exists()) {
                     showPage('page-my-groups');
@@ -1623,8 +1627,47 @@
                 }
                 const groupData = groupDoc.data();
                 document.getElementById('group-detail-name').textContent = groupData.name;
+                
+                // When group data changes (e.g., new member), set up listeners for all members
+                setupGroupMemberListeners(groupData.members || []);
+
+                // Initial render of the current subpage
                 const activeSubPage = document.querySelector('#group-detail-nav .active')?.dataset.subpage || 'home';
                 renderGroupSubPage(activeSubPage);
+            });
+            groupDetailUnsubscribers.push(groupUnsub);
+        }
+
+        function setupGroupMemberListeners(memberIds) {
+            // Clear existing listeners for this group
+            groupDetailUnsubscribers.forEach(unsub => unsub());
+            groupDetailUnsubscribers = [];
+            groupRealtimeData = { members: {}, sessions: {} };
+
+            memberIds.forEach(memberId => {
+                // Listen for user data changes (like 'studying' status)
+                const userDocRef = doc(db, 'artifacts', appId, 'users', memberId);
+                const userUnsub = onSnapshot(userDocRef, (doc) => {
+                    groupRealtimeData.members[memberId] = doc.data();
+                    const activeSubPage = document.querySelector('#group-detail-nav .active')?.dataset.subpage || 'home';
+                    if (activeSubPage === 'home') {
+                        renderGroupMembers();
+                    }
+                });
+                groupDetailUnsubscribers.push(userUnsub);
+
+                // Listen for new sessions from this user
+                const sessionsRef = collection(userDocRef, 'sessions');
+                const sessionsUnsub = onSnapshot(sessionsRef, (snapshot) => {
+                    groupRealtimeData.sessions[memberId] = snapshot.docs.map(doc => doc.data());
+                    const activeSubPage = document.querySelector('#group-detail-nav .active')?.dataset.subpage;
+                    if (activeSubPage === 'rankings') {
+                        renderGroupLeaderboard();
+                    } else if (activeSubPage === 'attendance') {
+                        renderGroupAttendance();
+                    }
+                });
+                groupDetailUnsubscribers.push(sessionsUnsub);
             });
         }
 
@@ -1637,7 +1680,7 @@
             
             if (subpage === 'home') {
                  container.innerHTML = '<div class="member-grid" id="group-member-grid"><div class="text-center text-gray-500 py-8 col-span-full"><i class="fas fa-spinner fa-spin fa-2x"></i></div></div>';
-                 renderGroupMembers(currentGroupId);
+                 renderGroupMembers();
             } else if (subpage === 'invite') {
                 const inviteLink = `${window.location.origin}${window.location.pathname}?groupId=${currentGroupId}`;
                 container.innerHTML = `<div class="p-8 text-center"><img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(inviteLink)}" class="mx-auto mb-4 rounded-lg"><p class="text-blue-400 break-all">${inviteLink}</p><div class="flex gap-4 mt-4"><button id="copy-link-btn" class="w-full py-2 bg-gray-700 rounded-lg">Copy Link</button><button class="w-full py-2 bg-orange-500 rounded-lg">Share Link</button></div><p class="text-gray-500 mt-4 text-sm">Share this link to invite a friend or organization to study with you.</p></div>`;
@@ -1662,11 +1705,10 @@
                     </div>
                 </div>
                 <div id="group-ranking-list" class="ranking-list"></div>`;
-                renderGroupLeaderboard(currentGroupId, 'weekly');
+                renderGroupLeaderboard();
                 document.getElementById('group-ranking-period-tabs').addEventListener('click', (e) => {
                     if (e.target.classList.contains('ranking-tab-btn')) {
-                        const period = e.target.dataset.period;
-                        renderGroupLeaderboard(currentGroupId, period);
+                        renderGroupLeaderboard(e.target.dataset.period);
                     }
                 });
             } else if (subpage === 'attendance') {
@@ -1708,26 +1750,19 @@
                         <div id="attendance-member-grid"></div>
                     </div>
                 </div>`;
-                renderGroupAttendance(currentGroupId);
+                renderGroupAttendance();
             } else {
                  container.innerHTML = `<div class="p-8 text-center text-gray-400">${subpage.charAt(0).toUpperCase() + subpage.slice(1)} page is coming soon!</div>`;
             }
         }
         
-        async function renderGroupMembers(groupId) {
-             const groupDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'groups', groupId);
-             const groupDoc = await getDoc(groupDocRef);
-             if (!groupDoc.exists()) return;
-
-             const groupData = groupDoc.data();
+        function renderGroupMembers() {
              const memberGrid = document.getElementById('group-member-grid');
              if (!memberGrid) return;
              
-             const memberPromises = groupData.members.map(memberId => getDoc(doc(db, 'artifacts', appId, 'users', memberId)));
-             const memberDocs = await Promise.all(memberPromises);
-
-             memberGrid.innerHTML = memberDocs.map(memberDoc => {
-                 const memberData = memberDoc.data();
+             memberGrid.innerHTML = Object.keys(groupRealtimeData.members).map(memberId => {
+                 const memberData = groupRealtimeData.members[memberId];
+                 if (!memberData) return '';
                  const isStudying = memberData.studying;
                  return `
                       <div class="member-card">
@@ -1736,7 +1771,7 @@
                                 ${isStudying ? '<div class="member-status-icon"></div>' : ''}
                            </div>
                            <div class="member-name">${memberData.username || 'Anonymous'}</div>
-                           <div class="member-time" id="member-time-${memberDoc.id}">${isStudying ? '00:00:00' : ''}</div>
+                           <div class="member-time" id="member-time-${memberId}">${isStudying ? '00:00:00' : ''}</div>
                       </div>
                  `;
              }).join('');
@@ -1744,10 +1779,10 @@
              memberTimerIntervals.forEach(clearInterval);
              memberTimerIntervals = [];
 
-             memberDocs.forEach(memberDoc => {
-                 const memberData = memberDoc.data();
-                 if (memberData.studying && memberData.studying.startTime) {
-                     const memberTimeEl = document.getElementById(`member-time-${memberDoc.id}`);
+             Object.keys(groupRealtimeData.members).forEach(memberId => {
+                 const memberData = groupRealtimeData.members[memberId];
+                 if (memberData && memberData.studying && memberData.studying.startTime) {
+                     const memberTimeEl = document.getElementById(`member-time-${memberId}`);
                      const interval = setInterval(() => {
                          const elapsed = Math.floor((Date.now() - memberData.studying.startTime.toDate()) / 1000);
                          if(memberTimeEl) memberTimeEl.textContent = formatTime(elapsed);
@@ -1757,62 +1792,45 @@
              });
         }
         
-        async function renderGroupLeaderboard(groupId, period) {
+        function renderGroupLeaderboard(period) {
             const container = document.getElementById('group-ranking-list');
             if (!container) return;
+
+            if (!period) {
+                period = document.querySelector('#group-ranking-period-tabs .ranking-tab-btn.active')?.dataset.period || 'weekly';
+            }
             
             document.querySelectorAll('#group-ranking-period-tabs .ranking-tab-btn').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.period === period);
             });
 
-            container.innerHTML = '<div class="text-center text-gray-500 py-8"><i class="fas fa-spinner fa-spin fa-2x"></i></div>';
-            
-            const groupDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'groups', groupId);
-            const groupDoc = await getDoc(groupDocRef);
-            if (!groupDoc.exists()) return;
-            
-            const memberIds = groupDoc.data().members;
-
-            const userPromises = memberIds.map(async (userId) => {
-                const userRef = doc(db, 'artifacts', appId, 'users', userId);
-                const sessionsRef = collection(userRef, 'sessions');
-                const userPublicRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', userId);
-                const userPublicDoc = await getDoc(userPublicRef);
-                const userData = userPublicDoc.data();
+            const userScores = Object.keys(groupRealtimeData.members).map(memberId => {
+                const memberData = groupRealtimeData.members[memberId];
+                const memberSessions = groupRealtimeData.sessions[memberId] || [];
 
                 const now = new Date();
                 let startDate;
                 switch (period) {
-                    case 'daily':
-                        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-                        break;
-                    case 'monthly':
-                        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-                        break;
-                    case 'weekly':
-                    default:
+                    case 'daily': startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate()); break;
+                    case 'monthly': startDate = new Date(now.getFullYear(), now.getMonth(), 1); break;
+                    case 'weekly': default:
                         const dayOfWeek = now.getDay();
                         startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek);
                         break;
                 }
                 startDate.setHours(0,0,0,0);
 
-                const q = query(sessionsRef, where("endedAt", ">=", startDate));
-                const sessionsSnapshot = await getDocs(q);
-                
-                let totalSeconds = 0;
-                sessionsSnapshot.forEach(sessionDoc => {
-                    totalSeconds += sessionDoc.data().durationSeconds;
-                });
-                
+                const totalSeconds = memberSessions
+                    .filter(s => s.endedAt && s.endedAt.toDate() >= startDate)
+                    .reduce((sum, s) => sum + s.durationSeconds, 0);
+
                 return {
-                    id: userId,
-                    username: userData.username || 'Anonymous',
+                    id: memberId,
+                    username: memberData.username || 'Anonymous',
                     totalStudySeconds: totalSeconds
                 };
             });
 
-            const userScores = await Promise.all(userPromises);
             userScores.sort((a, b) => b.totalStudySeconds - a.totalStudySeconds);
 
             container.innerHTML = userScores.map((user, index) => {
@@ -1835,35 +1853,19 @@
             }).join('') || `<div class="empty-group"><i class="fas fa-trophy"></i><h3>Leaderboard is Empty</h3><p>Start studying to see your rank!</p></div>`;
         }
 
-        async function renderGroupAttendance(groupId) {
+        function renderGroupAttendance() {
             const container = document.getElementById('calendar-grid');
             if (!container) return;
             
-            container.innerHTML = '<div class="col-span-7 text-center py-4"><i class="fas fa-spinner fa-spin"></i> Loading attendance...</div>';
-            
-            const groupDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'groups', groupId);
-            const groupDoc = await getDoc(groupDocRef);
-            if (!groupDoc.exists()) return;
-            
-            const memberIds = groupDoc.data().members;
-            
-            // Update month display
             const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
             document.getElementById('current-month-display').textContent = `${monthNames[attendanceMonth]} ${attendanceYear}`;
             
-            // Calculate calendar days
             const firstDayOfMonth = new Date(attendanceYear, attendanceMonth, 1);
             const lastDayOfMonth = new Date(attendanceYear, attendanceMonth + 1, 0);
             const daysInMonth = lastDayOfMonth.getDate();
-            
             const startDay = firstDayOfMonth.getDay();
             
-            container.innerHTML = '';
-            
-            for (let i = 0; i < startDay; i++) {
-                container.innerHTML += `<div class="calendar-day empty"></div>`;
-            }
-            
+            container.innerHTML = Array(startDay).fill('<div class="calendar-day empty"></div>').join('');
             for (let day = 1; day <= daysInMonth; day++) {
                 const dateStr = `${attendanceYear}-${(attendanceMonth+1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
                 container.innerHTML += `
@@ -1875,44 +1877,22 @@
             }
             
             const attendanceData = {};
-            const memberPromises = memberIds.map(async (memberId) => {
-                const userRef = doc(db, 'artifacts', appId, 'users', memberId);
-                const sessionsRef = collection(userRef, 'sessions');
-                
-                const startDate = new Date(attendanceYear, attendanceMonth, 1);
-                const endDate = new Date(attendanceYear, attendanceMonth + 1, 0);
-                endDate.setHours(23, 59, 59, 999);
-                
-                const q = query(
-                    sessionsRef, 
-                    where("endedAt", ">=", startDate),
-                    where("endedAt", "<=", endDate)
-                );
-                
-                const sessionsSnapshot = await getDocs(q);
-                const memberAttendance = {};
-                
-                sessionsSnapshot.forEach(doc => {
-                    const session = doc.data();
-                    const sessionDate = session.endedAt.toDate().toISOString().split('T')[0];
-                    if (!memberAttendance[sessionDate]) {
-                        memberAttendance[sessionDate] = 0;
+            const memberAttendanceData = {};
+            
+            for(const memberId in groupRealtimeData.sessions) {
+                memberAttendanceData[memberId] = { totalTime: 0, daysStudied: new Set() };
+                const memberSessions = groupRealtimeData.sessions[memberId];
+                memberSessions.forEach(session => {
+                    const sessionDate = session.endedAt?.toDate();
+                    if(sessionDate && sessionDate.getFullYear() === attendanceYear && sessionDate.getMonth() === attendanceMonth) {
+                        const dateStr = sessionDate.toISOString().split('T')[0];
+                        attendanceData[dateStr] = (attendanceData[dateStr] || 0) + session.durationSeconds;
+                        memberAttendanceData[memberId].totalTime += session.durationSeconds;
+                        memberAttendanceData[memberId].daysStudied.add(dateStr);
                     }
-                    memberAttendance[sessionDate] += session.durationSeconds;
                 });
-                
-                for (const [date, seconds] of Object.entries(memberAttendance)) {
-                    if (!attendanceData[date]) {
-                        attendanceData[date] = 0;
-                    }
-                    attendanceData[date] += seconds;
-                }
-                
-                return { memberId, memberAttendance };
-            });
-            
-            const memberAttendanceData = await Promise.all(memberPromises);
-            
+            }
+
             const calendarDays = document.querySelectorAll('.calendar-day:not(.empty)');
             let totalGroupTime = 0;
             let daysWithStudy = 0;
@@ -1939,39 +1919,28 @@
             
             const memberGrid = document.getElementById('attendance-member-grid');
             if (memberGrid) {
-                memberGrid.innerHTML = '';
-                
-                for (const member of memberAttendanceData) {
-                    const userDoc = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', member.memberId));
-                    const userData = userDoc.data();
-                    
-                    let totalMemberTime = 0;
-                    let memberDaysStudied = 0;
-                    
-                    for (const seconds of Object.values(member.memberAttendance)) {
-                        totalMemberTime += seconds;
-                        if (seconds > 0) memberDaysStudied++;
-                    }
-                    
-                    const memberAttendanceRate = Math.round((memberDaysStudied / daysInMonth) * 100);
-                    
-                    memberGrid.innerHTML += `
+                memberGrid.innerHTML = Object.keys(groupRealtimeData.members).map(memberId => {
+                    const userData = groupRealtimeData.members[memberId];
+                    if (!userData) return '';
+                    const memberStats = memberAttendanceData[memberId] || { totalTime: 0, daysStudied: new Set() };
+                    const memberAttendanceRate = Math.round((memberStats.daysStudied.size / daysInMonth) * 100);
+                    return `
                         <div class="member-row">
                             <div class="member-avatar-sm">${(userData.username || 'U').charAt(0).toUpperCase()}</div>
                             <div class="member-info">
                                 <div class="member-name-sm">${userData.username || 'Anonymous'}</div>
-                                <div class="member-time-sm">${formatTime(totalMemberTime, false)} total</div>
+                                <div class="member-time-sm">${formatTime(memberStats.totalTime, false)} total</div>
                                 <div class="attendance-progress">
                                     <div class="progress-bar" style="width: ${memberAttendanceRate}%"></div>
                                 </div>
                             </div>
                             <div class="text-right">
                                 <div class="text-sm font-semibold">${memberAttendanceRate}%</div>
-                                <div class="text-xs text-gray-500">${memberDaysStudied}/${daysInMonth} days</div>
+                                <div class="text-xs text-gray-500">${memberStats.daysStudied.size}/${daysInMonth} days</div>
                             </div>
                         </div>
                     `;
-                }
+                }).join('');
             }
             
             document.getElementById('prev-month-btn').onclick = () => {
@@ -1980,7 +1949,7 @@
                     attendanceMonth = 11;
                     attendanceYear--;
                 }
-                renderGroupAttendance(groupId);
+                renderGroupAttendance();
             };
             
             document.getElementById('next-month-btn').onclick = () => {
@@ -1989,7 +1958,7 @@
                     attendanceMonth = 0;
                     attendanceYear++;
                 }
-                renderGroupAttendance(groupId);
+                renderGroupAttendance();
             };
         }
         
@@ -2009,7 +1978,7 @@
             const messagesRef = collection(db, 'artifacts', appId, 'public', 'data', 'groups', groupId, 'messages');
             const q = query(messagesRef, orderBy("timestamp"));
 
-            onSnapshot(q, (snapshot) => {
+            const chatUnsub = onSnapshot(q, (snapshot) => {
                 chatMessagesContainer.innerHTML = '';
                 snapshot.forEach(doc => {
                     const msg = doc.data();
@@ -2026,8 +1995,9 @@
                 });
                 chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
             });
+            groupDetailUnsubscribers.push(chatUnsub);
 
-            chatForm.addEventListener('submit', async (e) => {
+            chatForm.onsubmit = async (e) => {
                 e.preventDefault();
                 const text = chatInput.value.trim();
                 if (text && currentUser) {
@@ -2040,7 +2010,7 @@
                     });
                     chatInput.value = '';
                 }
-            });
+            };
         }
 
         // --- Event Listeners ---
