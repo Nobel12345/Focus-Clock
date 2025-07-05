@@ -16,8 +16,8 @@
         .nav-item.active svg, .nav-item.active p, .group-nav-item.active i, .group-nav-item.active p { color: #3B82F6; }
 
         /* Page and container visibility */
-        #loader-screen, #auth-screen, .page, #app-container, .modal { display: none; }
-        #loader-screen.active, #auth-screen.active, .page.active, #app-container.active, .modal.active { display: flex; }
+        #auth-screen, .page, #app-container, .modal { display: none; }
+        #auth-screen.active, .page.active, #app-container.active, .modal.active { display: flex; }
         .fade-in { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
 
@@ -676,10 +676,45 @@
 </head>
 <body class="bg-gray-900 text-white flex flex-col h-screen antialiased">
 
-    <!-- Loading Screen -->
-    <div id="loader-screen" class="active flex-col items-center justify-center h-full p-4 fade-in">
-        <i class="fas fa-spinner fa-spin fa-3x text-blue-500"></i>
-        <p class="mt-4 text-gray-400">Connecting...</p>
+    <!-- Authentication Screen -->
+    <div id="auth-screen" class="active flex-col items-center justify-center h-full p-4 fade-in">
+        <div class="w-full max-w-sm text-center">
+            <h1 class="text-4xl font-bold text-white mb-2">FocusFlow</h1>
+            <p class="text-gray-400 mb-8">Your Ultimate Study Companion</p>
+            <div id="auth-form-container" class="bg-gray-800 p-8 rounded-2xl shadow-lg">
+                <form id="login-form" class="space-y-4">
+                    <h2 class="text-2xl font-bold text-white mb-4">Login</h2>
+                    <input type="email" id="login-email" placeholder="Email" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    <input type="password" id="login-password" placeholder="Password" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Sign In</button>
+                </form>
+                <form id="signup-form" class="hidden space-y-4">
+                    <h2 class="text-2xl font-bold text-white mb-4">Create Account</h2>
+                    <input type="email" id="signup-email" placeholder="Email" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    <input type="password" id="signup-password" placeholder="Password (min. 6 characters)" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required minlength="6">
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Sign Up</button>
+                </form>
+                <p id="auth-error" class="text-red-400 text-sm mt-4 h-5"></p>
+                <div class="flex items-center my-6">
+                    <hr class="flex-grow border-gray-600">
+                    <span class="mx-4 text-gray-500">OR</span>
+                    <hr class="flex-grow border-gray-600">
+                </div>
+                <button id="google-signin-btn" class="w-full bg-white text-gray-800 font-semibold py-3 rounded-lg flex items-center justify-center transition hover:bg-gray-200">
+                    <svg class="w-6 h-6 mr-3" viewBox="0 0 48 48">
+                        <path fill="#4285F4" d="M43.611 20.083H24v8.838h11.002c-0.463 2.878-2.18 5.424-4.852 7.199l7.217 5.626C43.02 37.21 46 29.54 46 20.083z"/>
+                        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.897-5.781l-7.217-5.626c-2.13 1.442-4.852 2.308-7.68 2.308-5.878 0-10.845-3.965-12.624-9.26l-7.42 5.781C6.383 39.04 14.46 48 24 48z"/>
+                        <path fill="#FBBC05" d="M11.376 28.71c-0.565-1.71-0.565-3.526 0-5.236l-7.42-5.781C1.678 21.24 0 26.52 0 32.14c0 5.62 1.678 10.9 4.053 14.18l7.323-5.61z"/>
+                        <path fill="#EA4335" d="M24 10.73c3.52 0 6.565 1.218 9.015 3.655l6.345-6.345C35.93 2.13 30.48 0 24 0 14.46 0 6.383 8.96 2.053 17.71l7.42 5.781c1.779-5.295 6.746-9.26 12.624-9.26z"/>
+                    </svg>
+                    Sign in with Google
+                </button>
+                <p class="mt-8 text-sm text-gray-400">
+                    <span id="login-toggle-text">Don't have an account?</span>
+                    <button id="auth-toggle-btn" class="font-semibold text-blue-400 hover:text-blue-300">Sign Up</button>
+                </p>
+            </div>
+        </div>
     </div>
 
     <!-- Username Setup Screen -->
@@ -931,8 +966,10 @@
             getAuth, 
             onAuthStateChanged, 
             signOut,
-            signInWithCustomToken,
-            signInAnonymously
+            createUserWithEmailAndPassword, 
+            signInWithEmailAndPassword, 
+            signInWithPopup, 
+            GoogleAuthProvider
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { 
             getFirestore, 
@@ -974,6 +1011,7 @@
         let attendanceYear = new Date().getFullYear();
 
         // --- UI Elements ---
+        const authError = document.getElementById('auth-error');
         const sessionTimerDisplay = document.getElementById('session-timer');
         const totalTimeDisplay = document.getElementById('total-time-display');
         const activeSubjectDisplay = document.getElementById('active-subject-display');
@@ -1023,16 +1061,17 @@
         }
 
         // --- Firebase Initialization ---
-        async function initializeFirebase() {
+        function initializeFirebase() {
             try {
-                // Use the dynamically provided Firebase config
-                const firebaseConfigStr = typeof __firebase_config !== 'undefined' ? __firebase_config : '{}';
-                const firebaseConfig = JSON.parse(firebaseConfigStr);
-
-                if (!firebaseConfig.apiKey) {
-                    document.getElementById('loader-screen').innerHTML = '<p class="text-red-400">Firebase configuration is missing. App cannot start.</p>';
-                    return;
-                }
+                const firebaseConfig = {
+                    apiKey: "AIzaSyBSCrL6ravOzFnwOa7A0Jl_W68vEfZVcNw",
+                    authDomain: "focus-flow-34c07.firebaseapp.com",
+                    projectId: "focus-flow-34c07",
+                    storageBucket: "focus-flow-34c07.appspot.com",
+                    messagingSenderId: "473980178825",
+                    appId: "1:473980178825:web:164566ec8b068da3281158",
+                    measurementId: "G-RRFK3LY0E4"
+                };
 
                 const app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
@@ -1056,32 +1095,13 @@
                         }
                     } else {
                         currentUser = null;
-                        showPage('loader-screen'); // Or an error screen
+                        showPage('auth-screen');
                     }
                 });
 
-                // Start authentication process
-                await initializeAuth();
-
             } catch (e) {
                 console.error("Firebase initialization failed:", e);
-                document.getElementById('loader-screen').innerHTML = `<p class="text-red-400">Could not connect to the backend: ${e.message}</p>`;
-            }
-        }
-
-        async function initializeAuth() {
-            try {
-                const token = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-                if (token) {
-                    await signInWithCustomToken(auth, token);
-                    console.log("Signed in with custom token.");
-                } else {
-                    await signInAnonymously(auth);
-                    console.log("Signed in anonymously.");
-                }
-            } catch (error) {
-                console.error("Authentication failed:", error);
-                showToast("Authentication failed. Please refresh.", "error");
+                showToast("Could not connect to the backend.", "error");
             }
         }
 
@@ -1089,7 +1109,7 @@
         function showPage(pageId) {
             if (!pageId) return;
             // Hide all top-level containers and pages
-            document.getElementById('loader-screen').classList.remove('active');
+            document.getElementById('auth-screen').classList.remove('active');
             document.getElementById('app-container').classList.remove('active', 'flex');
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             
@@ -1239,8 +1259,8 @@
 
             if (!userDoc.exists()) {
                 const initialData = {
-                    email: user.email || `anon-${user.uid.substring(0,6)}@focus.flow`,
-                    username: null, // Force username setup
+                    email: user.email,
+                    username: user.displayName,
                     joinedGroups: [],
                     createdAt: serverTimestamp(),
                     totalStudySeconds: 0,
@@ -1248,8 +1268,8 @@
                 };
                 await setDoc(userDocRef, initialData);
                 await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', user.uid), {
-                    username: null,
-                    email: initialData.email,
+                    username: user.displayName,
+                    email: user.email,
                     totalStudySeconds: 0
                 });
             }
@@ -2030,6 +2050,46 @@
         };
 
         // Auth
+        ael('login-form', 'submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+            } catch (error) {
+                authError.textContent = error.message;
+            }
+        });
+
+        ael('signup-form', 'submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+            try {
+                await createUserWithEmailAndPassword(auth, email, password);
+            } catch (error) {
+                authError.textContent = error.message;
+            }
+        });
+
+        ael('google-signin-btn', 'click', async () => {
+            const provider = new GoogleAuthProvider();
+            try {
+                await signInWithPopup(auth, provider);
+            } catch (error) {
+                authError.textContent = error.message;
+            }
+        });
+
+        ael('auth-toggle-btn', 'click', () => {
+            const isLogin = !document.getElementById('login-form').classList.contains('hidden');
+            document.getElementById('login-form').classList.toggle('hidden', isLogin);
+            document.getElementById('signup-form').classList.toggle('hidden', !isLogin);
+            document.getElementById('auth-toggle-btn').textContent = isLogin ? 'Sign In' : 'Sign Up';
+            document.getElementById('login-toggle-text').textContent = isLogin ? 'Already have an account?' : "Don't have an account?";
+            authError.textContent = '';
+        });
+
         ael('sign-out-btn', () => {
             signOut(auth).catch(error => showToast(`Sign out failed: ${error.message}`, 'error'));
         });
