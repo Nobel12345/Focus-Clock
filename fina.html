@@ -315,6 +315,11 @@
         .settings-item {
             padding: 15px 0;
             border-bottom: 1px solid #374151;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .settings-item:hover {
+            background-color: #37415120;
         }
         .settings-label { font-weight: 600; margin-bottom: 5px; }
         .settings-value { color: #9CA3AF; }
@@ -827,10 +832,10 @@
                     <div class="w-6"></div> </header>
                 <div class="profile-container">
                     <div class="profile-header"><div id="profile-page-avatar" class="profile-avatar">U</div><div><div id="profile-page-name" class="profile-name">User Name</div><div id="profile-page-email" class="profile-email">user@example.com</div></div></div>
-                    <div class="settings-item"><div class="settings-label">Account</div><div class="settings-value">Edit profile information</div></div>
+                    <div id="settings-account" class="settings-item"><div class="settings-label">Account</div><div class="settings-value">Edit profile information</div></div>
                     <div class="settings-item"><div class="settings-label">Notifications</div><div class="settings-value">Enabled</div></div>
                     <div class="settings-item"><div class="settings-label">Appearance</div><div class="settings-value">Dark Mode</div></div>
-                    <div class="settings-item"><div class="settings-label">Study Goals</div><div class="settings-value">4 hours/day</div></div>
+                    <div id="settings-study-goal" class="settings-item"><div class="settings-label">Study Goals</div><div id="study-goal-value" class="settings-value">Not set</div></div>
                     <div class="settings-item"><div class="settings-label">About FocusFlow</div><div class="settings-value">Version 1.0.0</div></div>
                     <button id="sign-out-btn" class="w-full mt-8 py-3 bg-red-600 hover:bg-red-700 rounded-lg font-medium transition">Sign Out</button>
                 </div>
@@ -936,6 +941,12 @@
     <div id="add-task-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Add New Task</div><button class="close-modal">&times;</button></div><form id="add-task-form"><div class="mb-4"><label for="add-task-name" class="block text-gray-300 mb-2">Task Description</label><input type="text" id="add-task-name" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required></div><div class="mb-4"><label for="add-task-date" class="block text-gray-300 mb-2">Date</label><input type="date" id="add-task-date" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required></div><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Add Task</button></form></div></div>
     <div id="password-prompt-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Enter Group Password</div><button class="close-modal">&times;</button></div><form id="password-prompt-form"><input type="password" id="group-password-prompt-input" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required><div class="flex gap-2 mt-4"><button type="button" class="close-modal w-full py-2 bg-gray-600 rounded-lg">Cancel</button><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-lg transition">Submit</button></div></form></div></div>
     <div id="confirmation-modal" class="modal"><div class="modal-content"><div class="modal-header"><h2 id="confirmation-modal-title" class="modal-title">Are you sure?</h2><button class="close-modal">&times;</button></div><p id="confirmation-modal-message">This action cannot be undone.</p><div id="confirmation-modal-buttons"><button id="cancel-btn">Cancel</button><button id="confirm-btn">Confirm</button></div></div></div>
+    
+    <!-- Edit Profile Modal -->
+    <div id="edit-profile-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Edit Profile</div><button class="close-modal">&times;</button></div><form id="edit-profile-form"><div class="mb-4"><label for="edit-username-input" class="block text-gray-300 mb-2">Username</label><input type="text" id="edit-username-input" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required minlength="3"></div><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Save Changes</button></form></div></div>
+    
+    <!-- Study Goal Modal -->
+    <div id="study-goal-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Set Study Goal</div><button class="close-modal">&times;</button></div><form id="study-goal-form"><div class="mb-4"><label for="study-goal-input" class="block text-gray-300 mb-2">Daily Study Goal (hours)</label><input type="number" id="study-goal-input" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required min="1" max="24"></div><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Set Goal</button></form></div></div>
 
 
     <script type="module">
@@ -970,14 +981,13 @@
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- Application Setup ---
-        // This constant sets the application's "current time" to a fixed date.
-        // All date-dependent logic will be based on this value instead of the user's system time.
         const MOCK_CURRENT_DATE = new Date('2025-07-06T08:42:00.000+06:00');
         const getCurrentDate = () => new Date(MOCK_CURRENT_DATE);
 
         // --- App State ---
         let db, auth;
         let currentUser = null;
+        let currentUserData = {};
         let charts = { weekly: null, subject: null };
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         let userSessions = [];
@@ -995,7 +1005,7 @@
             sessions: {}
         };
 
-        // Attendance State (now uses mocked date)
+        // Attendance State
         let attendanceMonth = getCurrentDate().getMonth();
         let attendanceYear = getCurrentDate().getFullYear();
 
@@ -1020,7 +1030,9 @@
             setTimeout(() => {
                 toast.classList.remove('show');
                 setTimeout(() => {
-                    container.removeChild(toast);
+                    if (container.contains(toast)) {
+                       container.removeChild(toast);
+                    }
                 }, 300);
             }, duration);
         }
@@ -1067,23 +1079,23 @@
                 db = getFirestore(app);
                 console.log("Firebase initialized successfully.");
 
-                // Set up the authentication state listener
                 onAuthStateChanged(auth, async (user) => {
                     if (user) {
                         currentUser = user;
                         const userDoc = await getOrCreateUserDocument(user);
-                        const userData = userDoc.data();
+                        currentUserData = userDoc.data();
                         
-                        if (!userData || !userData.username) {
+                        if (!currentUserData || !currentUserData.username) {
                             showPage('page-username-setup');
                         } else {
-                            updateProfileUI(userData);
+                            updateProfileUI(currentUserData);
                             showPage('page-timer');
                             setupRealtimeListeners();
                             loadDailyTotal();
                         }
                     } else {
                         currentUser = null;
+                        currentUserData = {};
                         showPage('auth-screen');
                     }
                 });
@@ -1098,7 +1110,6 @@
         function showPage(pageId) {
             if (!pageId) return;
             
-            // Cleanup from previous page
             if (pageId !== 'page-group-detail') {
                 groupDetailUnsubscribers.forEach(unsub => unsub());
                 groupDetailUnsubscribers = [];
@@ -1107,12 +1118,10 @@
                 groupRealtimeData = { members: {}, sessions: {} };
             }
 
-            // Hide all top-level containers and pages
             document.getElementById('auth-screen').classList.remove('active');
             document.getElementById('app-container').classList.remove('active', 'flex');
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             
-            // Show the correct container/page
             if (pageId.startsWith('page-')) {
                  document.getElementById('app-container').classList.add('active', 'flex');
                  const targetPage = document.getElementById(pageId);
@@ -1164,7 +1173,6 @@
             document.getElementById('start-studying-btn').classList.add('hidden');
             document.getElementById('stop-studying-btn').classList.remove('hidden');
 
-            // Update user's studying status in Firestore
             const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
             await updateDoc(userRef, { studying: { subject: activeSubject, startTime: serverTimestamp() } });
         }
@@ -1188,7 +1196,6 @@
             document.getElementById('stop-studying-btn').classList.add('hidden');
             document.getElementById('start-studying-btn').classList.remove('hidden');
             
-            // Clear user's studying status in Firestore
             const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
             await updateDoc(userRef, { studying: null });
         }
@@ -1246,7 +1253,7 @@
 
         async function getOrCreateUserDocument(user) {
             const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid);
-            const userDoc = await getDoc(userDocRef);
+            let userDoc = await getDoc(userDocRef);
 
             if (!userDoc.exists()) {
                 const initialData = {
@@ -1255,7 +1262,8 @@
                     joinedGroups: [],
                     createdAt: serverTimestamp(),
                     totalStudySeconds: 0,
-                    studying: null
+                    studying: null,
+                    studyGoalHours: 4 // Default goal
                 };
                 await setDoc(userDocRef, initialData);
                 await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', user.uid), {
@@ -1263,19 +1271,30 @@
                     email: user.email,
                     totalStudySeconds: 0
                 });
+                userDoc = await getDoc(userDocRef);
             }
-            return await getDoc(userDocRef);
+            return userDoc;
         }
 
         function updateProfileUI(userData) {
             if (!userData) return;
+            currentUserData = userData; // Update global state
             const username = userData.username || 'Anonymous';
             const email = userData.email || '';
+            const studyGoal = userData.studyGoalHours;
+
             document.getElementById('profile-page-name').textContent = username;
             document.getElementById('profile-page-email').textContent = email;
             const avatarChar = username ? username.charAt(0).toUpperCase() : 'U';
             document.getElementById('header-avatar').textContent = avatarChar;
             document.getElementById('profile-page-avatar').textContent = avatarChar;
+            
+            const studyGoalValueEl = document.getElementById('study-goal-value');
+            if (studyGoal) {
+                studyGoalValueEl.textContent = `${studyGoal} hours/day`;
+            } else {
+                studyGoalValueEl.textContent = 'Not set';
+            }
         }
 
         function setupRealtimeListeners() {
@@ -1287,33 +1306,42 @@
             const sessionsCollectionRef = collection(userDocRef, 'sessions');
             const plannerTasksRef = collection(userDocRef, 'plannerTasks');
 
+            onSnapshot(userDocRef, (doc) => {
+                if (doc.exists()) {
+                    const data = doc.data();
+                    currentUserData = data;
+                    updateProfileUI(data);
+                    renderJoinedGroups();
+                }
+            });
+            
             onSnapshot(groupsCollectionRef, () => {
                 if (document.getElementById('page-my-groups').classList.contains('active') || document.getElementById('page-find-groups').classList.contains('active')) {
                     renderAvailableGroups();
                     renderJoinedGroups();
                 }
             });
-            onSnapshot(userDocRef, (doc) => {
-                renderJoinedGroups();
-                if (doc.exists()) updateProfileUI(doc.data());
-            });
+
             onSnapshot(subjectsCollectionRef, (snapshot) => {
                 const subjects = [];
                 snapshot.forEach(doc => subjects.push({ id: doc.id, ...doc.data() }));
                 renderSubjectSelectionList(subjects);
             });
+            
             onSnapshot(usersCollectionRef, () => {
                 if (document.getElementById('page-ranking').classList.contains('active')) {
                     const activeTab = document.querySelector('.ranking-tab-btn.active');
                     renderLeaderboard(activeTab ? activeTab.dataset.period : 'weekly');
                 }
             });
+
             onSnapshot(query(sessionsCollectionRef, orderBy("endedAt", "desc")), (snapshot) => {
                 userSessions = snapshot.docs.map(doc => doc.data());
                 if (document.getElementById('page-stats').classList.contains('active')) {
                     renderStatsPage(userSessions);
                 }
             });
+
             onSnapshot(query(plannerTasksRef, orderBy("date")), (snapshot) => {
                 if (document.getElementById('page-planner').classList.contains('active')) {
                     const tasks = [];
@@ -1327,7 +1355,7 @@
             const container = document.getElementById('ranking-list');
             if (!container) return;
             
-            document.querySelectorAll('.ranking-tab-btn').forEach(btn => {
+            document.querySelectorAll('#ranking-period-tabs .ranking-tab-btn').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.period === period);
             });
 
@@ -1439,9 +1467,7 @@
             const container = document.getElementById('my-groups-list');
             if (!container) return;
 
-            const userDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
-            const userDoc = await getDoc(userDocRef);
-            const joinedGroupIds = userDoc.exists() && userDoc.data().joinedGroups ? userDoc.data().joinedGroups : [];
+            const joinedGroupIds = currentUserData.joinedGroups || [];
             
             if (joinedGroupIds.length === 0) {
                 container.innerHTML = `<div class="empty-group"><i class="fas fa-users-slash"></i><h3>No Groups Joined Yet</h3><p>You haven't joined any study groups. Join a group or create your own to get started!</p><button class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition mt-4" id="explore-groups-btn">Explore Groups</button></div>`;
@@ -1475,9 +1501,7 @@
             const container = document.getElementById('all-groups-list');
             if (!container) return;
             
-            const userDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
-            const userDoc = await getDoc(userDocRef);
-            const joinedGroupIds = userDoc.exists() && userDoc.data().joinedGroups ? userDoc.data().joinedGroups : [];
+            const joinedGroupIds = currentUserData.joinedGroups || [];
 
             const groupsCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'groups');
             const groupsSnapshot = await getDocs(groupsCollectionRef);
@@ -1612,10 +1636,8 @@
                 const groupData = groupDoc.data();
                 document.getElementById('group-detail-name').textContent = groupData.name;
                 
-                // When group data changes (e.g., new member), set up listeners for all members
                 setupGroupMemberListeners(groupData.members || []);
 
-                // Initial render of the current subpage
                 const activeSubPage = document.querySelector('#group-detail-nav .active')?.dataset.subpage || 'home';
                 renderGroupSubPage(activeSubPage);
             });
@@ -1623,13 +1645,11 @@
         }
 
         function setupGroupMemberListeners(memberIds) {
-            // Clear existing listeners for this group
             groupDetailUnsubscribers.forEach(unsub => unsub());
             groupDetailUnsubscribers = [];
             groupRealtimeData = { members: {}, sessions: {} };
 
             memberIds.forEach(memberId => {
-                // Listen for user data changes (like 'studying' status)
                 const userDocRef = doc(db, 'artifacts', appId, 'users', memberId);
                 const userUnsub = onSnapshot(userDocRef, (doc) => {
                     groupRealtimeData.members[memberId] = doc.data();
@@ -1640,7 +1660,6 @@
                 });
                 groupDetailUnsubscribers.push(userUnsub);
 
-                // Listen for new sessions from this user
                 const sessionsRef = collection(userDocRef, 'sessions');
                 const sessionsUnsub = onSnapshot(sessionsRef, (snapshot) => {
                     groupRealtimeData.sessions[memberId] = snapshot.docs.map(doc => doc.data());
@@ -2089,8 +2108,8 @@
             const publicUserDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
             await setDoc(publicUserDocRef, { username: username }, { merge: true });
             
-            const userData = (await getDoc(userDocRef)).data();
-            updateProfileUI(userData);
+            const userDoc = await getDoc(userDocRef);
+            updateProfileUI(userDoc.data());
             showPage('page-timer');
             setupRealtimeListeners();
             loadDailyTotal();
@@ -2135,8 +2154,7 @@
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
             
             try {
-                const userDoc = await getDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid));
-                const username = userDoc.data().username;
+                const username = currentUserData.username;
 
                 const groupsCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'groups');
                 const newGroup = {
@@ -2227,7 +2245,6 @@
 
         ael('stop-studying-btn', 'click', stopTimer);
 
-        // Subject options menu logic
         document.getElementById('subject-selection-list').addEventListener('click', async (e) => {
             e.stopPropagation();
             const optionsBtn = e.target.closest('.subject-options-btn');
@@ -2322,14 +2339,56 @@
             }
         });
 
-        // Close subject menus when clicking outside
+        // Profile Settings Modals
+        const editProfileModal = document.getElementById('edit-profile-modal');
+        ael('settings-account', 'click', () => {
+            document.getElementById('edit-username-input').value = currentUserData.username || '';
+            editProfileModal.classList.add('active');
+        });
+        
+        const studyGoalModal = document.getElementById('study-goal-modal');
+        ael('settings-study-goal', 'click', () => {
+            document.getElementById('study-goal-input').value = currentUserData.studyGoalHours || '';
+            studyGoalModal.classList.add('active');
+        });
+
+        ael('edit-profile-form', 'submit', async (e) => {
+            e.preventDefault();
+            const newUsername = document.getElementById('edit-username-input').value.trim();
+            if (newUsername.length < 3) {
+                showToast("Username must be at least 3 characters.", "error");
+                return;
+            }
+            const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
+            const publicUserRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
+            await updateDoc(userRef, { username: newUsername });
+            await updateDoc(publicUserRef, { username: newUsername });
+            
+            editProfileModal.classList.remove('active');
+            showToast("Profile updated!", "success");
+        });
+
+        ael('study-goal-form', 'submit', async (e) => {
+            e.preventDefault();
+            const goal = parseInt(document.getElementById('study-goal-input').value, 10);
+            if (isNaN(goal) || goal < 1 || goal > 24) {
+                showToast("Please enter a valid number of hours (1-24).", "error");
+                return;
+            }
+            const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
+            await updateDoc(userRef, { studyGoalHours: goal });
+
+            studyGoalModal.classList.remove('active');
+            showToast("Study goal updated!", "success");
+        });
+
+
         window.addEventListener('click', (e) => {
             if (!e.target.closest('.subject-options-btn')) {
                 document.querySelectorAll('.subject-options-menu').forEach(m => m.classList.remove('active'));
             }
         });
         
-        // Close modals
         document.querySelectorAll('.modal').forEach(modal => {
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) {
