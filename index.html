@@ -799,7 +799,7 @@
                     </div>
                 </div>
                 <div id="ranking-list" class="ranking-list">
-                       </div>
+                            </div>
             </div>
             
             <div id="page-planner" class="page flex-col h-full overflow-y-auto no-scrollbar">
@@ -969,6 +969,12 @@
             where
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+        // --- Application Setup ---
+        // This constant sets the application's "current time" to a fixed date.
+        // All date-dependent logic will be based on this value instead of the user's system time.
+        const MOCK_CURRENT_DATE = new Date('2025-07-06T08:42:00.000+06:00');
+        const getCurrentDate = () => new Date(MOCK_CURRENT_DATE);
+
         // --- App State ---
         let db, auth;
         let currentUser = null;
@@ -989,9 +995,9 @@
             sessions: {}
         };
 
-        // Attendance State
-        let attendanceMonth = new Date().getMonth();
-        let attendanceYear = new Date().getFullYear();
+        // Attendance State (now uses mocked date)
+        let attendanceMonth = getCurrentDate().getMonth();
+        let attendanceYear = getCurrentDate().getFullYear();
 
         // --- UI Elements ---
         const authError = document.getElementById('auth-error');
@@ -1203,7 +1209,7 @@
                 await updateDoc(userRef, {
                     totalStudySeconds: increment(durationSeconds),
                     totalTimeToday: {
-                        date: new Date().toISOString().split('T')[0],
+                        date: getCurrentDate().toISOString().split('T')[0],
                         seconds: totalTimeTodayInSeconds
                     }
                 });
@@ -1226,7 +1232,7 @@
 
             if (userDoc.exists()) {
                 const data = userDoc.data();
-                const todayStr = new Date().toISOString().split('T')[0];
+                const todayStr = getCurrentDate().toISOString().split('T')[0];
                 if (data.totalTimeToday && data.totalTimeToday.date === todayStr) {
                     totalTimeTodayInSeconds = data.totalTimeToday.seconds || 0;
                 } else {
@@ -1335,7 +1341,7 @@
                 const userRef = doc(db, 'artifacts', appId, 'users', userDoc.id);
                 const sessionsRef = collection(userRef, 'sessions');
 
-                const now = new Date();
+                const now = getCurrentDate();
                 let startDate;
                 switch (period) {
                     case 'daily':
@@ -1398,7 +1404,7 @@
             const subjectData = {};
             let totalSecondsThisWeek = 0;
 
-            const today = new Date();
+            const today = getCurrentDate();
             const dayOfWeek = today.getDay(); // 0 (Sun) - 6 (Sat)
             const firstDayOfWeek = new Date(today);
             firstDayOfWeek.setDate(today.getDate() - dayOfWeek);
@@ -1737,7 +1743,7 @@
             memberTimerIntervals.forEach(clearInterval);
             memberTimerIntervals = [];
             
-            const todayStr = new Date().toISOString().split('T')[0];
+            const todayStr = getCurrentDate().toISOString().split('T')[0];
 
             memberList.innerHTML = Object.keys(groupRealtimeData.members).map(memberId => {
                 const memberData = groupRealtimeData.members[memberId];
@@ -1808,7 +1814,7 @@
                 const memberData = groupRealtimeData.members[memberId];
                 const memberSessions = groupRealtimeData.sessions[memberId] || [];
 
-                const now = new Date();
+                const now = getCurrentDate();
                 let startDate;
                 switch (period) {
                     case 'daily': startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate()); break;
@@ -1963,7 +1969,7 @@
         }
         
         function isToday(year, month, day) {
-            const today = new Date();
+            const today = getCurrentDate();
             return today.getFullYear() === year && 
                    today.getMonth() === month && 
                    today.getDate() === day;
@@ -2060,7 +2066,7 @@
             authError.textContent = '';
         });
 
-        ael('sign-out-btn', () => {
+        ael('sign-out-btn', 'click', () => {
             signOut(auth).catch(error => showToast(`Sign out failed: ${error.message}`, 'error'));
         });
         
