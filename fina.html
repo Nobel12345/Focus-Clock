@@ -727,6 +727,33 @@
             height: 300px;
             width: 100%;
         }
+        .session-log-item {
+            position: relative;
+        }
+        .log-options-menu {
+            display: none;
+            position: absolute;
+            right: 1rem;
+            top: 2.5rem;
+            background-color: #334155;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            z-index: 20;
+            overflow: hidden;
+        }
+        .log-options-menu.active {
+            display: block;
+        }
+        .log-options-menu button {
+            display: block;
+            width: 100%;
+            padding: 0.5rem 1rem;
+            text-align: left;
+            color: #f1f5f9;
+        }
+        .log-options-menu button:hover {
+            background-color: #475569;
+        }
     </style>
 </head>
 <body class="bg-gray-900 text-white flex flex-col h-screen antialiased">
@@ -1052,10 +1079,7 @@
         let attendanceYear = getCurrentDate().getFullYear();
 
         // --- UI Elements ---
-        const authError = document.getElementById('auth-error');
-        const sessionTimerDisplay = document.getElementById('session-timer');
-        const totalTimeDisplay = document.getElementById('total-time-display');
-        const activeSubjectDisplay = document.getElementById('active-subject-display');
+        let authError, sessionTimerDisplay, totalTimeDisplay, activeSubjectDisplay;
 
         // --- UI Helper Functions ---
         function showToast(message, type = 'info', duration = 3000) {
@@ -1133,7 +1157,7 @@
                             updateProfileUI(currentUserData);
                             showPage('page-timer');
                             setupRealtimeListeners();
-                            loadDailyTotal();
+                            await loadDailyTotal();
                         }
                     } else {
                         currentUser = null;
@@ -1294,7 +1318,9 @@
             } else {
                 totalTimeTodayInSeconds = 0;
             }
-            totalTimeDisplay.textContent = `Total Today: ${formatTime(totalTimeTodayInSeconds)}`;
+            if(totalTimeDisplay) {
+                totalTimeDisplay.textContent = `Total Today: ${formatTime(totalTimeTodayInSeconds)}`;
+            }
         }
 
         async function getOrCreateUserDocument(user) {
@@ -1376,7 +1402,7 @@
             
             onSnapshot(usersCollectionRef, () => {
                 if (document.getElementById('page-ranking').classList.contains('active')) {
-                    const activeTab = document.querySelector('.ranking-tab-btn.active');
+                    const activeTab = document.querySelector('#ranking-period-tabs .ranking-tab-btn.active');
                     renderLeaderboard(activeTab ? activeTab.dataset.period : 'weekly');
                 }
             });
@@ -1384,13 +1410,18 @@
             onSnapshot(query(sessionsCollectionRef, orderBy("endedAt", "desc")), (snapshot) => {
                 userSessions = snapshot.docs.map(doc => {
                     const data = doc.data();
-                    if (data.endedAt && data.endedAt.toDate) {
-                        data.endedAt = data.endedAt.toDate();
-                    }
-                    return data;
+                    return {
+                        id: doc.id, // Keep the document ID
+                        ...data,
+                        endedAt: data.endedAt?.toDate() // Convert timestamp to Date
+                    };
                 });
                 if (document.getElementById('page-stats').classList.contains('active')) {
                     renderStatsPage(userSessions);
+                }
+                 if (document.getElementById('page-ranking').classList.contains('active')) {
+                    const activeTab = document.querySelector('#ranking-period-tabs .ranking-tab-btn.active');
+                    renderLeaderboard(activeTab ? activeTab.dataset.period : 'weekly');
                 }
             });
 
@@ -1480,7 +1511,6 @@
             const insightsContainer = document.getElementById('insights-container');
             if (!insightsContainer) return;
             
-            // Inject the new dashboard HTML
             insightsContainer.innerHTML = `
                 <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
                     <div>
@@ -1529,10 +1559,12 @@
                 const endTime = session.endedAt;
                 const startTime = new Date(endTime.getTime() - session.durationSeconds * 1000);
                 return {
+                    id: session.id, // Pass the session ID through
                     subject: session.subject,
                     startTime: startTime,
                     endTime: endTime,
-                    duration: session.durationSeconds / 60
+                    duration: session.durationSeconds / 60,
+                    durationSeconds: session.durationSeconds
                 };
             });
 
@@ -1673,10 +1705,26 @@
                 logContainer.innerHTML = '';
                 appData.slice().reverse().slice(0, 20).forEach(s => {
                     const item = document.createElement('div');
-                    item.className = 'p-3 mb-2 bg-slate-700/50 rounded-lg flex justify-between items-center';
-                    item.innerHTML = `<div><p class="font-semibold text-white">${s.subject}</p><p class="text-sm text-slate-400">${s.startTime.toLocaleString()}</p></div><div class="text-lg font-bold text-sky-400">${s.duration.toFixed(0)} min</div>`;
+                    item.className = 'session-log-item p-3 mb-2 bg-slate-700/50 rounded-lg flex justify-between items-center';
+                    item.innerHTML = `
+                        <div>
+                            <p class="font-semibold text-white">${s.subject}</p>
+                            <p class="text-sm text-slate-400">${s.startTime.toLocaleString()}</p>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="text-lg font-bold text-sky-400 mr-4">${s.duration.toFixed(0)} min</div>
+                            <button class="log-options-btn p-2 rounded-full hover:bg-slate-600" data-session-id="${s.id}" data-duration-seconds="${s.durationSeconds}" data-ended-at="${s.endTime.toISOString()}">
+                                <i data-lucide="more-vertical" class="w-5 h-5 pointer-events-none"></i>
+                            </button>
+                            <div class="log-options-menu">
+                                <button class="log-edit-btn">Edit</button>
+                                <button class="log-delete-btn">Delete</button>
+                            </div>
+                        </div>
+                    `;
                     logContainer.appendChild(item);
                 });
+                lucide.createIcons();
             }
 
             const navBar = document.getElementById('dashboard-nav-bar');
@@ -1701,10 +1749,77 @@
                 }
             });
 
+            const logContainer = document.getElementById('session-log-container');
+            if (logContainer) {
+                logContainer.addEventListener('click', e => {
+                    const optionsBtn = e.target.closest('.log-options-btn');
+                    if (optionsBtn) {
+                        const menu = optionsBtn.nextElementSibling;
+                        menu.classList.toggle('active');
+                        return;
+                    }
+
+                    const deleteBtn = e.target.closest('.log-delete-btn');
+                    if(deleteBtn) {
+                        const sessionItem = deleteBtn.closest('.session-log-item').querySelector('.log-options-btn');
+                        const sessionId = sessionItem.dataset.sessionId;
+                        const duration = parseInt(sessionItem.dataset.durationSeconds, 10);
+                        const endedAt = new Date(sessionItem.dataset.endedAt);
+                        
+                        showConfirmationModal('Delete Session?', 'Are you sure you want to permanently delete this study session?', () => {
+                            deleteSession(sessionId, duration, endedAt);
+                        });
+                    }
+
+                     const editBtn = e.target.closest('.log-edit-btn');
+                     if(editBtn) {
+                        showToast("Edit functionality is coming soon!", "info");
+                     }
+                });
+            }
+
             renderPeriodView();
             generateAIInsight();
         }
         
+        async function deleteSession(sessionId, durationSeconds, endedAt) {
+            if (!currentUser || !sessionId) return;
+            
+            const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
+            const publicUserRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
+            const sessionRef = doc(userRef, 'sessions', sessionId);
+
+            try {
+                // 1. Delete the session document
+                await deleteDoc(sessionRef);
+
+                // 2. Decrement total study time
+                await updateDoc(userRef, { totalStudySeconds: increment(-durationSeconds) });
+                await updateDoc(publicUserRef, { totalStudySeconds: increment(-durationSeconds) });
+
+                // 3. Update today's total if applicable
+                const sessionDateStr = endedAt.toISOString().split('T')[0];
+                const todayStr = getCurrentDate().toISOString().split('T')[0];
+                if (sessionDateStr === todayStr) {
+                    totalTimeTodayInSeconds -= durationSeconds;
+                    if (totalTimeTodayInSeconds < 0) totalTimeTodayInSeconds = 0;
+                    
+                    await updateDoc(userRef, {
+                        totalTimeToday: {
+                            date: todayStr,
+                            seconds: totalTimeTodayInSeconds
+                        }
+                    });
+                     totalTimeDisplay.textContent = `Total Today: ${formatTime(totalTimeTodayInSeconds)}`;
+                }
+
+                showToast("Session deleted successfully", "success");
+            } catch (error) {
+                console.error("Error deleting session:", error);
+                showToast("Failed to delete session.", "error");
+            }
+        }
+
         async function renderJoinedGroups() {
             if (!currentUser) return;
             const container = document.getElementById('my-groups-list');
@@ -2627,6 +2742,9 @@
             if (!e.target.closest('.subject-options-btn')) {
                 document.querySelectorAll('.subject-options-menu').forEach(m => m.classList.remove('active'));
             }
+            if (!e.target.closest('.log-options-btn')) {
+                document.querySelectorAll('.log-options-menu').forEach(m => m.classList.remove('active'));
+            }
         });
         
         document.querySelectorAll('.modal').forEach(modal => {
@@ -2641,7 +2759,13 @@
         });
 
         // --- Initial Load ---
-        window.onload = initializeFirebase;
+        window.onload = () => {
+            authError = document.getElementById('auth-error');
+            sessionTimerDisplay = document.getElementById('session-timer');
+            totalTimeDisplay = document.getElementById('total-time-display');
+            activeSubjectDisplay = document.getElementById('active-subject-display');
+            initializeFirebase();
+        };
 
     </script>
 </body>
