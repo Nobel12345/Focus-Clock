@@ -5,9 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FocusFlow - Real-time Study Timer</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+
     <style>
         /* Base styles */
         body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
@@ -675,6 +679,54 @@
         #confirm-btn:hover { background-color: #DC2626; }
         #cancel-btn { background-color: #4B5563; color: white; }
         #cancel-btn:hover { background-color: #6B7280; }
+
+        /* New Dashboard Styles */
+        #insights-container {
+            background-color: #0f172a; /* slate-900 */
+            color: #f1f5f9; /* slate-100 */
+        }
+        .card {
+            background-color: #1e293b; /* slate-800 */
+            border-radius: 1rem;
+            padding: 1.5rem;
+            border: 1px solid #334155; /* slate-700 */
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 255, 255, 0.1);
+        }
+        .nav-btn {
+            padding: 0.5rem 1.5rem;
+            border-radius: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+        }
+        .nav-btn.active {
+            background-color: #0ea5e9; /* sky-500 */
+            color: #ffffff;
+            box-shadow: 0 0 15px rgba(14, 165, 233, 0.5);
+        }
+        .nav-btn:not(.active) {
+            background-color: #334155; /* slate-700 */
+            color: #cbd5e1; /* slate-300 */
+        }
+        .nav-btn:not(.active):hover {
+            background-color: #475569; /* slate-600 */
+        }
+        .view {
+            display: none;
+        }
+        .view.active {
+            display: grid;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
     </style>
 </head>
 <body class="bg-gray-900 text-white flex flex-col h-screen antialiased">
@@ -763,27 +815,17 @@
             </div>
             
             <div id="page-stats" class="page flex-col h-full overflow-y-auto no-scrollbar">
-                <header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-gray-800 sticky top-0 bg-gray-900">
+                 <header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-gray-800 sticky top-0 bg-gray-900">
                     <button class="back-button text-gray-400 hover:text-white" data-target="timer">
                         <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                         </svg>
                     </button>
-                    <h1 class="text-xl font-bold text-gray-100">Your Stats</h1>
-                    <div class="w-6"></div> </header>
-                <div class="stats-container">
-                    <div class="stat-card">
-                        <div class="stat-title">Study Time This Week</div>
-                        <canvas id="weeklyChart" height="200"></canvas>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-title">Subject Distribution</div>
-                        <canvas id="subjectChart" height="200"></canvas>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-title">Daily Average</div>
-                        <div id="daily-average" class="text-3xl font-bold text-blue-400">0h 0m</div>
-                    </div>
+                    <h1 class="text-xl font-bold text-gray-100">Stats & Insights</h1>
+                    <div class="w-6"></div> 
+                </header>
+                <div id="insights-container" class="p-4 md:p-6">
+                    <!-- New Dashboard HTML will be injected here -->
                 </div>
             </div>
             
@@ -981,16 +1023,16 @@
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- Application Setup ---
-        const MOCK_CURRENT_DATE = new Date('2025-07-06T08:42:00.000+06:00');
+        const MOCK_CURRENT_DATE = new Date('2025-07-08T14:04:00.000+06:00');
         const getCurrentDate = () => new Date(MOCK_CURRENT_DATE);
 
         // --- App State ---
         let db, auth;
         let currentUser = null;
         let currentUserData = {};
-        let charts = { weekly: null, subject: null };
+        let dashboardCharts = {};
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        let userSessions = [];
+        let userSessions = []; // This will be populated from Firestore
 
         // Timer State
         let timerInterval = null;
@@ -1143,10 +1185,14 @@
             } else if (pageId === 'page-group-detail') {
                 if (groupNav) groupNav.style.display = 'grid';
             }
+            
+            if (pageId === 'page-stats') {
+                renderStatsPage(userSessions);
+            }
         }
 
         function formatTime(seconds, includeSeconds = true) {
-            if (seconds < 0) seconds = 0;
+            if (isNaN(seconds) || seconds < 0) seconds = 0;
             const h = Math.floor(seconds / 3600);
             const m = Math.floor((seconds % 3600) / 60);
             const s = Math.floor(seconds % 60);
@@ -1336,7 +1382,13 @@
             });
 
             onSnapshot(query(sessionsCollectionRef, orderBy("endedAt", "desc")), (snapshot) => {
-                userSessions = snapshot.docs.map(doc => doc.data());
+                userSessions = snapshot.docs.map(doc => {
+                    const data = doc.data();
+                    if (data.endedAt && data.endedAt.toDate) {
+                        data.endedAt = data.endedAt.toDate();
+                    }
+                    return data;
+                });
                 if (document.getElementById('page-stats').classList.contains('active')) {
                     renderStatsPage(userSessions);
                 }
@@ -1424,42 +1476,233 @@
             }).join('') || `<div class="empty-group"><i class="fas fa-trophy"></i><h3>Leaderboard is Empty</h3><p>Start studying to see your rank!</p></div>`;
         }
 
-        function renderStatsPage(sessions) {
-            const weeklyChartEl = document.getElementById('weeklyChart');
-            if (!weeklyChartEl) return;
+        function renderStatsPage(focusSessions) {
+            const insightsContainer = document.getElementById('insights-container');
+            if (!insightsContainer) return;
             
-            const weeklyData = Array(7).fill(0);
-            const subjectData = {};
-            let totalSecondsThisWeek = 0;
+            // Inject the new dashboard HTML
+            insightsContainer.innerHTML = `
+                <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
+                    <div>
+                        <h1 class="text-4xl font-bold text-white">Study Insights</h1>
+                        <p class="text-slate-400 mt-1">Welcome back, let's analyze your progress.</p>
+                    </div>
+                    <nav id="dashboard-nav-bar" class="flex space-x-2 mt-4 sm:mt-0 bg-slate-800 p-2 rounded-xl">
+                        <button class="nav-btn active" data-view="period">Period</button>
+                        <button class="nav-btn" data-view="month">Month</button>
+                        <button class="nav-btn" data-view="trend">Trend</button>
+                    </nav>
+                </header>
+                <main>
+                    <div id="period-view" class="view active grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            <div class="card flex flex-col justify-center items-center"><h3 class="text-slate-400 text-lg font-medium">Total Time</h3><p id="period-total-time" class="text-4xl font-bold text-cyan-400 mt-2">--:--:--</p></div>
+                            <div class="card flex flex-col justify-center items-center"><h3 class="text-slate-400 text-lg font-medium">Daily Average</h3><p id="period-daily-avg" class="text-4xl font-bold text-cyan-400 mt-2">--:--:--</p></div>
+                            <div class="card flex flex-col justify-center items-center"><h3 class="text-slate-400 text-lg font-medium">Focus Score</h3><p id="period-focus-score" class="text-4xl font-bold text-cyan-400 mt-2">--</p></div>
+                            <div class="card bg-gradient-to-br from-sky-500 to-indigo-600"><h3 class="text-white text-lg font-medium flex items-center"><i data-lucide="brain-circuit" class="mr-2"></i>AI Insight</h3><p id="ai-insight-text" class="text-white mt-2 text-sm">Analyzing your study patterns...</p></div>
+                        </div>
+                        <div class="card lg:col-span-1"><h3 class="font-semibold text-xl mb-4">Subject Ratio</h3><div class="chart-container" style="height: 250px;"><canvas id="subject-ratio-chart"></canvas></div></div>
+                        <div class="card lg:col-span-2"><h3 class="font-semibold text-xl mb-4">Time Per Day (Last 28 Days)</h3><div class="chart-container"><canvas id="time-per-day-chart"></canvas></div></div>
+                        <div class="card lg:col-span-3"><h3 class="font-semibold text-xl mb-4">Cumulative Study Time</h3><div class="chart-container"><canvas id="cumulative-time-chart"></canvas></div></div>
+                    </div>
+                    <div id="month-view" class="view grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="card lg:col-span-1"><h3 class="font-semibold text-xl mb-4">Study vs. Break</h3><div class="chart-container"><canvas id="study-break-chart"></canvas></div></div>
+                        <div class="card lg:col-span-2"><h3 class="font-semibold text-xl mb-4">Study Time by Subject (This Month)</h3><div class="chart-container"><canvas id="study-time-by-subject-chart"></canvas></div></div>
+                        <div class="card lg:col-span-3"><h3 class="font-semibold text-xl mb-4">Start/End Time Distribution</h3><div class="chart-container"><canvas id="start-end-distribution-chart"></canvas></div></div>
+                    </div>
+                    <div id="trend-view" class="view grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="card lg:col-span-1"><h3 class="font-semibold text-xl mb-4">Study Time Regularity</h3><div class="chart-container"><canvas id="regularity-chart"></canvas></div></div>
+                        <div class="card lg:col-span-1"><h3 class="font-semibold text-xl mb-4">Performance Forecast</h3><div class="chart-container"><canvas id="forecast-chart"></canvas></div></div>
+                        <div class="card lg:col-span-2"><h3 class="font-semibold text-xl mb-4">Session Log</h3><div id="session-log-container" class="max-h-80 overflow-y-auto pr-2"></div></div>
+                    </div>
+                </main>
+            `;
+            
+            initializeDashboard(focusSessions, insightsContainer);
+            lucide.createIcons();
+        }
 
-            const today = getCurrentDate();
-            const dayOfWeek = today.getDay(); // 0 (Sun) - 6 (Sat)
-            const firstDayOfWeek = new Date(today);
-            firstDayOfWeek.setDate(today.getDate() - dayOfWeek);
-            firstDayOfWeek.setHours(0,0,0,0);
+        function initializeDashboard(focusSessions, insightsContainer) {
+            const today = new Date(); 
 
-            sessions.forEach(session => {
-                const sessionDate = session.endedAt?.toDate();
-                if (sessionDate && sessionDate >= firstDayOfWeek) {
-                    const sessionDayOfWeek = sessionDate.getDay();
-                    weeklyData[sessionDayOfWeek] += session.durationSeconds;
-                    totalSecondsThisWeek += session.durationSeconds;
+            const appData = focusSessions.map(session => {
+                const endTime = session.endedAt;
+                const startTime = new Date(endTime.getTime() - session.durationSeconds * 1000);
+                return {
+                    subject: session.subject,
+                    startTime: startTime,
+                    endTime: endTime,
+                    duration: session.durationSeconds / 60
+                };
+            });
+
+            appData.sort((a, b) => a.startTime - b.startTime);
+
+            let charts = {};
+            
+            const formatTimeDashboard = (minutes) => {
+                if (isNaN(minutes) || minutes < 0) return '00:00:00';
+                const hours = Math.floor(minutes / 60);
+                const mins = Math.floor(minutes % 60);
+                const secs = Math.floor((minutes * 60) % 60);
+                return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+            };
+            
+            const CHART_COLORS = { cyan: 'rgba(34, 211, 238, 0.6)', sky: 'rgba(56, 189, 248, 0.6)', indigo: 'rgba(129, 140, 248, 0.6)', pink: 'rgba(244, 114, 182, 0.6)', orange: 'rgba(251, 146, 60, 0.6)', };
+            const CHART_BORDERS = { cyan: 'rgba(34, 211, 238, 1)', sky: 'rgba(56, 189, 248, 1)', indigo: 'rgba(129, 140, 248, 1)', pink: 'rgba(244, 114, 182, 1)', orange: 'rgba(251, 146, 60, 1)', };
+
+            const destroyChart = (chartId) => {
+                if (charts[chartId]) {
+                    charts[chartId].destroy();
+                    delete charts[chartId];
                 }
-                if (session.subject) {
-                    subjectData[session.subject] = (subjectData[session.subject] || 0) + session.durationSeconds;
+            };
+
+            const aiInsights = [ "Your most productive study time is in the late afternoon. Capitalize on it!", "You're showing great consistency in 'Statistics'. Keep up the momentum.", "Consider breaking longer 'Calculus' sessions into smaller, focused chunks.", "You tend to study 'Machine Learning' on weekends. Try to sprinkle some in during the week.", "Your focus score is highest when you start studying before 10 AM.", "Great job balancing multiple subjects! This prevents burnout.", "You haven't studied 'Data Structures' in a few days. Maybe it's time for a review session?", ];
+
+            function generateAIInsight() {
+                const insightText = document.getElementById('ai-insight-text');
+                if(!insightText) return;
+                const randomIndex = Math.floor(Math.random() * aiInsights.length);
+                insightText.textContent = aiInsights[randomIndex];
+            }
+
+            function renderPeriodView() {
+                const last28DaysData = appData.filter(d => {
+                    const diffDays = (today - d.startTime) / (1000 * 60 * 60 * 24);
+                    return diffDays <= 28;
+                });
+
+                const totalMinutes = last28DaysData.reduce((sum, s) => sum + s.duration, 0);
+                const dailyAverage = totalMinutes / 28;
+                const focusScore = Math.round((totalMinutes / last28DaysData.length) / 60 * 100);
+
+                document.getElementById('period-total-time').textContent = formatTimeDashboard(totalMinutes);
+                document.getElementById('period-daily-avg').textContent = formatTimeDashboard(dailyAverage);
+                document.getElementById('period-focus-score').textContent = isNaN(focusScore) ? '0' : focusScore;
+
+                const subjectData = last28DaysData.reduce((acc, session) => {
+                    acc[session.subject] = (acc[session.subject] || 0) + session.duration;
+                    return acc;
+                }, {});
+                destroyChart('subject-ratio-chart');
+                charts['subject-ratio-chart'] = new Chart(document.getElementById('subject-ratio-chart'), {
+                    type: 'doughnut', plugins: [ChartDataLabels],
+                    data: { labels: Object.keys(subjectData), datasets: [{ data: Object.values(subjectData), backgroundColor: Object.values(CHART_COLORS), borderColor: '#1e293b', borderWidth: 4, }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: '#cbd5e1' } }, tooltip: { callbacks: { label: function(context) { const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0); const percentage = ((context.parsed / total) * 100).toFixed(1) + '%'; return `${context.label}: ${percentage}`; } } }, datalabels: { formatter: (value, ctx) => { const sum = ctx.chart.data.datasets[0].data.reduce((a, b) => a + b, 0); const percentage = (value * 100 / sum).toFixed(1) + "%"; return percentage; }, color: '#ffffff', font: { weight: 'bold' } } } }
+                });
+
+                const timePerDay = Array(28).fill(0);
+                last28DaysData.forEach(s => {
+                    const dayIndex = 27 - Math.floor((today - s.startTime) / (1000 * 60 * 60 * 24));
+                    if (dayIndex >= 0 && dayIndex < 28) { timePerDay[dayIndex] += s.duration; }
+                });
+                const labels28Days = Array.from({length: 28}, (_, i) => { const d = new Date(); d.setDate(d.getDate() - (27 - i)); return d; });
+                destroyChart('time-per-day-chart');
+                charts['time-per-day-chart'] = new Chart(document.getElementById('time-per-day-chart'), {
+                    type: 'bar',
+                    data: { labels: labels28Days.map(d => `${d.getMonth()+1}/${d.getDate()}`), datasets: [{ label: 'Minutes Studied', data: timePerDay, backgroundColor: CHART_COLORS.sky, borderColor: CHART_BORDERS.sky, borderWidth: 1, borderRadius: 5, }] },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: '#334155' }, ticks: { color: '#94a3b8' } }, x: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } } }, plugins: { legend: { display: false } } }
+                });
+                
+                let cumulativeTotal = 0;
+                const cumulativeData = timePerDay.map(d => cumulativeTotal += d);
+                destroyChart('cumulative-time-chart');
+                charts['cumulative-time-chart'] = new Chart(document.getElementById('cumulative-time-chart'), {
+                    type: 'line',
+                    data: { labels: labels28Days.map(d => `${d.getMonth()+1}/${d.getDate()}`), datasets: [{ label: 'Cumulative Minutes', data: cumulativeData, fill: true, backgroundColor: CHART_COLORS.cyan, borderColor: CHART_BORDERS.cyan, tension: 0.4, pointRadius: 0, }] },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: '#334155' }, ticks: { color: '#94a3b8' } }, x: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } } }, plugins: { legend: { display: false } } }
+                });
+            }
+
+            function renderMonthView() {
+                const thisMonthData = appData.filter(d => d.startTime.getMonth() === today.getMonth() && d.startTime.getFullYear() === today.getFullYear());
+                
+                const totalStudy = thisMonthData.reduce((sum, s) => sum + s.duration, 0);
+                const totalBreaks = Math.floor(totalStudy / 3);
+                destroyChart('study-break-chart');
+                charts['study-break-chart'] = new Chart(document.getElementById('study-break-chart'), {
+                    type: 'doughnut', plugins: [ChartDataLabels],
+                    data: { labels: ['Study', 'Break'], datasets: [{ data: [totalStudy, totalBreaks], backgroundColor: [CHART_COLORS.indigo, '#475569'], borderColor: '#1e293b', borderWidth: 4, }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels: { color: '#cbd5e1' } }, tooltip: { callbacks: { label: function(context) { const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0); const percentage = ((context.parsed / total) * 100).toFixed(1) + '%'; return `${context.label}: ${percentage}`; } } }, datalabels: { formatter: (value, ctx) => { const sum = ctx.chart.data.datasets[0].data.reduce((a, b) => a + b, 0); const percentage = (value * 100 / sum).toFixed(1) + "%"; return percentage; }, color: '#ffffff', font: { weight: 'bold' } } } }
+                });
+
+                const subjectDataMonth = thisMonthData.reduce((acc, session) => { acc[session.subject] = (acc[session.subject] || 0) + session.duration; return acc; }, {});
+                destroyChart('study-time-by-subject-chart');
+                charts['study-time-by-subject-chart'] = new Chart(document.getElementById('study-time-by-subject-chart'), {
+                    type: 'bar',
+                    data: { labels: Object.keys(subjectDataMonth), datasets: [{ label: 'Minutes Studied', data: Object.values(subjectDataMonth), backgroundColor: Object.values(CHART_COLORS), }] },
+                    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, scales: { x: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } }, y: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } } }, plugins: { legend: { display: false } } }
+                });
+
+                const distributionData = thisMonthData.map(s => ({ x: s.startTime, y: s.startTime.getHours() + s.startTime.getMinutes() / 60, yEnd: s.endTime.getHours() + s.endTime.getMinutes() / 60, }));
+                destroyChart('start-end-distribution-chart');
+                charts['start-end-distribution-chart'] = new Chart(document.getElementById('start-end-distribution-chart'), {
+                    type: 'scatter',
+                    data: { datasets: [{ label: 'Start Time', data: distributionData.map(d => ({x: d.x, y: d.y})), backgroundColor: CHART_COLORS.sky, }, { label: 'End Time', data: distributionData.map(d => ({x: d.x, y: d.yEnd})), backgroundColor: CHART_COLORS.pink, }] },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { x: { type: 'time', time: { unit: 'day' }, grid: { color: '#334155' }, ticks: { color: '#94a3b8' } }, y: { beginAtZero: true, max: 24, grid: { color: '#334155' }, ticks: { color: '#94a3b8', stepSize: 2, callback: (v) => `${v}:00` } } }, plugins: { legend: { labels: { color: '#cbd5e1' } } } }
+                });
+            }
+
+            function renderTrendView() {
+                const regularityData = appData.slice(-50).map(s => ({ x: s.startTime, y: s.startTime.getHours() + s.startTime.getMinutes() / 60, r: s.duration / 10 }));
+                destroyChart('regularity-chart');
+                charts['regularity-chart'] = new Chart(document.getElementById('regularity-chart'), {
+                    type: 'bubble',
+                    data: { datasets: [{ label: 'Study Session', data: regularityData, backgroundColor: CHART_COLORS.indigo, }] },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { x: { type: 'time', time: { unit: 'day' }, grid: { color: '#334155' }, ticks: { color: '#94a3b8' } }, y: { min: 6, max: 24, grid: { color: '#334155' }, ticks: { color: '#94a3b8', stepSize: 3, callback: (v) => `${v}:00` } } }, plugins: { legend: { display: false } } }
+                });
+                
+                const last14Days = Array(14).fill(0);
+                appData.filter(d => (today - d.startTime) / (1000 * 60 * 60 * 24) <= 14).forEach(s => {
+                    const dayIndex = 13 - Math.floor((today - s.startTime) / (1000 * 60 * 60 * 24));
+                    if (dayIndex >= 0) last14Days[dayIndex] += s.duration;
+                });
+                const avgLast14 = last14Days.reduce((a, b) => a + b, 0) / 14;
+                const forecastData = Array.from({length: 7}, (_, i) => avgLast14 * (i + 1) + last14Days.reduce((a, b) => a + b, 0));
+                const forecastLabels = Array.from({length: 7}, (_, i) => { const d = new Date(); d.setDate(d.getDate() + i + 1); return `${d.getMonth()+1}/${d.getDate()}`; });
+                
+                destroyChart('forecast-chart');
+                charts['forecast-chart'] = new Chart(document.getElementById('forecast-chart'), {
+                    type: 'line',
+                    data: { labels: forecastLabels, datasets: [{ label: 'Projected Study Minutes', data: forecastData, borderColor: CHART_BORDERS.orange, backgroundColor: CHART_COLORS.orange, borderDash: [5, 5], tension: 0.2, }] },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: '#334155' }, ticks: { color: '#94a3b8' } }, x: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } } }, plugins: { legend: { display: false } } }
+                });
+
+                const logContainer = document.getElementById('session-log-container');
+                logContainer.innerHTML = '';
+                appData.slice().reverse().slice(0, 20).forEach(s => {
+                    const item = document.createElement('div');
+                    item.className = 'p-3 mb-2 bg-slate-700/50 rounded-lg flex justify-between items-center';
+                    item.innerHTML = `<div><p class="font-semibold text-white">${s.subject}</p><p class="text-sm text-slate-400">${s.startTime.toLocaleString()}</p></div><div class="text-lg font-bold text-sky-400">${s.duration.toFixed(0)} min</div>`;
+                    logContainer.appendChild(item);
+                });
+            }
+
+            const navBar = document.getElementById('dashboard-nav-bar');
+            const views = insightsContainer.querySelectorAll('.view');
+            const navButtons = navBar.querySelectorAll('.nav-btn');
+
+            navBar.addEventListener('click', (e) => {
+                if (e.target.tagName === 'BUTTON') {
+                    const viewName = e.target.dataset.view;
+                    navButtons.forEach(btn => btn.classList.remove('active'));
+                    e.target.classList.add('active');
+                    views.forEach(view => {
+                        view.classList.remove('active');
+                        if (view.id === `${viewName}-view`) { view.classList.add('active'); }
+                    });
+                    switch (viewName) {
+                        case 'period': renderPeriodView(); break;
+                        case 'month': renderMonthView(); break;
+                        case 'trend': renderTrendView(); break;
+                    }
+                    generateAIInsight();
                 }
             });
 
-            if (charts.weekly) charts.weekly.destroy();
-            const weeklyCtx = weeklyChartEl.getContext('2d');
-            charts.weekly = new Chart(weeklyCtx, { type: 'bar', data: { labels: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'], datasets: [{ label: 'Study Time (hours)', data: weeklyData.map(s => s / 3600), backgroundColor: '#3B82F6' }] }, options: { scales: { y: { beginAtZero: true, ticks: { color: '#9CA3AF' }, grid: { color: '#374151' } }, x: { ticks: { color: '#9CA3AF' }, grid: { color: '#374151' } } }, plugins: { legend: { display: false } } } });
-
-            if (charts.subject) charts.subject.destroy();
-            const subjectCtx = document.getElementById('subjectChart').getContext('2d');
-            charts.subject = new Chart(subjectCtx, { type: 'doughnut', data: { labels: Object.keys(subjectData), datasets: [{ data: Object.values(subjectData), backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899'], borderWidth: 0 }] }, options: { plugins: { legend: { position: 'right', labels: { color: '#E5E7EB' } } } } });
-
-            const dailyAvgSeconds = totalSecondsThisWeek / 7;
-            document.getElementById('daily-average').textContent = formatTime(dailyAvgSeconds, false);
+            renderPeriodView();
+            generateAIInsight();
         }
         
         async function renderJoinedGroups() {
@@ -2121,9 +2364,6 @@
             this.classList.add('active');
             const pageName = this.dataset.page;
             showPage(`page-${pageName}`);
-            if (pageName === 'stats') {
-                renderStatsPage(userSessions);
-            }
         }));
 
         document.querySelectorAll('.back-button').forEach(button => button.addEventListener('click', function() {
