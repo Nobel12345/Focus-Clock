@@ -28,6 +28,115 @@
         /* UI element styles */
         .timer-text { font-weight: 900; letter-spacing: -0.05em; }
         
+        /* Pomodoro Switch Styles */
+        .timer-switch-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            background-color: #1f2937;
+            padding: 0.5rem;
+            border-radius: 9999px;
+            width: fit-content;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .timer-switch-btn {
+            padding: 0.5rem 1.5rem;
+            border: none;
+            background-color: transparent;
+            color: #9ca3af;
+            font-weight: 600;
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .timer-switch-btn.active {
+            background-color: #3b82f6;
+            color: white;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+        }
+        #pomodoro-status {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #f59e0b; /* Amber color for breaks */
+            height: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Pomodoro Settings Modal Scroll Fix */
+        #pomodoro-settings-modal .modal-content {
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        /* Toggle Switch Styles */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 28px;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #4b5563;
+            transition: .4s;
+            border-radius: 28px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #3b82f6;
+        }
+        input:checked + .slider:before {
+            transform: translateX(22px);
+        }
+
+        /* Volume Slider */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 8px;
+            cursor: pointer;
+            background: #4b5563;
+            border-radius: 4px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #3b82f6;
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -6px;
+        }
+
         /* Group study styles */
         .group-card {
             background: #1f2937;
@@ -837,13 +946,19 @@
                     </div>
                 </header>
                 <div class="relative flex-grow flex items-center justify-center -mt-16">
-                    <div class="relative text-center z-10 bg-gray-900/50 backdrop-blur-sm p-8 rounded-full">
+                    <div class="relative text-center z-10 bg-gray-900/50 backdrop-blur-sm p-4 sm:p-8 rounded-full">
+                        <div class="timer-switch-container">
+                            <button id="normal-timer-btn" class="timer-switch-btn active">Normal</button>
+                            <button id="pomodoro-timer-btn" class="timer-switch-btn">Pomodoro</button>
+                        </div>
                         <p id="active-subject-display" class="text-xl font-semibold text-blue-400 h-7 mb-2"></p>
+                        <p id="pomodoro-status"></p>
                         <h2 id="session-timer" class="text-7xl md:text-8xl timer-text text-white">00:00:00</h2>
                         <p id="total-time-display" class="text-gray-400 mt-2">Total Today: 00:00:00</p>
                         <div id="timer-controls" class="mt-8">
                             <button id="start-studying-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-full text-lg transition-transform transform hover:scale-105">Start Studying</button>
                             <button id="stop-studying-btn" class="hidden bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-10 rounded-full text-lg transition-transform transform hover:scale-105">Stop</button>
+                            <button id="manual-start-btn" class="hidden bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-8 rounded-full text-lg transition-transform transform hover:scale-105">Start Next</button>
                         </div>
                     </div>
                 </div>
@@ -885,7 +1000,7 @@
                     </div>
                 </div>
                 <div id="ranking-list" class="ranking-list">
-                            </div>
+                          </div>
             </div>
             
             <div id="page-planner" class="page flex-col h-full overflow-y-auto no-scrollbar">
@@ -914,9 +1029,10 @@
                 <div class="profile-container">
                     <div class="profile-header"><div id="profile-page-avatar" class="profile-avatar">U</div><div><div id="profile-page-name" class="profile-name">User Name</div><div id="profile-page-email" class="profile-email">user@example.com</div></div></div>
                     <div id="settings-account" class="settings-item"><div class="settings-label">Account</div><div class="settings-value">Edit profile information</div></div>
+                    <div id="settings-pomodoro" class="settings-item"><div class="settings-label">Pomodoro Timer</div><div class="settings-value">Customize durations & sounds</div></div>
+                    <div id="settings-study-goal" class="settings-item"><div class="settings-label">Study Goals</div><div id="study-goal-value" class="settings-value">Not set</div></div>
                     <div class="settings-item"><div class="settings-label">Notifications</div><div class="settings-value">Enabled</div></div>
                     <div class="settings-item"><div class="settings-label">Appearance</div><div class="settings-value">Dark Mode</div></div>
-                    <div id="settings-study-goal" class="settings-item"><div class="settings-label">Study Goals</div><div id="study-goal-value" class="settings-value">Not set</div></div>
                     <div class="settings-item"><div class="settings-label">About FocusFlow</div><div class="settings-value">Version 1.0.0</div></div>
                     <button id="sign-out-btn" class="w-full mt-8 py-3 bg-red-600 hover:bg-red-700 rounded-lg font-medium transition">Sign Out</button>
                 </div>
@@ -1029,6 +1145,9 @@
     <!-- Study Goal Modal -->
     <div id="study-goal-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Set Study Goal</div><button class="close-modal">&times;</button></div><form id="study-goal-form"><div class="mb-4"><label for="study-goal-input" class="block text-gray-300 mb-2">Daily Study Goal (hours)</label><input type="number" id="study-goal-input" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required min="1" max="24"></div><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Set Goal</button></form></div></div>
 
+    <!-- Pomodoro Settings Modal -->
+    <div id="pomodoro-settings-modal" class="modal"><div class="modal-content no-scrollbar"><div class="modal-header"><div class="modal-title">Pomodoro Settings</div><button class="close-modal">&times;</button></div><form id="pomodoro-settings-form" class="space-y-4"><div class="grid grid-cols-1 gap-4"><div><label for="pomodoro-work-duration" class="block text-sm font-medium text-gray-300">Focus Duration (minutes)</label><input type="number" id="pomodoro-work-duration" class="w-full bg-gray-700 border-gray-600 rounded-lg p-2 mt-1 text-white" min="1" required></div><div><label for="pomodoro-short-break-duration" class="block text-sm font-medium text-gray-300">Short Break (minutes)</label><input type="number" id="pomodoro-short-break-duration" class="w-full bg-gray-700 border-gray-600 rounded-lg p-2 mt-1 text-white" min="1" required></div><div><label for="pomodoro-long-break-duration" class="block text-sm font-medium text-gray-300">Long Break (minutes)</label><input type="number" id="pomodoro-long-break-duration" class="w-full bg-gray-700 border-gray-600 rounded-lg p-2 mt-1 text-white" min="1" required></div><div><label for="pomodoro-long-break-interval" class="block text-sm font-medium text-gray-300">Long Break Interval (sessions)</label><input type="number" id="pomodoro-long-break-interval" class="w-full bg-gray-700 border-gray-600 rounded-lg p-2 mt-1 text-white" min="2" required></div></div><hr class="border-gray-600 my-2"><h3 class="text-lg font-semibold text-gray-200">Alarms</h3><div class="grid grid-cols-1 gap-4"><div><label for="pomodoro-volume" class="block text-sm font-medium text-gray-300">Volume</label><input type="range" id="pomodoro-volume" min="0" max="1" step="0.1" class="w-full mt-1"></div><div><label for="pomodoro-start-sound" class="block text-sm font-medium text-gray-300">Starting Bell</label><select id="pomodoro-start-sound" class="w-full bg-gray-700 border-gray-600 rounded-lg p-2 mt-1 text-white"></select></div><div><label for="pomodoro-focus-sound" class="block text-sm font-medium text-gray-300">Focus Alarm (End of Break)</label><select id="pomodoro-focus-sound" class="w-full bg-gray-700 border-gray-600 rounded-lg p-2 mt-1 text-white"></select></div><div><label for="pomodoro-break-sound" class="block text-sm font-medium text-gray-300">Break Alarm (End of Focus)</label><select id="pomodoro-break-sound" class="w-full bg-gray-700 border-gray-600 rounded-lg p-2 mt-1 text-white"></select></div></div><hr class="border-gray-600 my-2"><h3 class="text-lg font-semibold text-gray-200">Automation</h3><div class="space-y-3"> <div class="flex items-center justify-between"><span class="text-sm font-medium text-gray-300">Auto-start next focus session?</span><label class="toggle-switch"><input type="checkbox" id="pomodoro-auto-start-focus"><span class="slider"></span></label></div><div class="flex items-center justify-between"><span class="text-sm font-medium text-gray-300">Auto-start next break?</span><label class="toggle-switch"><input type="checkbox" id="pomodoro-auto-start-break"><span class="slider"></span></label></div></div><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition mt-4">Save Settings</button></form></div></div>
+
     <!-- Edit Session Modal -->
     <div id="edit-session-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Edit Session</div><button class="close-modal">&times;</button></div><form id="edit-session-form"><div class="mb-4"><label for="edit-session-duration" class="block text-gray-300 mb-2">Duration (minutes)</label><input type="number" id="edit-session-duration" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required min="1"></div><input type="hidden" id="edit-session-id"><input type="hidden" id="edit-session-old-duration"><input type="hidden" id="edit-session-ended-at"><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Save Changes</button></form></div></div>
 
@@ -1065,8 +1184,7 @@
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- Application Setup ---
-        const MOCK_CURRENT_DATE = new Date('2025-07-08T14:04:00.000+06:00');
-        const getCurrentDate = () => new Date(MOCK_CURRENT_DATE);
+        const getCurrentDate = () => new Date(); // Use real time
 
         // --- App State ---
         let db, auth;
@@ -1075,6 +1193,7 @@
         let dashboardCharts = {};
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         let userSessions = []; // This will be populated from Firestore
+        let isAudioUnlocked = false;
 
         // Timer State
         let timerInterval = null;
@@ -1088,15 +1207,69 @@
             members: {},
             sessions: {}
         };
+        
+        // --- Pomodoro State ---
+        let timerMode = 'normal'; // 'normal' or 'pomodoro'
+        let pomodoroState = 'work'; // 'work', 'short_break', 'long_break'
+        let pomodoroCycle = 0;
+        let pomodoroTimeLeft = 0;
+        let pomodoroSettings = {
+            work: 25,
+            short_break: 5,
+            long_break: 15,
+            long_break_interval: 4,
+            autoStartBreak: true,
+            autoStartFocus: true
+        };
+        let pomodoroSounds = {
+            start: 'https://assets.mixkit.co/sfx/preview/mixkit-clear-announce-tones-2861.mp3',
+            focus: 'https://assets.mixkit.co/sfx/preview/mixkit-positive-notification-951.mp3',
+            break: 'https://assets.mixkit.co/sfx/preview/mixkit-long-pop-2358.mp3',
+            volume: 1.0
+        };
+        const availableSounds = {
+            'Bell': 'https://assets.mixkit.co/sfx/preview/mixkit-clear-announce-tones-2861.mp3',
+            'Notification': 'https://assets.mixkit.co/sfx/preview/mixkit-positive-notification-951.mp3',
+            'Pop': 'https://assets.mixkit.co/sfx/preview/mixkit-long-pop-2358.mp3',
+            'Chime': 'https://assets.mixkit.co/sfx/preview/mixkit-instrument-notification-alert-2322.mp3',
+            'Success': 'https://assets.mixkit.co/sfx/preview/mixkit-video-game-win-2016.mp3',
+            'None': ''
+        };
+        // --- End Pomodoro State ---
 
         // Attendance State
         let attendanceMonth = getCurrentDate().getMonth();
         let attendanceYear = getCurrentDate().getFullYear();
 
         // --- UI Elements ---
-        let authError, sessionTimerDisplay, totalTimeDisplay, activeSubjectDisplay;
+        let authError, sessionTimerDisplay, totalTimeDisplay, activeSubjectDisplay, pomodoroStatusDisplay;
 
         // --- UI Helper Functions ---
+        function playSound(url, volume) {
+            if (!url || url.trim() === '') return;
+            try {
+                const audio = new Audio(url);
+                audio.volume = volume;
+                const playPromise = audio.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(error => {
+                        console.warn(`Could not play sound: ${url}. Error: ${error.message}`);
+                    });
+                }
+            } catch (e) {
+                console.warn("Error creating audio element:", e);
+            }
+        }
+
+        function unlockAudio() {
+            if (isAudioUnlocked) return;
+            const silentAudio = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=');
+            silentAudio.play().then(() => {
+                isAudioUnlocked = true;
+                console.log("Audio unlocked.");
+            }).catch(e => console.warn("Audio unlock failed.", e));
+        }
+
         function showToast(message, type = 'info', duration = 3000) {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
@@ -1166,6 +1339,13 @@
                         const userDoc = await getOrCreateUserDocument(user);
                         currentUserData = userDoc.data();
                         
+                        if (currentUserData.pomodoroSettings) {
+                            pomodoroSettings = {...pomodoroSettings, ...currentUserData.pomodoroSettings};
+                        }
+                        if (currentUserData.pomodoroSounds) {
+                            pomodoroSounds = {...pomodoroSounds, ...currentUserData.pomodoroSounds};
+                        }
+
                         if (!currentUserData || !currentUserData.username) {
                             showPage('page-username-setup');
                         } else {
@@ -1239,54 +1419,198 @@
             if (includeSeconds) {
                 return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
             }
-            return `${h}h ${m}m`;
+            const hDisplay = h > 0 ? `${h}h ` : '';
+            return `${hDisplay}${m}m`;
         }
-        
+
+        function formatPomodoroTime(seconds) {
+            if (isNaN(seconds) || seconds < 0) seconds = 0;
+            const m = Math.floor(seconds / 60);
+            const s = Math.floor(seconds % 60);
+            return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
+
         async function startTimer(subject) {
-            if (!subject) return;
+            if (!subject) {
+                showToast("Please select a subject first.", "error");
+                return;
+            }
+            unlockAudio(); // Important: Unlock audio on user interaction
 
             activeSubject = subject;
             activeSubjectDisplay.textContent = activeSubject;
             sessionStartTime = Date.now();
             
             if(timerInterval) clearInterval(timerInterval);
-            timerInterval = setInterval(() => {
-                const elapsedSeconds = Math.floor((Date.now() - sessionStartTime) / 1000);
-                sessionTimerDisplay.textContent = formatTime(elapsedSeconds);
-            }, 1000);
+
+            if (timerMode === 'normal') {
+                timerInterval = setInterval(() => {
+                    const elapsedSeconds = Math.floor((Date.now() - sessionStartTime) / 1000);
+                    sessionTimerDisplay.textContent = formatTime(elapsedSeconds);
+                }, 1000);
+            } else { // Pomodoro Mode
+                playSound(pomodoroSounds.start, pomodoroSounds.volume);
+                startPomodoroSession();
+            }
 
             document.getElementById('start-studying-btn').classList.add('hidden');
             document.getElementById('stop-studying-btn').classList.remove('hidden');
+            document.getElementById('manual-start-btn').classList.add('hidden');
 
             const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
             await updateDoc(userRef, { studying: { subject: activeSubject, startTime: serverTimestamp() } });
         }
+        
+        // --- Pomodoro Logic ---
+        function startPomodoroSession() {
+            pomodoroState = 'work';
+            pomodoroCycle = 0;
+            startNextPomodoroState();
+        }
+        
+        function startNextPomodoroState() {
+            if (timerInterval) clearInterval(timerInterval);
+            document.getElementById('manual-start-btn').classList.add('hidden');
+            document.getElementById('stop-studying-btn').classList.remove('hidden');
+
+            let isBreak = false;
+            switch(pomodoroState) {
+                case 'work':
+                    pomodoroTimeLeft = pomodoroSettings.work * 60;
+                    pomodoroStatusDisplay.textContent = `Work (${pomodoroCycle + 1}/${pomodoroSettings.long_break_interval})`;
+                    pomodoroStatusDisplay.style.color = '#3b82f6'; // Blue for work
+                    break;
+                case 'short_break':
+                    pomodoroTimeLeft = pomodoroSettings.short_break * 60;
+                    pomodoroStatusDisplay.textContent = "Short Break";
+                    pomodoroStatusDisplay.style.color = '#f59e0b'; // Amber for break
+                    isBreak = true;
+                    break;
+                case 'long_break':
+                    pomodoroTimeLeft = pomodoroSettings.long_break * 60;
+                    pomodoroStatusDisplay.textContent = "Long Break";
+                    pomodoroStatusDisplay.style.color = '#10b981'; // Green for long break
+                    isBreak = true;
+                    break;
+            }
+            
+            if (!isBreak) {
+                 sessionStartTime = Date.now();
+            } else {
+                 sessionStartTime = 0;
+            }
+
+            updatePomodoroDisplay();
+
+            timerInterval = setInterval(() => {
+                pomodoroTimeLeft--;
+                if (!isBreak) {
+                     totalTimeTodayInSeconds++;
+                     updateTotalTimeDisplay();
+                }
+                updatePomodoroDisplay();
+
+                if (pomodoroTimeLeft <= 0) {
+                    handlePomodoroTransition();
+                }
+            }, 1000);
+        }
+        
+        async function handlePomodoroTransition() {
+            if (timerInterval) clearInterval(timerInterval);
+            
+            if (pomodoroState === 'work') {
+                playSound(pomodoroSounds.break, pomodoroSounds.volume);
+                const duration = pomodoroSettings.work * 60;
+                await saveSession(activeSubject, duration);
+                pomodoroCycle++;
+            } else { // End of a break
+                playSound(pomodoroSounds.focus, pomodoroSounds.volume);
+            }
+
+            let nextState;
+            if (pomodoroState === 'work') {
+                if (pomodoroCycle % pomodoroSettings.long_break_interval === 0) {
+                    nextState = 'long_break';
+                } else {
+                    nextState = 'short_break';
+                }
+            } else {
+                nextState = 'work';
+            }
+            pomodoroState = nextState;
+
+            const shouldAutoStart = (pomodoroState === 'work' && pomodoroSettings.autoStartFocus) || (pomodoroState !== 'work' && pomodoroSettings.autoStartBreak);
+
+            if (shouldAutoStart) {
+                startNextPomodoroState();
+            } else {
+                const manualStartBtn = document.getElementById('manual-start-btn');
+                manualStartBtn.textContent = `Start ${pomodoroState.replace('_', ' ')}`;
+                manualStartBtn.classList.remove('hidden');
+                document.getElementById('stop-studying-btn').classList.add('hidden');
+                pomodoroStatusDisplay.textContent = `Ready for ${pomodoroState.replace('_', ' ')}`;
+            }
+        }
+
+        function updatePomodoroDisplay() {
+            sessionTimerDisplay.textContent = formatPomodoroTime(pomodoroTimeLeft);
+        }
+        
+        function resetPomodoroState() {
+            if(timerInterval) clearInterval(timerInterval);
+            pomodoroState = 'work';
+            pomodoroCycle = 0;
+            pomodoroTimeLeft = pomodoroSettings.work * 60;
+            pomodoroStatusDisplay.textContent = '';
+            updatePomodoroDisplay();
+        }
+        // --- End Pomodoro Logic ---
+
 
         async function stopTimer() {
             if(timerInterval) clearInterval(timerInterval);
             
-            const elapsedMillis = Date.now() - sessionStartTime;
-            const sessionDurationSeconds = Math.floor(elapsedMillis / 1000);
+            if (timerMode === 'normal') {
+                const elapsedMillis = Date.now() - sessionStartTime;
+                const sessionDurationSeconds = Math.floor(elapsedMillis / 1000);
 
-            if (sessionDurationSeconds > 0) {
-                totalTimeTodayInSeconds += sessionDurationSeconds;
-                await saveSession(activeSubject, sessionDurationSeconds);
+                if (sessionDurationSeconds > 0) {
+                    totalTimeTodayInSeconds += sessionDurationSeconds;
+                    await saveSession(activeSubject, sessionDurationSeconds);
+                }
+            } else { 
+                if(pomodoroState === 'work' && sessionStartTime) {
+                     const elapsedSeconds = Math.floor((Date.now() - sessionStartTime) / 1000);
+                     if (elapsedSeconds > 0) {
+                         await saveSession(activeSubject, elapsedSeconds);
+                     }
+                }
+                resetPomodoroState();
             }
+
             
             activeSubjectDisplay.textContent = '';
             sessionTimerDisplay.textContent = formatTime(0);
-            totalTimeDisplay.textContent = `Total Today: ${formatTime(totalTimeTodayInSeconds)}`;
+            updateTotalTimeDisplay();
             timerInterval = null;
+            sessionStartTime = 0;
 
             document.getElementById('stop-studying-btn').classList.add('hidden');
+            document.getElementById('manual-start-btn').classList.add('hidden');
             document.getElementById('start-studying-btn').classList.remove('hidden');
             
             const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
             await updateDoc(userRef, { studying: null });
         }
+        
+        function updateTotalTimeDisplay() {
+            totalTimeDisplay.textContent = `Total Today: ${formatTime(totalTimeTodayInSeconds)}`;
+        }
+
 
         async function saveSession(subject, durationSeconds) {
-            if (!currentUser) return;
+            if (!currentUser || durationSeconds <= 0) return;
             try {
                 const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
                 const publicUserRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
@@ -1310,7 +1634,7 @@
                     totalStudySeconds: increment(durationSeconds)
                 });
 
-                console.log('Session saved successfully');
+                console.log(`Session of ${durationSeconds}s saved successfully.`);
             } catch (error) {
                 console.error("Error saving session: ", error);
                 showToast("Error saving session.", "error");
@@ -1334,7 +1658,7 @@
                 totalTimeTodayInSeconds = 0;
             }
             if(totalTimeDisplay) {
-                totalTimeDisplay.textContent = `Total Today: ${formatTime(totalTimeTodayInSeconds)}`;
+                updateTotalTimeDisplay();
             }
         }
 
@@ -1350,7 +1674,21 @@
                     createdAt: serverTimestamp(),
                     totalStudySeconds: 0,
                     studying: null,
-                    studyGoalHours: 4 // Default goal
+                    studyGoalHours: 4,
+                    pomodoroSettings: {
+                        work: 25,
+                        short_break: 5,
+                        long_break: 15,
+                        long_break_interval: 4,
+                        autoStartBreak: true,
+                        autoStartFocus: true
+                    },
+                    pomodoroSounds: {
+                        start: 'https://assets.mixkit.co/sfx/preview/mixkit-clear-announce-tones-2861.mp3',
+                        focus: 'https://assets.mixkit.co/sfx/preview/mixkit-positive-notification-951.mp3',
+                        break: 'https://assets.mixkit.co/sfx/preview/mixkit-long-pop-2358.mp3',
+                        volume: 1.0
+                    }
                 };
                 await setDoc(userDocRef, initialData);
                 await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', user.uid), {
@@ -1365,7 +1703,7 @@
 
         function updateProfileUI(userData) {
             if (!userData) return;
-            currentUserData = userData; // Update global state
+            currentUserData = userData; 
             const username = userData.username || 'Anonymous';
             const email = userData.email || '';
             const studyGoal = userData.studyGoalHours;
@@ -1397,6 +1735,12 @@
                 if (doc.exists()) {
                     const data = doc.data();
                     currentUserData = data;
+                    if (data.pomodoroSettings) {
+                        pomodoroSettings = {...pomodoroSettings, ...data.pomodoroSettings};
+                    }
+                    if (data.pomodoroSounds) {
+                        pomodoroSounds = {...pomodoroSounds, ...data.pomodoroSounds};
+                    }
                     updateProfileUI(data);
                     renderJoinedGroups();
                 }
@@ -1426,9 +1770,9 @@
                 userSessions = snapshot.docs.map(doc => {
                     const data = doc.data();
                     return {
-                        id: doc.id, // Keep the document ID
+                        id: doc.id,
                         ...data,
-                        endedAt: data.endedAt?.toDate() // Convert timestamp to Date
+                        endedAt: data.endedAt?.toDate()
                     };
                 });
                 if (document.getElementById('page-stats').classList.contains('active')) {
@@ -1478,7 +1822,7 @@
                         break;
                     case 'weekly':
                     default:
-                        const dayOfWeek = now.getDay(); // 0 (Sun) - 6 (Sat)
+                        const dayOfWeek = now.getDay();
                         startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek);
                         break;
                 }
@@ -1574,7 +1918,7 @@
                 const endTime = session.endedAt;
                 const startTime = new Date(endTime.getTime() - session.durationSeconds * 1000);
                 return {
-                    id: session.id, // Pass the session ID through
+                    id: session.id,
                     subject: session.subject,
                     startTime: startTime,
                     endTime: endTime,
@@ -1609,24 +1953,24 @@
                 const insightTextEl = document.getElementById('ai-insight-text');
                 if (!insightTextEl) return;
 
-                if (sessions.length < 5) { // Not enough data for meaningful insights yet
+                if (sessions.length < 5) {
                     insightTextEl.textContent = "Start logging more sessions to unlock personalized insights!";
                     return;
                 }
 
                 const insightFunctions = [
-                    () => { // Insight: Most studied subject
+                    () => {
                         const subjectTotals = sessions.reduce((acc, s) => {
                             acc[s.subject] = (acc[s.subject] || 0) + s.duration;
                             return acc;
                         }, {});
                         const topSubject = Object.entries(subjectTotals).sort((a, b) => b[1] - a[1])[0];
-                        if (topSubject && topSubject[1] > 60) { // Only show if studied for more than an hour
+                        if (topSubject && topSubject[1] > 60) {
                             return `You're putting a lot of effort into '${topSubject[0]}'. Keep up the great work!`;
                         }
                         return null;
                     },
-                    () => { // Insight: Least studied subject (that has been studied)
+                    () => {
                         const subjectTotals = sessions.reduce((acc, s) => {
                             acc[s.subject] = (acc[s.subject] || 0) + s.duration;
                             return acc;
@@ -1635,13 +1979,13 @@
                         if (sortedSubjects.length > 1) {
                             const leastStudied = sortedSubjects[0];
                             const mostStudied = sortedSubjects[sortedSubjects.length - 1];
-                            if (mostStudied[1] > leastStudied[1] * 3) { // If there's a significant difference
+                            if (mostStudied[1] > leastStudied[1] * 3) {
                                  return `Don't forget to give some attention to '${leastStudied[0]}'. A quick review could be beneficial.`;
                             }
                         }
                         return null;
                     },
-                    () => { // Insight: Productive time of day
+                    () => {
                         const hourlyTotals = Array(24).fill(0);
                         sessions.forEach(s => {
                             const startHour = s.startTime.getHours();
@@ -1655,7 +1999,7 @@
                         else timeOfDay = 'late at night';
                         return `You seem to be most productive ${timeOfDay}. Plan your key tasks accordingly!`;
                     },
-                     () => { // Insight: Session length
+                     () => {
                         const avgDuration = sessions.reduce((sum, s) => sum + s.duration, 0) / sessions.length;
                         if (avgDuration > 90) {
                             return "You're tackling long study sessions! Remember that short breaks can boost long-term focus.";
@@ -1665,7 +2009,7 @@
                         }
                         return null;
                     },
-                    () => { // Insight: Consistency
+                    () => {
                         const last7Days = new Set();
                         sessions.forEach(s => {
                             const diffDays = (new Date() - s.startTime) / (1000 * 60 * 60 * 24);
@@ -1683,7 +2027,6 @@
                     }
                 ];
 
-                // Try to get a valid insight
                 let insight = null;
                 let attempts = 0;
                 while (insight === null && attempts < 5) {
@@ -1692,7 +2035,6 @@
                     attempts++;
                 }
 
-                // Fallback to a generic message
                 if (insight === null) {
                     insight = "Keep up the consistent effort. Every session is a step towards your goal!";
                 }
@@ -1889,7 +2231,6 @@
                 });
             }
 
-            // Initial Render based on the active tab in HTML
             const initialActiveView = insightsContainer.querySelector('.nav-btn.active').dataset.view;
             switch(initialActiveView) {
                 case 'period': renderPeriodView(); break;
@@ -1907,14 +2248,11 @@
             const sessionRef = doc(userRef, 'sessions', sessionId);
 
             try {
-                // 1. Delete the session document
                 await deleteDoc(sessionRef);
 
-                // 2. Decrement total study time
                 await updateDoc(userRef, { totalStudySeconds: increment(-durationSeconds) });
                 await updateDoc(publicUserRef, { totalStudySeconds: increment(-durationSeconds) });
 
-                // 3. Update today's total if applicable
                 const sessionDateStr = endedAt.toISOString().split('T')[0];
                 const todayStr = getCurrentDate().toISOString().split('T')[0];
                 if (sessionDateStr === todayStr) {
@@ -2283,8 +2621,8 @@
                     const startTime = parseInt(timeEl.dataset.startTime, 10);
                     if (startTime > 0) {
                        const interval = setInterval(() => {
-                           const ongoingSeconds = (Date.now() - startTime) / 1000;
-                           timeEl.textContent = formatTime(baseTime + ongoingSeconds);
+                            const ongoingSeconds = (Date.now() - startTime) / 1000;
+                            timeEl.textContent = formatTime(baseTime + ongoingSeconds);
                        }, 1000);
                        memberTimerIntervals.push(interval);
                     }
@@ -2716,6 +3054,36 @@
         });
 
         ael('stop-studying-btn', 'click', stopTimer);
+        ael('manual-start-btn', 'click', () => {
+            document.getElementById('stop-studying-btn').classList.remove('hidden');
+            startNextPomodoroState();
+        });
+        
+        // --- Timer Switch Logic ---
+        const normalTimerBtn = document.getElementById('normal-timer-btn');
+        const pomodoroTimerBtn = document.getElementById('pomodoro-timer-btn');
+        
+        ael('normal-timer-btn', 'click', () => {
+            if (timerMode === 'normal') return;
+            if(timerInterval) stopTimer();
+            timerMode = 'normal';
+            normalTimerBtn.classList.add('active');
+            pomodoroTimerBtn.classList.remove('active');
+            sessionTimerDisplay.textContent = formatTime(0);
+            pomodoroStatusDisplay.textContent = '';
+        });
+        
+        ael('pomodoro-timer-btn', 'click', () => {
+            if (timerMode === 'pomodoro') return;
+            if(timerInterval) stopTimer();
+            timerMode = 'pomodoro';
+            pomodoroTimerBtn.classList.add('active');
+            normalTimerBtn.classList.remove('active');
+            pomodoroStatusDisplay.textContent = 'Ready for Pomodoro';
+            pomodoroStatusDisplay.style.color = '#9ca3af';
+            resetPomodoroState();
+        });
+        // --- End Timer Switch Logic ---
 
         document.getElementById('subject-selection-list').addEventListener('click', async (e) => {
             e.stopPropagation();
@@ -2824,6 +3192,38 @@
             studyGoalModal.classList.add('active');
         });
 
+        const pomodoroSettingsModal = document.getElementById('pomodoro-settings-modal');
+        ael('settings-pomodoro', 'click', () => {
+            document.getElementById('pomodoro-work-duration').value = pomodoroSettings.work;
+            document.getElementById('pomodoro-short-break-duration').value = pomodoroSettings.short_break;
+            document.getElementById('pomodoro-long-break-duration').value = pomodoroSettings.long_break;
+            document.getElementById('pomodoro-long-break-interval').value = pomodoroSettings.long_break_interval;
+            document.getElementById('pomodoro-auto-start-focus').checked = pomodoroSettings.autoStartFocus;
+            document.getElementById('pomodoro-auto-start-break').checked = pomodoroSettings.autoStartBreak;
+            document.getElementById('pomodoro-volume').value = pomodoroSounds.volume;
+            
+            const soundDropdowns = [
+                { id: 'pomodoro-start-sound', key: 'start' },
+                { id: 'pomodoro-focus-sound', key: 'focus' },
+                { id: 'pomodoro-break-sound', key: 'break' }
+            ];
+            soundDropdowns.forEach(dd => {
+                const selectEl = document.getElementById(dd.id);
+                selectEl.innerHTML = '';
+                for (const [name, url] of Object.entries(availableSounds)) {
+                    const option = document.createElement('option');
+                    option.value = url;
+                    option.textContent = name;
+                    if (url === pomodoroSounds[dd.key]) {
+                        option.selected = true;
+                    }
+                    selectEl.appendChild(option);
+                }
+            });
+
+            pomodoroSettingsModal.classList.add('active');
+        });
+
         ael('edit-profile-form', 'submit', async (e) => {
             e.preventDefault();
             const newUsername = document.getElementById('edit-username-input').value.trim();
@@ -2852,6 +3252,41 @@
 
             studyGoalModal.classList.remove('active');
             showToast("Study goal updated!", "success");
+        });
+
+        ael('pomodoro-settings-form', 'submit', async (e) => {
+            e.preventDefault();
+            const newSettings = {
+                work: parseInt(document.getElementById('pomodoro-work-duration').value, 10),
+                short_break: parseInt(document.getElementById('pomodoro-short-break-duration').value, 10),
+                long_break: parseInt(document.getElementById('pomodoro-long-break-duration').value, 10),
+                long_break_interval: parseInt(document.getElementById('pomodoro-long-break-interval').value, 10),
+                autoStartFocus: document.getElementById('pomodoro-auto-start-focus').checked,
+                autoStartBreak: document.getElementById('pomodoro-auto-start-break').checked,
+            };
+            const newSounds = {
+                start: document.getElementById('pomodoro-start-sound').value,
+                focus: document.getElementById('pomodoro-focus-sound').value,
+                break: document.getElementById('pomodoro-break-sound').value,
+                volume: parseFloat(document.getElementById('pomodoro-volume').value)
+            };
+
+            if (Object.values(newSettings).some(v => typeof v === 'number' && (isNaN(v) || v < 1))) {
+                showToast("Please enter valid, positive numbers for all duration settings.", "error");
+                return;
+            }
+            
+            const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
+            await updateDoc(userRef, { 
+                pomodoroSettings: newSettings,
+                pomodoroSounds: newSounds
+            });
+
+            pomodoroSettings = newSettings;
+            pomodoroSounds = newSounds;
+            pomodoroSettingsModal.classList.remove('active');
+            showToast("Pomodoro settings saved!", "success");
+            resetPomodoroState();
         });
         
         ael('edit-session-form', 'submit', async (e) => {
@@ -2927,7 +3362,25 @@
             sessionTimerDisplay = document.getElementById('session-timer');
             totalTimeDisplay = document.getElementById('total-time-display');
             activeSubjectDisplay = document.getElementById('active-subject-display');
+            pomodoroStatusDisplay = document.getElementById('pomodoro-status');
             initializeFirebase();
+
+            // Add event listener for sound previews in the settings modal
+            const pomodoroSettingsForm = document.getElementById('pomodoro-settings-form');
+            if (pomodoroSettingsForm) {
+                pomodoroSettingsForm.addEventListener('change', (e) => {
+                    const target = e.target;
+                    if (target.matches('select[id^="pomodoro-"]')) {
+                        const soundUrl = target.value;
+                        const volume = parseFloat(document.getElementById('pomodoro-volume').value);
+                        playSound(soundUrl, volume);
+                    } else if (target.id === 'pomodoro-volume') {
+                        const sampleSoundUrl = document.getElementById('pomodoro-focus-sound').value;
+                        const volume = parseFloat(target.value);
+                        playSound(sampleSoundUrl, volume);
+                    }
+                });
+            }
         };
 
     </script>
