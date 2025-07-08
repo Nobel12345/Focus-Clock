@@ -1605,13 +1605,99 @@
                 }
             };
 
-            const aiInsights = [ "Your most productive study time is in the late afternoon. Capitalize on it!", "You're showing great consistency in 'Statistics'. Keep up the momentum.", "Consider breaking longer 'Calculus' sessions into smaller, focused chunks.", "You tend to study 'Machine Learning' on weekends. Try to sprinkle some in during the week.", "Your focus score is highest when you start studying before 10 AM.", "Great job balancing multiple subjects! This prevents burnout.", "You haven't studied 'Data Structures' in a few days. Maybe it's time for a review session?", ];
+            function generateAIInsight(sessions) {
+                const insightTextEl = document.getElementById('ai-insight-text');
+                if (!insightTextEl) return;
 
-            function generateAIInsight() {
-                const insightText = document.getElementById('ai-insight-text');
-                if(!insightText) return;
-                const randomIndex = Math.floor(Math.random() * aiInsights.length);
-                insightText.textContent = aiInsights[randomIndex];
+                if (sessions.length < 5) { // Not enough data for meaningful insights yet
+                    insightTextEl.textContent = "Start logging more sessions to unlock personalized insights!";
+                    return;
+                }
+
+                const insightFunctions = [
+                    () => { // Insight: Most studied subject
+                        const subjectTotals = sessions.reduce((acc, s) => {
+                            acc[s.subject] = (acc[s.subject] || 0) + s.duration;
+                            return acc;
+                        }, {});
+                        const topSubject = Object.entries(subjectTotals).sort((a, b) => b[1] - a[1])[0];
+                        if (topSubject && topSubject[1] > 60) { // Only show if studied for more than an hour
+                            return `You're putting a lot of effort into '${topSubject[0]}'. Keep up the great work!`;
+                        }
+                        return null;
+                    },
+                    () => { // Insight: Least studied subject (that has been studied)
+                        const subjectTotals = sessions.reduce((acc, s) => {
+                            acc[s.subject] = (acc[s.subject] || 0) + s.duration;
+                            return acc;
+                        }, {});
+                        const sortedSubjects = Object.entries(subjectTotals).sort((a, b) => a[1] - b[1]);
+                        if (sortedSubjects.length > 1) {
+                            const leastStudied = sortedSubjects[0];
+                            const mostStudied = sortedSubjects[sortedSubjects.length - 1];
+                            if (mostStudied[1] > leastStudied[1] * 3) { // If there's a significant difference
+                                 return `Don't forget to give some attention to '${leastStudied[0]}'. A quick review could be beneficial.`;
+                            }
+                        }
+                        return null;
+                    },
+                    () => { // Insight: Productive time of day
+                        const hourlyTotals = Array(24).fill(0);
+                        sessions.forEach(s => {
+                            const startHour = s.startTime.getHours();
+                            hourlyTotals[startHour] += s.duration;
+                        });
+                        const peakHour = hourlyTotals.indexOf(Math.max(...hourlyTotals));
+                        let timeOfDay = '';
+                        if (peakHour >= 5 && peakHour < 12) timeOfDay = 'in the morning';
+                        else if (peakHour >= 12 && peakHour < 17) timeOfDay = 'in the afternoon';
+                        else if (peakHour >= 17 && peakHour < 21) timeOfDay = 'in the evening';
+                        else timeOfDay = 'late at night';
+                        return `You seem to be most productive ${timeOfDay}. Plan your key tasks accordingly!`;
+                    },
+                     () => { // Insight: Session length
+                        const avgDuration = sessions.reduce((sum, s) => sum + s.duration, 0) / sessions.length;
+                        if (avgDuration > 90) {
+                            return "You're tackling long study sessions! Remember that short breaks can boost long-term focus.";
+                        }
+                        if (avgDuration < 25) {
+                            return "Your sessions are short and sharp. For deeper topics, try a longer, uninterrupted block of time.";
+                        }
+                        return null;
+                    },
+                    () => { // Insight: Consistency
+                        const last7Days = new Set();
+                        sessions.forEach(s => {
+                            const diffDays = (new Date() - s.startTime) / (1000 * 60 * 60 * 24);
+                            if (diffDays <= 7) {
+                                last7Days.add(s.startTime.getDay());
+                            }
+                        });
+                        if (last7Days.size >= 5) {
+                            return "Amazing consistency this week! You've studied on " + last7Days.size + " different days.";
+                        }
+                        if (last7Days.size > 0 && last7Days.size < 3) {
+                             return "Building a consistent habit is key. Try to schedule short sessions every day.";
+                        }
+                        return null;
+                    }
+                ];
+
+                // Try to get a valid insight
+                let insight = null;
+                let attempts = 0;
+                while (insight === null && attempts < 5) {
+                    const randomIndex = Math.floor(Math.random() * insightFunctions.length);
+                    insight = insightFunctions[randomIndex]();
+                    attempts++;
+                }
+
+                // Fallback to a generic message
+                if (insight === null) {
+                    insight = "Keep up the consistent effort. Every session is a step towards your goal!";
+                }
+
+                insightTextEl.textContent = insight;
             }
 
             function renderPeriodView() {
@@ -1760,7 +1846,7 @@
                         case 'month': renderMonthView(); break;
                         case 'trend': renderTrendView(); break;
                     }
-                    generateAIInsight();
+                    generateAIInsight(appData);
                 }
             });
 
@@ -1810,7 +1896,7 @@
                 case 'month': renderMonthView(); break;
                 case 'trend': renderTrendView(); break;
             }
-            generateAIInsight();
+            generateAIInsight(appData);
         }
         
         async function deleteSession(sessionId, durationSeconds, endedAt) {
