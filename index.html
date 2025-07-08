@@ -754,6 +754,14 @@
         .log-options-menu button:hover {
             background-color: #475569;
         }
+        #pull-to-refresh {
+            text-align: center;
+            padding: 10px;
+            color: #94a3b8;
+            transition: height 0.3s ease;
+            overflow: hidden;
+            height: 0;
+        }
     </style>
 </head>
 <body class="bg-gray-900 text-white flex flex-col h-screen antialiased">
@@ -842,6 +850,10 @@
             </div>
             
             <div id="page-stats" class="page flex-col h-full overflow-y-auto no-scrollbar">
+                 <div id="pull-to-refresh">
+                    <i class="fas fa-arrow-down"></i>
+                    <span id="pull-to-refresh-text">Pull to refresh</span>
+                </div>
                  <header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-gray-800 sticky top-0 bg-gray-900">
                     <button class="back-button text-gray-400 hover:text-white" data-target="timer">
                         <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1016,6 +1028,9 @@
     
     <!-- Study Goal Modal -->
     <div id="study-goal-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Set Study Goal</div><button class="close-modal">&times;</button></div><form id="study-goal-form"><div class="mb-4"><label for="study-goal-input" class="block text-gray-300 mb-2">Daily Study Goal (hours)</label><input type="number" id="study-goal-input" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required min="1" max="24"></div><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Set Goal</button></form></div></div>
+
+    <!-- Edit Session Modal -->
+    <div id="edit-session-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Edit Session</div><button class="close-modal">&times;</button></div><form id="edit-session-form"><div class="mb-4"><label for="edit-session-duration" class="block text-gray-300 mb-2">Duration (minutes)</label><input type="number" id="edit-session-duration" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required min="1"></div><input type="hidden" id="edit-session-id"><input type="hidden" id="edit-session-old-duration"><input type="hidden" id="edit-session-ended-at"><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Save Changes</button></form></div></div>
 
 
     <script type="module">
@@ -1518,13 +1533,13 @@
                         <p class="text-slate-400 mt-1">Welcome back, let's analyze your progress.</p>
                     </div>
                     <nav id="dashboard-nav-bar" class="flex space-x-2 mt-4 sm:mt-0 bg-slate-800 p-2 rounded-xl">
-                        <button class="nav-btn active" data-view="period">Period</button>
+                        <button class="nav-btn active" data-view="trend">Trend</button>
                         <button class="nav-btn" data-view="month">Month</button>
-                        <button class="nav-btn" data-view="trend">Trend</button>
+                        <button class="nav-btn" data-view="period">Period</button>
                     </nav>
                 </header>
                 <main>
-                    <div id="period-view" class="view active grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div id="period-view" class="view grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div class="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                             <div class="card flex flex-col justify-center items-center"><h3 class="text-slate-400 text-lg font-medium">Total Time</h3><p id="period-total-time" class="text-4xl font-bold text-cyan-400 mt-2">--:--:--</p></div>
                             <div class="card flex flex-col justify-center items-center"><h3 class="text-slate-400 text-lg font-medium">Daily Average</h3><p id="period-daily-avg" class="text-4xl font-bold text-cyan-400 mt-2">--:--:--</p></div>
@@ -1540,7 +1555,7 @@
                         <div class="card lg:col-span-2"><h3 class="font-semibold text-xl mb-4">Study Time by Subject (This Month)</h3><div class="chart-container"><canvas id="study-time-by-subject-chart"></canvas></div></div>
                         <div class="card lg:col-span-3"><h3 class="font-semibold text-xl mb-4">Start/End Time Distribution</h3><div class="chart-container"><canvas id="start-end-distribution-chart"></canvas></div></div>
                     </div>
-                    <div id="trend-view" class="view grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div id="trend-view" class="view active grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div class="card lg:col-span-1"><h3 class="font-semibold text-xl mb-4">Study Time Regularity</h3><div class="chart-container"><canvas id="regularity-chart"></canvas></div></div>
                         <div class="card lg:col-span-1"><h3 class="font-semibold text-xl mb-4">Performance Forecast</h3><div class="chart-container"><canvas id="forecast-chart"></canvas></div></div>
                         <div class="card lg:col-span-2"><h3 class="font-semibold text-xl mb-4">Session Log</h3><div id="session-log-container" class="max-h-80 overflow-y-auto pr-2"></div></div>
@@ -1727,7 +1742,7 @@
                 lucide.createIcons();
             }
 
-            const navBar = document.getElementById('dashboard-nav-bar');
+            const navBar = insightsContainer.querySelector('#dashboard-nav-bar');
             const views = insightsContainer.querySelectorAll('.view');
             const navButtons = navBar.querySelectorAll('.nav-btn');
 
@@ -1773,12 +1788,28 @@
 
                      const editBtn = e.target.closest('.log-edit-btn');
                      if(editBtn) {
-                        showToast("Edit functionality is coming soon!", "info");
+                        const sessionItem = editBtn.closest('.session-log-item').querySelector('.log-options-btn');
+                        const sessionId = sessionItem.dataset.sessionId;
+                        const durationSeconds = parseInt(sessionItem.dataset.durationSeconds, 10);
+                        const endedAt = sessionItem.dataset.endedAt;
+
+                        const modal = document.getElementById('edit-session-modal');
+                        document.getElementById('edit-session-id').value = sessionId;
+                        document.getElementById('edit-session-duration').value = Math.round(durationSeconds / 60);
+                        document.getElementById('edit-session-old-duration').value = durationSeconds;
+                        document.getElementById('edit-session-ended-at').value = endedAt;
+                        modal.classList.add('active');
                      }
                 });
             }
 
-            renderPeriodView();
+            // Initial Render based on the active tab in HTML
+            const initialActiveView = insightsContainer.querySelector('.nav-btn.active').dataset.view;
+            switch(initialActiveView) {
+                case 'period': renderPeriodView(); break;
+                case 'month': renderMonthView(); break;
+                case 'trend': renderTrendView(); break;
+            }
             generateAIInsight();
         }
         
@@ -2735,6 +2766,52 @@
 
             studyGoalModal.classList.remove('active');
             showToast("Study goal updated!", "success");
+        });
+        
+        ael('edit-session-form', 'submit', async (e) => {
+            e.preventDefault();
+            const modal = document.getElementById('edit-session-modal');
+            const sessionId = document.getElementById('edit-session-id').value;
+            const newDurationMinutes = parseInt(document.getElementById('edit-session-duration').value, 10);
+            const oldDurationSeconds = parseInt(document.getElementById('edit-session-old-duration').value, 10);
+            const endedAt = new Date(document.getElementById('edit-session-ended-at').value);
+            
+            if (isNaN(newDurationMinutes) || newDurationMinutes < 1) {
+                showToast('Please enter a valid duration.', 'error');
+                return;
+            }
+            
+            const newDurationSeconds = newDurationMinutes * 60;
+            const durationDifference = newDurationSeconds - oldDurationSeconds;
+
+            const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
+            const publicUserRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
+            const sessionRef = doc(userRef, 'sessions', sessionId);
+
+            try {
+                await updateDoc(sessionRef, { durationSeconds: newDurationSeconds });
+                await updateDoc(userRef, { totalStudySeconds: increment(durationDifference) });
+                await updateDoc(publicUserRef, { totalStudySeconds: increment(durationDifference) });
+
+                const sessionDateStr = endedAt.toISOString().split('T')[0];
+                const todayStr = getCurrentDate().toISOString().split('T')[0];
+                if (sessionDateStr === todayStr) {
+                    totalTimeTodayInSeconds += durationDifference;
+                     if (totalTimeTodayInSeconds < 0) totalTimeTodayInSeconds = 0;
+                    await updateDoc(userRef, {
+                        totalTimeToday: {
+                            date: todayStr,
+                            seconds: totalTimeTodayInSeconds
+                        }
+                    });
+                }
+                
+                modal.classList.remove('active');
+                showToast("Session updated successfully!", "success");
+            } catch (error) {
+                 console.error("Error updating session:", error);
+                showToast("Failed to update session.", "error");
+            }
         });
 
 
