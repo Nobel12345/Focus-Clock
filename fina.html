@@ -1000,7 +1000,7 @@
                     </div>
                 </div>
                 <div id="ranking-list" class="ranking-list">
-                          </div>
+                                  </div>
             </div>
             
             <div id="page-planner" class="page flex-col h-full overflow-y-auto no-scrollbar">
@@ -1184,7 +1184,7 @@
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- Application Setup ---
-        const getCurrentDate = () => new Date(); // Use real time
+        const getCurrentDate = () => new Date('2025-07-09T13:36:00+06:00'); // Use specified time
 
         // --- App State ---
         let db, auth;
@@ -2215,19 +2215,19 @@
                     }
 
                      const editBtn = e.target.closest('.log-edit-btn');
-                     if(editBtn) {
-                        const sessionItem = editBtn.closest('.session-log-item').querySelector('.log-options-btn');
-                        const sessionId = sessionItem.dataset.sessionId;
-                        const durationSeconds = parseInt(sessionItem.dataset.durationSeconds, 10);
-                        const endedAt = sessionItem.dataset.endedAt;
+                       if(editBtn) {
+                         const sessionItem = editBtn.closest('.session-log-item').querySelector('.log-options-btn');
+                         const sessionId = sessionItem.dataset.sessionId;
+                         const durationSeconds = parseInt(sessionItem.dataset.durationSeconds, 10);
+                         const endedAt = sessionItem.dataset.endedAt;
 
-                        const modal = document.getElementById('edit-session-modal');
-                        document.getElementById('edit-session-id').value = sessionId;
-                        document.getElementById('edit-session-duration').value = Math.round(durationSeconds / 60);
-                        document.getElementById('edit-session-old-duration').value = durationSeconds;
-                        document.getElementById('edit-session-ended-at').value = endedAt;
-                        modal.classList.add('active');
-                     }
+                         const modal = document.getElementById('edit-session-modal');
+                         document.getElementById('edit-session-id').value = sessionId;
+                         document.getElementById('edit-session-duration').value = Math.round(durationSeconds / 60);
+                         document.getElementById('edit-session-old-duration').value = durationSeconds;
+                         document.getElementById('edit-session-ended-at').value = endedAt;
+                         modal.classList.add('active');
+                       }
                 });
             }
 
