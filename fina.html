@@ -871,6 +871,59 @@
             overflow: hidden;
             height: 0;
         }
+
+        /* New Group Study Button */
+        #group-study-timer-btn {
+            background-color: #1f2937;
+            color: #9ca3af;
+            font-weight: 600;
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: fit-content;
+            margin: 1rem auto 0; /* Center it below the switch */
+            padding: 0.5rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        #group-study-timer-btn:hover {
+            background-color: #3b82f6;
+            color: white;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+        }
+
+        /* Group Detail Header Dropdown */
+        .group-detail-header-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .group-detail-header-dropdown select {
+            background-color: #1f2937;
+            color: white;
+            border: 1px solid #374151;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            padding-right: 30px; /* Space for arrow */
+            cursor: pointer;
+            outline: none;
+        }
+
+        .group-detail-header-dropdown::after {
+            content: '▼';
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9CA3AF;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body class="bg-gray-900 text-white flex flex-col h-screen antialiased">
@@ -951,6 +1004,10 @@
                             <button id="normal-timer-btn" class="timer-switch-btn active">Normal</button>
                             <button id="pomodoro-timer-btn" class="timer-switch-btn">Pomodoro</button>
                         </div>
+                        <!-- New Group Study button -->
+                        <button id="group-study-timer-btn" class="text-sm">
+                            <i class="fas fa-users-line"></i> Group Study
+                        </button>
                         <p id="active-subject-display" class="text-xl font-semibold text-blue-400 h-7 mb-2"></p>
                         <p id="pomodoro-status"></p>
                         <h2 id="session-timer" class="text-7xl md:text-8xl timer-text text-white">00:00:00</h2>
@@ -965,11 +1022,11 @@
             </div>
             
             <div id="page-stats" class="page flex-col h-full overflow-y-auto no-scrollbar">
-                 <div id="pull-to-refresh">
+                   <div id="pull-to-refresh">
                     <i class="fas fa-arrow-down"></i>
                     <span id="pull-to-refresh-text">Pull to refresh</span>
                 </div>
-                 <header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-gray-800 sticky top-0 bg-gray-900">
+                   <header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-gray-800 sticky top-0 bg-gray-900">
                     <button class="back-button text-gray-400 hover:text-white" data-target="timer">
                         <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
@@ -1000,7 +1057,7 @@
                     </div>
                 </div>
                 <div id="ranking-list" class="ranking-list">
-                                    </div>
+                                        </div>
             </div>
             
             <div id="page-planner" class="page flex-col h-full overflow-y-auto no-scrollbar">
@@ -1041,9 +1098,7 @@
             <div id="page-my-groups" class="page flex-col h-full overflow-y-auto no-scrollbar">
                 <header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-gray-800 sticky top-0 bg-gray-900">
                     <button class="back-button text-gray-400 hover:text-white" data-target="timer">
-                        <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                        </svg>
+                        <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
                     </button>
                     <h1 class="text-xl font-bold text-gray-100">My Groups</h1>
                     <button id="notification-btn" class="text-gray-400 hover:text-white">
@@ -1094,8 +1149,20 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                         </svg>
                     </button>
-                    <h1 id="group-detail-name" class="text-xl font-bold text-gray-100">Group Name</h1>
-                    <div class="w-6"></div>
+                    <!-- Centered content -->
+                    <div class="flex-grow flex items-center justify-center gap-4">
+                        <div class="group-detail-header-dropdown">
+                            <select id="group-selector" class="w-full">
+                                <!-- Options will be dynamically loaded here -->
+                            </select>
+                        </div>
+                        <!-- New Ranking Switch -->
+                        <div id="ranking-scope-switch" class="hidden timer-switch-container bg-gray-800 p-1">
+                            <button id="group-ranking-scope-btn" class="timer-switch-btn text-xs px-3 py-1 active">Group</button>
+                            <button id="global-ranking-scope-btn" class="timer-switch-btn text-xs px-3 py-1">Global</button>
+                        </div>
+                    </div>
+                    <div class="w-6"></div> <!-- Spacer -->
                 </header>
                 <div id="group-detail-content" class="flex-grow overflow-y-auto no-scrollbar">
                 </div>
@@ -1184,6 +1251,10 @@
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- Web Worker Implementation ---
+        // Using a Web Worker is the correct approach for running timers in the background.
+        // It runs on a separate thread from the main UI thread, so it's not throttled
+        // when the tab is inactive, ensuring the Pomodoro timer remains accurate.
+        // The user's suggestion of WebSockets is for server communication, not for this purpose.
         const workerCode = `
             let timerInterval = null;
             let settings = {};
@@ -1268,7 +1339,7 @@
                         if (state === 'work' && sessionStartTime > 0) {
                              const elapsedSeconds = Math.floor((Date.now() - sessionStartTime) / 1000);
                              if (elapsedSeconds > 0) {
-                                self.postMessage({ type: 'sessionComplete', duration: elapsedSeconds });
+                                 self.postMessage({ type: 'sessionComplete', duration: elapsedSeconds });
                              }
                         }
                         sessionStartTime = 0;
@@ -1284,7 +1355,8 @@
 
 
         // --- Application Setup ---
-        const getCurrentDate = () => new Date('2025-07-09T13:36:00+06:00'); // Use specified time
+        // FIX: Use the actual current date, not a hardcoded one. This fixes the daily total reset issue.
+        const getCurrentDate = () => new Date();
 
         // --- App State ---
         let db, auth;
@@ -1566,7 +1638,6 @@
                 const sessionDurationSeconds = Math.floor(elapsedMillis / 1000);
 
                 if (sessionDurationSeconds > 0) {
-                    totalTimeTodayInSeconds += sessionDurationSeconds;
                     await saveSession(activeSubject, sessionDurationSeconds);
                 }
             } else {
@@ -1640,6 +1711,13 @@
                     totalTimeTodayInSeconds = data.totalTimeToday.seconds || 0;
                 } else {
                     totalTimeTodayInSeconds = 0;
+                    // Also update the database to reflect the new day's total
+                    await updateDoc(userRef, {
+                        totalTimeToday: {
+                            date: todayStr,
+                            seconds: 0
+                        }
+                    });
                 }
             } else {
                 totalTimeTodayInSeconds = 0;
@@ -1722,6 +1800,15 @@
                 if (doc.exists()) {
                     const data = doc.data();
                     currentUserData = data;
+                     // Check if daily total needs reset on listener trigger
+                    const todayStr = getCurrentDate().toISOString().split('T')[0];
+                    if (!data.totalTimeToday || data.totalTimeToday.date !== todayStr) {
+                        loadDailyTotal(); // This will reset the counter
+                    } else {
+                        totalTimeTodayInSeconds = data.totalTimeToday.seconds;
+                        updateTotalTimeDisplay();
+                    }
+
                     if (data.pomodoroSettings) {
                         pomodoroSettings = {...pomodoroSettings, ...data.pomodoroSettings};
                     }
@@ -1780,13 +1867,20 @@
             });
         }
         
-        async function renderLeaderboard(period = 'weekly') {
-            const container = document.getElementById('ranking-list');
+        async function renderLeaderboard(period = 'weekly', containerId = 'ranking-list') {
+            const container = document.getElementById(containerId);
             if (!container) return;
             
-            document.querySelectorAll('#ranking-period-tabs .ranking-tab-btn').forEach(btn => {
-                btn.classList.toggle('active', btn.dataset.period === period);
-            });
+            const periodTabsSelector = containerId === 'ranking-list' 
+                ? '#ranking-period-tabs .ranking-tab-btn' 
+                : '#group-ranking-period-tabs .ranking-tab-btn';
+            
+            const periodTabs = document.querySelectorAll(periodTabsSelector);
+            if (periodTabs.length > 0) {
+                periodTabs.forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.period === period);
+                });
+            }
 
             container.innerHTML = '<div class="text-center text-gray-500 py-8"><i class="fas fa-spinner fa-spin fa-2x"></i></div>';
 
@@ -1864,32 +1958,24 @@
                         <p class="text-slate-400 mt-1">Welcome back, let's analyze your progress.</p>
                     </div>
                     <nav id="dashboard-nav-bar" class="flex space-x-2 mt-4 sm:mt-0 bg-slate-800 p-2 rounded-xl">
-                        <button class="nav-btn active" data-view="trend">Trend</button>
+                        <button class="nav-btn active" data-view="day">Day</button>
+                        <button class="nav-btn" data-view="trend">Trend</button>
                         <button class="nav-btn" data-view="month">Month</button>
                         <button class="nav-btn" data-view="period">Period</button>
                     </nav>
                 </header>
                 <main>
-                    <div id="period-view" class="view grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <div class="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                            <div class="card flex flex-col justify-center items-center"><h3 class="text-slate-400 text-lg font-medium">Total Time</h3><p id="period-total-time" class="text-4xl font-bold text-cyan-400 mt-2">--:--:--</p></div>
-                            <div class="card flex flex-col justify-center items-center"><h3 class="text-slate-400 text-lg font-medium">Daily Average</h3><p id="period-daily-avg" class="text-4xl font-bold text-cyan-400 mt-2">--:--:--</p></div>
-                            <div class="card flex flex-col justify-center items-center"><h3 class="text-slate-400 text-lg font-medium">Focus Score</h3><p id="period-focus-score" class="text-4xl font-bold text-cyan-400 mt-2">--</p></div>
-                            <div class="card bg-gradient-to-br from-sky-500 to-indigo-600"><h3 class="text-white text-lg font-medium flex items-center"><i data-lucide="brain-circuit" class="mr-2"></i>AI Insight</h3><p id="ai-insight-text" class="text-white mt-2 text-sm">Analyzing your study patterns...</p></div>
-                        </div>
-                        <div class="card lg:col-span-1"><h3 class="font-semibold text-xl mb-4">Subject Ratio</h3><div class="chart-container" style="height: 250px;"><canvas id="subject-ratio-chart"></canvas></div></div>
-                        <div class="card lg:col-span-2"><h3 class="font-semibold text-xl mb-4">Time Per Day (Last 28 Days)</h3><div class="chart-container"><canvas id="time-per-day-chart"></canvas></div></div>
-                        <div class="card lg:col-span-3"><h3 class="font-semibold text-xl mb-4">Cumulative Study Time</h3><div class="chart-container"><canvas id="cumulative-time-chart"></canvas></div></div>
+                    <div id="day-view" class="view active grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Content for Day view will be injected by renderDayView -->
+                    </div>
+                    <div id="trend-view" class="view grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Content for Trend view will be injected by renderTrendView -->
                     </div>
                     <div id="month-view" class="view grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <div class="card lg:col-span-1"><h3 class="font-semibold text-xl mb-4">Study vs. Break</h3><div class="chart-container"><canvas id="study-break-chart"></canvas></div></div>
-                        <div class="card lg:col-span-2"><h3 class="font-semibold text-xl mb-4">Study Time by Subject (This Month)</h3><div class="chart-container"><canvas id="study-time-by-subject-chart"></canvas></div></div>
-                        <div class="card lg:col-span-3"><h3 class="font-semibold text-xl mb-4">Start/End Time Distribution</h3><div class="chart-container"><canvas id="start-end-distribution-chart"></canvas></div></div>
+                        <!-- Content for Month view will be injected by renderMonthView -->
                     </div>
-                    <div id="trend-view" class="view active grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <div class="card lg:col-span-1"><h3 class="font-semibold text-xl mb-4">Study Time Regularity</h3><div class="chart-container"><canvas id="regularity-chart"></canvas></div></div>
-                        <div class="card lg:col-span-1"><h3 class="font-semibold text-xl mb-4">Performance Forecast</h3><div class="chart-container"><canvas id="forecast-chart"></canvas></div></div>
-                        <div class="card lg:col-span-2"><h3 class="font-semibold text-xl mb-4">Session Log</h3><div id="session-log-container" class="max-h-80 overflow-y-auto pr-2"></div></div>
+                    <div id="period-view" class="view grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Content for Period view will be injected by renderPeriodView -->
                     </div>
                 </main>
             `;
@@ -1899,10 +1985,11 @@
         }
 
         function initializeDashboard(focusSessions, insightsContainer) {
-            const today = new Date(); 
+            const today = getCurrentDate(); 
 
             const appData = focusSessions.map(session => {
                 const endTime = session.endedAt;
+                if (!endTime) return null; // Skip sessions without an end time
                 const startTime = new Date(endTime.getTime() - session.durationSeconds * 1000);
                 return {
                     id: session.id,
@@ -1912,7 +1999,7 @@
                     duration: session.durationSeconds / 60,
                     durationSeconds: session.durationSeconds
                 };
-            });
+            }).filter(Boolean); // Filter out null entries
 
             appData.sort((a, b) => a.startTime - b.startTime);
 
@@ -2030,6 +2117,20 @@
             }
 
             function renderPeriodView() {
+                const container = document.getElementById('period-view');
+                container.innerHTML = `
+                    <div class="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div class="card flex flex-col justify-center items-center"><h3 class="text-slate-400 text-lg font-medium">Total Time</h3><p id="period-total-time" class="text-4xl font-bold text-cyan-400 mt-2">--:--:--</p></div>
+                        <div class="card flex flex-col justify-center items-center"><h3 class="text-slate-400 text-lg font-medium">Daily Average</h3><p id="period-daily-avg" class="text-4xl font-bold text-cyan-400 mt-2">--:--:--</p></div>
+                        <div class="card flex flex-col justify-center items-center"><h3 class="text-slate-400 text-lg font-medium">Focus Score</h3><p id="period-focus-score" class="text-4xl font-bold text-cyan-400 mt-2">--</p></div>
+                        <div class="card bg-gradient-to-br from-sky-500 to-indigo-600"><h3 class="text-white text-lg font-medium flex items-center"><i data-lucide="brain-circuit" class="mr-2"></i>AI Insight</h3><p id="ai-insight-text" class="text-white mt-2 text-sm">Analyzing your study patterns...</p></div>
+                    </div>
+                    <div class="card lg:col-span-1"><h3 class="font-semibold text-xl mb-4">Subject Ratio</h3><div class="chart-container" style="height: 250px;"><canvas id="subject-ratio-chart"></canvas></div></div>
+                    <div class="card lg:col-span-2"><h3 class="font-semibold text-xl mb-4">Time Per Day (Last 28 Days)</h3><div class="chart-container"><canvas id="time-per-day-chart"></canvas></div></div>
+                    <div class="card lg:col-span-3"><h3 class="font-semibold text-xl mb-4">Cumulative Study Time</h3><div class="chart-container"><canvas id="cumulative-time-chart"></canvas></div></div>
+                `;
+                lucide.createIcons();
+
                 const last28DaysData = appData.filter(d => {
                     const diffDays = (today - d.startTime) / (1000 * 60 * 60 * 24);
                     return diffDays <= 28;
@@ -2075,9 +2176,17 @@
                     data: { labels: labels28Days.map(d => `${d.getMonth()+1}/${d.getDate()}`), datasets: [{ label: 'Cumulative Minutes', data: cumulativeData, fill: true, backgroundColor: CHART_COLORS.cyan, borderColor: CHART_BORDERS.cyan, tension: 0.4, pointRadius: 0, }] },
                     options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: '#334155' }, ticks: { color: '#94a3b8' } }, x: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } } }, plugins: { legend: { display: false } } }
                 });
+                generateAIInsight(last28DaysData);
             }
 
             function renderMonthView() {
+                const container = document.getElementById('month-view');
+                container.innerHTML = `
+                    <div class="card lg:col-span-1"><h3 class="font-semibold text-xl mb-4">Study vs. Break</h3><div class="chart-container"><canvas id="study-break-chart"></canvas></div></div>
+                    <div class="card lg:col-span-2"><h3 class="font-semibold text-xl mb-4">Study Time by Subject (This Month)</h3><div class="chart-container"><canvas id="study-time-by-subject-chart"></canvas></div></div>
+                    <div class="card lg:col-span-3"><h3 class="font-semibold text-xl mb-4">Start/End Time Distribution</h3><div class="chart-container"><canvas id="start-end-distribution-chart"></canvas></div></div>
+                `;
+
                 const thisMonthData = appData.filter(d => d.startTime.getMonth() === today.getMonth() && d.startTime.getFullYear() === today.getFullYear());
                 
                 const totalStudy = thisMonthData.reduce((sum, s) => sum + s.duration, 0);
@@ -2107,6 +2216,13 @@
             }
 
             function renderTrendView() {
+                const container = document.getElementById('trend-view');
+                container.innerHTML = `
+                    <div class="card lg:col-span-1"><h3 class="font-semibold text-xl mb-4">Study Time Regularity</h3><div class="chart-container"><canvas id="regularity-chart"></canvas></div></div>
+                    <div class="card lg:col-span-1"><h3 class="font-semibold text-xl mb-4">Performance Forecast</h3><div class="chart-container"><canvas id="forecast-chart"></canvas></div></div>
+                    <div class="card lg:col-span-2"><h3 class="font-semibold text-xl mb-4">Recent Session Log</h3><div id="session-log-container-trend" class="max-h-80 overflow-y-auto pr-2"></div></div>
+                `;
+
                 const regularityData = appData.slice(-50).map(s => ({ x: s.startTime, y: s.startTime.getHours() + s.startTime.getMinutes() / 60, r: s.duration / 10 }));
                 destroyChart('regularity-chart');
                 charts['regularity-chart'] = new Chart(document.getElementById('regularity-chart'), {
@@ -2130,10 +2246,67 @@
                     data: { labels: forecastLabels, datasets: [{ label: 'Projected Study Minutes', data: forecastData, borderColor: CHART_BORDERS.orange, backgroundColor: CHART_COLORS.orange, borderDash: [5, 5], tension: 0.2, }] },
                     options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: '#334155' }, ticks: { color: '#94a3b8' } }, x: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } } }, plugins: { legend: { display: false } } }
                 });
+                
+                renderSessionLog(appData.slice().reverse().slice(0, 20), 'session-log-container-trend');
+            }
+            
+            function renderDayView() {
+                const container = document.getElementById('day-view');
+                container.innerHTML = `
+                    <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-6">
+                         <div class="card flex flex-col justify-center items-center"><h3 class="text-slate-400 text-lg font-medium">Total Time Today</h3><p id="day-total-time" class="text-4xl font-bold text-cyan-400 mt-2">--:--:--</p></div>
+                         <div class="card flex flex-col justify-center items-center"><h3 class="text-slate-400 text-lg font-medium">Sessions Today</h3><p id="day-session-count" class="text-4xl font-bold text-cyan-400 mt-2">--</p></div>
+                         <div class="card flex flex-col justify-center items-center"><h3 class="text-slate-400 text-lg font-medium">Avg. Session</h3><p id="day-avg-session" class="text-4xl font-bold text-cyan-400 mt-2">--m</p></div>
+                    </div>
+                    <div class="card lg:col-span-1"><h3 class="font-semibold text-xl mb-4">Today's Subject Ratio</h3><div class="chart-container" style="height:250px;"><canvas id="day-subject-ratio-chart"></canvas></div></div>
+                    <div class="card lg:col-span-1"><h3 class="font-semibold text-xl mb-4">Time Per Hour Today</h3><div class="chart-container"><canvas id="day-time-per-hour-chart"></canvas></div></div>
+                    <div class="card lg:col-span-2"><h3 class="font-semibold text-xl mb-4">Today's Session Log</h3><div id="session-log-container-day" class="max-h-80 overflow-y-auto pr-2"></div></div>
+                `;
 
-                const logContainer = document.getElementById('session-log-container');
+                const todayStr = today.toISOString().split('T')[0];
+                const todayData = appData.filter(d => d.startTime.toISOString().split('T')[0] === todayStr);
+
+                const totalMinutesToday = todayData.reduce((sum, s) => sum + s.duration, 0);
+                const sessionCountToday = todayData.length;
+                const avgSessionMinutes = sessionCountToday > 0 ? totalMinutesToday / sessionCountToday : 0;
+
+                document.getElementById('day-total-time').textContent = formatTimeDashboard(totalMinutesToday);
+                document.getElementById('day-session-count').textContent = sessionCountToday;
+                document.getElementById('day-avg-session').textContent = `${avgSessionMinutes.toFixed(0)}m`;
+
+                const subjectDataToday = todayData.reduce((acc, session) => {
+                    acc[session.subject] = (acc[session.subject] || 0) + session.duration;
+                    return acc;
+                }, {});
+                destroyChart('day-subject-ratio-chart');
+                charts['day-subject-ratio-chart'] = new Chart(document.getElementById('day-subject-ratio-chart'), {
+                    type: 'pie', plugins: [ChartDataLabels],
+                    data: { labels: Object.keys(subjectDataToday), datasets: [{ data: Object.values(subjectDataToday), backgroundColor: Object.values(CHART_COLORS), borderColor: '#1e293b', borderWidth: 4, }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: '#cbd5e1' } }, datalabels: { formatter: (value, ctx) => { const sum = ctx.chart.data.datasets[0].data.reduce((a, b) => a + b, 0); const percentage = (value * 100 / sum).toFixed(0) + "%"; return percentage; }, color: '#ffffff', font: { weight: 'bold' } } } }
+                });
+
+                const timePerHour = Array(24).fill(0);
+                todayData.forEach(s => {
+                    const hour = s.startTime.getHours();
+                    timePerHour[hour] += s.duration;
+                });
+                const hourLabels = Array.from({length: 24}, (_, i) => `${i.toString().padStart(2, '0')}:00`);
+                destroyChart('day-time-per-hour-chart');
+                charts['day-time-per-hour-chart'] = new Chart(document.getElementById('day-time-per-hour-chart'), {
+                    type: 'bar',
+                    data: { labels: hourLabels, datasets: [{ label: 'Minutes Studied', data: timePerHour, backgroundColor: CHART_COLORS.sky, borderRadius: 5, }] },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: '#334155' }, ticks: { color: '#94a3b8' } }, x: { grid: { color: '#334155' }, ticks: { color: '#94a3b8', maxRotation: 90, minRotation: 45 } } }, plugins: { legend: { display: false } } }
+                });
+
+                renderSessionLog(todayData.slice().reverse(), 'session-log-container-day');
+            }
+
+            function renderSessionLog(sessions, containerId) {
+                const logContainer = document.getElementById(containerId);
+                if (!logContainer) return;
+
                 logContainer.innerHTML = '';
-                appData.slice().reverse().slice(0, 20).forEach(s => {
+                sessions.forEach(s => {
                     const item = document.createElement('div');
                     item.className = 'session-log-item p-3 mb-2 bg-slate-700/50 rounded-lg flex justify-between items-center';
                     item.innerHTML = `
@@ -2171,60 +2344,60 @@
                         if (view.id === `${viewName}-view`) { view.classList.add('active'); }
                     });
                     switch (viewName) {
-                        case 'period': renderPeriodView(); break;
-                        case 'month': renderMonthView(); break;
+                        case 'day': renderDayView(); break;
                         case 'trend': renderTrendView(); break;
+                        case 'month': renderMonthView(); break;
+                        case 'period': renderPeriodView(); break;
                     }
-                    generateAIInsight(appData);
                 }
             });
 
-            const logContainer = document.getElementById('session-log-container');
-            if (logContainer) {
-                logContainer.addEventListener('click', e => {
-                    const optionsBtn = e.target.closest('.log-options-btn');
-                    if (optionsBtn) {
-                        const menu = optionsBtn.nextElementSibling;
-                        menu.classList.toggle('active');
-                        return;
-                    }
+            document.getElementById('insights-container').addEventListener('click', e => {
+                const optionsBtn = e.target.closest('.log-options-btn');
+                if (optionsBtn) {
+                    const menu = optionsBtn.nextElementSibling;
+                    document.querySelectorAll('.log-options-menu').forEach(m => {
+                        if (m !== menu) m.classList.remove('active');
+                    });
+                    menu.classList.toggle('active');
+                    return;
+                }
 
-                    const deleteBtn = e.target.closest('.log-delete-btn');
-                    if(deleteBtn) {
-                        const sessionItem = deleteBtn.closest('.session-log-item').querySelector('.log-options-btn');
+                const deleteBtn = e.target.closest('.log-delete-btn');
+                if(deleteBtn) {
+                    const sessionItem = deleteBtn.closest('.session-log-item').querySelector('.log-options-btn');
+                    const sessionId = sessionItem.dataset.sessionId;
+                    const duration = parseInt(sessionItem.dataset.durationSeconds, 10);
+                    const endedAt = new Date(sessionItem.dataset.endedAt);
+                    
+                    showConfirmationModal('Delete Session?', 'Are you sure you want to permanently delete this study session?', () => {
+                        deleteSession(sessionId, duration, endedAt);
+                    });
+                }
+
+                 const editBtn = e.target.closest('.log-edit-btn');
+                    if(editBtn) {
+                        const sessionItem = editBtn.closest('.session-log-item').querySelector('.log-options-btn');
                         const sessionId = sessionItem.dataset.sessionId;
-                        const duration = parseInt(sessionItem.dataset.durationSeconds, 10);
-                        const endedAt = new Date(sessionItem.dataset.endedAt);
-                        
-                        showConfirmationModal('Delete Session?', 'Are you sure you want to permanently delete this study session?', () => {
-                            deleteSession(sessionId, duration, endedAt);
-                        });
+                        const durationSeconds = parseInt(sessionItem.dataset.durationSeconds, 10);
+                        const endedAt = sessionItem.dataset.endedAt;
+
+                        const modal = document.getElementById('edit-session-modal');
+                        document.getElementById('edit-session-id').value = sessionId;
+                        document.getElementById('edit-session-duration').value = Math.round(durationSeconds / 60);
+                        document.getElementById('edit-session-old-duration').value = durationSeconds;
+                        document.getElementById('edit-session-ended-at').value = endedAt;
+                        modal.classList.add('active');
                     }
+            });
 
-                      const editBtn = e.target.closest('.log-edit-btn');
-                        if(editBtn) {
-                          const sessionItem = editBtn.closest('.session-log-item').querySelector('.log-options-btn');
-                          const sessionId = sessionItem.dataset.sessionId;
-                          const durationSeconds = parseInt(sessionItem.dataset.durationSeconds, 10);
-                          const endedAt = sessionItem.dataset.endedAt;
-
-                          const modal = document.getElementById('edit-session-modal');
-                          document.getElementById('edit-session-id').value = sessionId;
-                          document.getElementById('edit-session-duration').value = Math.round(durationSeconds / 60);
-                          document.getElementById('edit-session-old-duration').value = durationSeconds;
-                          document.getElementById('edit-session-ended-at').value = endedAt;
-                          modal.classList.add('active');
-                        }
-                });
-            }
-
+            // Initial render
             const initialActiveView = insightsContainer.querySelector('.nav-btn.active').dataset.view;
-            switch(initialActiveView) {
-                case 'period': renderPeriodView(); break;
-                case 'month': renderMonthView(); break;
-                case 'trend': renderTrendView(); break;
+            if (initialActiveView === 'day') {
+                renderDayView();
+            } else {
+                renderTrendView();
             }
-            generateAIInsight(appData);
         }
         
         async function deleteSession(sessionId, durationSeconds, endedAt) {
@@ -2427,6 +2600,32 @@
             currentGroupId = groupId;
             const groupDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'groups', groupId);
             
+            // Populate the group selector dropdown
+            const groupSelector = document.getElementById('group-selector');
+            if (groupSelector) {
+                groupSelector.innerHTML = ''; // Clear previous options
+                const allGroupsSnapshot = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'groups'));
+                const allGroups = {};
+                allGroupsSnapshot.forEach(doc => allGroups[doc.id] = { id: doc.id, ...doc.data() });
+
+                (currentUserData.joinedGroups || []).forEach(joinedGroupId => {
+                    const group = allGroups[joinedGroupId];
+                    if (group) {
+                        const option = document.createElement('option');
+                        option.value = group.id;
+                        option.textContent = group.name;
+                        if (group.id === groupId) {
+                            option.selected = true;
+                        }
+                        groupSelector.appendChild(option);
+                    }
+                });
+                groupSelector.value = groupId; // Ensure the current group is selected
+                groupSelector.onchange = (e) => {
+                    renderGroupDetail(e.target.value);
+                };
+            }
+
             const groupUnsub = onSnapshot(groupDocRef, async (groupDoc) => {
                 const container = document.getElementById('group-detail-content');
                 if (!container || !groupDoc.exists()) {
@@ -2434,7 +2633,6 @@
                     return;
                 }
                 const groupData = groupDoc.data();
-                document.getElementById('group-detail-name').textContent = groupData.name;
                 
                 setupGroupMemberListeners(groupData.members || []);
 
@@ -2447,6 +2645,8 @@
         function setupGroupMemberListeners(memberIds) {
             groupDetailUnsubscribers.forEach(unsub => unsub());
             groupDetailUnsubscribers = [];
+            memberTimerIntervals.forEach(clearInterval);
+            memberTimerIntervals = [];
             groupRealtimeData = { members: {}, sessions: {} };
 
             memberIds.forEach(memberId => {
@@ -2477,6 +2677,16 @@
         function renderGroupSubPage(subpage) {
             const container = document.getElementById('group-detail-content');
             if (!container) return;
+            
+            // Show/hide the ranking scope switch
+            const rankingScopeSwitch = document.getElementById('ranking-scope-switch');
+            if (subpage === 'rankings') {
+                rankingScopeSwitch.classList.remove('hidden');
+                rankingScopeSwitch.classList.add('flex');
+            } else {
+                rankingScopeSwitch.classList.add('hidden');
+                rankingScopeSwitch.classList.remove('flex');
+            }
 
             document.querySelectorAll('.group-nav-item').forEach(i => i.classList.remove('active'));
             document.querySelector(`.group-nav-item[data-subpage="${subpage}"]`).classList.add('active');
@@ -2488,9 +2698,8 @@
                 const inviteLink = `${window.location.origin}${window.location.pathname}?groupId=${currentGroupId}`;
                 container.innerHTML = `<div class="p-8 text-center"><img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(inviteLink)}" class="mx-auto mb-4 rounded-lg"><p class="text-blue-400 break-all">${inviteLink}</p><div class="flex gap-4 mt-4"><button id="copy-link-btn" class="w-full py-2 bg-gray-700 rounded-lg">Copy Link</button><button class="w-full py-2 bg-orange-500 rounded-lg">Share Link</button></div><p class="text-gray-500 mt-4 text-sm">Share this link to invite a friend or organization to study with you.</p></div>`;
                 document.getElementById('copy-link-btn').addEventListener('click', () => {
-                    navigator.clipboard.writeText(inviteLink).then(() => {
-                        showToast('Link copied to clipboard!', 'success');
-                    });
+                    document.execCommand('copy');
+                    showToast('Link copied to clipboard!', 'success');
                 });
             } else if (subpage === 'chat') {
                 container.innerHTML = `<div class="p-4 flex flex-col h-full"><div id="chat-messages" class="flex-grow overflow-y-auto"></div><form id="chat-form" class="flex gap-2 mt-4"><input id="chat-input" class="flex-grow bg-gray-700 rounded-lg p-3" placeholder="Type a message..."><button type="submit" class="bg-blue-600 px-4 rounded-lg"><i class="fas fa-paper-plane"></i></button></form></div>`;
@@ -2504,14 +2713,26 @@
                     </div>
                 </div>
                 <div id="group-ranking-list" class="ranking-list"></div>`;
-                renderGroupLeaderboard();
+                
+                // Set the switch to default to 'Group'
+                document.getElementById('global-ranking-scope-btn').classList.remove('active');
+                document.getElementById('group-ranking-scope-btn').classList.add('active');
+
+                renderGroupLeaderboard(); // Initial render
+                
                 document.getElementById('group-ranking-period-tabs').addEventListener('click', (e) => {
                     if (e.target.classList.contains('ranking-tab-btn')) {
-                        renderGroupLeaderboard(e.target.dataset.period);
+                        const period = e.target.dataset.period;
+                        // Check which scope is active and re-render
+                        if (document.getElementById('group-ranking-scope-btn').classList.contains('active')) {
+                            renderGroupLeaderboard(period);
+                        } else {
+                            renderLeaderboard(period, 'group-ranking-list');
+                        }
                     }
                 });
             } else if (subpage === 'attendance') {
-                container.innerHTML = `<div id="attendance-container" class="attendance-container">
+                 container.innerHTML = `<div id="attendance-container" class="attendance-container">
                     <div class="attendance-header">
                         <button id="prev-month-btn" class="attendance-nav-btn"><i class="fas fa-chevron-left"></i></button>
                         <h2 id="current-month-display" class="attendance-title">Loading...</h2>
@@ -3336,7 +3557,7 @@
                 const todayStr = getCurrentDate().toISOString().split('T')[0];
                 if (sessionDateStr === todayStr) {
                     totalTimeTodayInSeconds += durationDifference;
-                     if (totalTimeTodayInSeconds < 0) totalTimeTodayInSeconds = 0;
+                    if (totalTimeTodayInSeconds < 0) totalTimeTodayInSeconds = 0;
                     await updateDoc(userRef, {
                         totalTimeToday: {
                             date: todayStr,
@@ -3350,6 +3571,25 @@
             } catch (error) {
                  console.error("Error updating session:", error);
                 showToast("Failed to update session.", "error");
+            }
+        });
+
+        // Ranking Scope Switch Listeners
+        ael('group-ranking-scope-btn', 'click', () => {
+            if (!document.getElementById('group-ranking-scope-btn').classList.contains('active')) {
+                document.getElementById('global-ranking-scope-btn').classList.remove('active');
+                document.getElementById('group-ranking-scope-btn').classList.add('active');
+                const activePeriod = document.querySelector('#group-ranking-period-tabs .ranking-tab-btn.active')?.dataset.period || 'weekly';
+                renderGroupLeaderboard(activePeriod);
+            }
+        });
+
+        ael('global-ranking-scope-btn', 'click', () => {
+            if (!document.getElementById('global-ranking-scope-btn').classList.contains('active')) {
+                document.getElementById('group-ranking-scope-btn').classList.remove('active');
+                document.getElementById('global-ranking-scope-btn').classList.add('active');
+                const activePeriod = document.querySelector('#group-ranking-period-tabs .ranking-tab-btn.active')?.dataset.period || 'weekly';
+                renderLeaderboard(activePeriod, 'group-ranking-list');
             }
         });
 
@@ -3399,8 +3639,29 @@
                     }
                 });
             }
+
+            // New: Event listener for the group study button on the timer page
+            ael('group-study-timer-btn', 'click', async () => {
+                if (currentUserData.joinedGroups && currentUserData.joinedGroups.length > 0) {
+                    // Try to go to the last viewed group, or the first one if not set
+                    if (currentGroupId && currentUserData.joinedGroups.includes(currentGroupId)) {
+                        showPage('page-group-detail');
+                        renderGroupDetail(currentGroupId);
+                    } else {
+                        // If no currentGroupId or it's invalid, default to the first joined group
+                        const firstJoinedGroup = currentUserData.joinedGroups[0];
+                        currentGroupId = firstJoinedGroup; // Set currentGroupId
+                        showPage('page-group-detail');
+                        renderGroupDetail(firstJoinedGroup);
+                    }
+                } else {
+                    // If no joined groups, go to the "My Groups" page (which will prompt to find/create)
+                    showPage('page-my-groups'); 
+                }
+            });
         };
 
     </script>
 </body>
 </html>
+
