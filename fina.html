@@ -1248,14 +1248,11 @@
             orderBy,
             limit,
             increment,
-            where
+            where,
+            runTransaction
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- Web Worker Implementation ---
-        // Using a Web Worker is the correct approach for running timers in the background.
-        // It runs on a separate thread from the main UI thread, so it's not throttled
-        // when the tab is inactive, ensuring the Pomodoro timer remains accurate.
-        // The user's suggestion of WebSockets is for server communication, not for this purpose.
         const workerCode = `
             let timerInterval = null;
             let settings = {};
@@ -1295,8 +1292,6 @@
             function tick() {
                 timeLeft--;
                 self.postMessage({ type: 'tick', timeLeft: timeLeft });
-                // Log worker ticks to help debug mobile throttling
-                console.log('Worker tick:', timeLeft, 'at', new Date().toLocaleTimeString());
 
                 if (timeLeft <= 0) {
                     handleTransition();
@@ -1305,14 +1300,13 @@
 
             function handleTransition() {
                 clearInterval(timerInterval);
-                timerInterval = null; // Ensure interval is cleared
+                timerInterval = null;
                 let previousState = state;
 
                 if (state === 'work') {
-                    const currentEndTime = Date.now(); // Capture end time
+                    const currentEndTime = Date.now();
                     const elapsedSeconds = Math.floor((currentEndTime - sessionStartTime) / 1000);
-                    self.postMessage({ type: 'sessionComplete', duration: elapsedSeconds, sessionStart: sessionStartTime, sessionEnd: currentEndTime });
-                    console.log('Worker: Work session completed, duration:', elapsedSeconds, 'from', sessionStartTime, 'to', currentEndTime); // Log session completion
+                    self.postMessage({ type: 'sessionComplete', duration: elapsedSeconds });
                     cycle++;
                     state = (cycle % settings.long_break_interval === 0) ? 'long_break' : 'short_break';
                 } else {
@@ -1321,7 +1315,6 @@
                 
                 const shouldAutoStart = (state === 'work' && settings.autoStartFocus) || (state !== 'work' && settings.autoStartBreak);
                 self.postMessage({ type: 'transition', newState: state, oldState: previousState, autoStart: shouldAutoStart });
-                console.log('Worker: Transition to', state, 'autoStart:', shouldAutoStart); // Log transition
                 
                 if (shouldAutoStart) {
                     startNextState();
@@ -1336,31 +1329,24 @@
                         state = 'work';
                         cycle = 0;
                         startNextState();
-                        console.log('Worker: Start command received, settings:', settings);
                         break;
                     case 'startNext':
                         startNextState();
-                        console.log('Worker: StartNext command received');
                         break;
                     case 'stop':
                         if (timerInterval) clearInterval(timerInterval);
                         timerInterval = null;
                         if (state === 'work' && sessionStartTime > 0) {
-                             const currentEndTime = Date.now(); // Capture end time on stop
+                             const currentEndTime = Date.now();
                              const elapsedSeconds = Math.floor((currentEndTime - sessionStartTime) / 1000);
                              if (elapsedSeconds > 0) {
-                                 self.postMessage({ type: 'sessionComplete', duration: elapsedSeconds, sessionStart: sessionStartTime, sessionEnd: currentEndTime });
-                                 console.log('Worker: Stop command received, work session complete, duration:', elapsedSeconds, 'from', sessionStartTime, 'to', currentEndTime);
-                             } else {
-                                console.warn('Worker: Stop command received, but elapsedSeconds is 0 or negative.');
+                                 self.postMessage({ type: 'sessionComplete', duration: elapsedSeconds });
                              }
                         }
                         sessionStartTime = 0;
-                        console.log('Worker: Stop command received');
                         break;
                     case 'updateSettings':
                         settings = newSettings;
-                        console.log('Worker: Settings updated:', settings);
                         break;
                 }
             };
@@ -1370,7 +1356,6 @@
 
 
         // --- Application Setup ---
-        // FIX: Use the actual current date, not a hardcoded one. This fixes the daily total reset issue.
         const getCurrentDate = () => new Date();
 
         // --- App State ---
@@ -1379,7 +1364,7 @@
         let currentUserData = {};
         let dashboardCharts = {};
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        let userSessions = []; // This will be populated from Firestore
+        let userSessions = []; 
         let isAudioUnlocked = false;
 
         // Timer State
@@ -1439,7 +1424,6 @@
                         console.warn(`Could not play sound: ${url}. Error: ${error.message}`);
                     });
                 }
-                console.log(`Playing sound: ${url} at volume ${volume}`); // Log sound playback
             } catch (e) {
                 console.warn("Error creating audio element:", e);
             }
@@ -1447,11 +1431,9 @@
 
         function unlockAudio() {
             if (isAudioUnlocked) return;
-            // Play a silent audio to unlock Web Audio API on iOS/some browsers
             const silentAudio = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=');
             silentAudio.play().then(() => {
                 isAudioUnlocked = true;
-                console.log("Audio unlocked.");
             }).catch(e => console.warn("Audio unlock failed.", e));
         }
 
@@ -1515,7 +1497,6 @@
                 const app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
-                console.log("Firebase initialized successfully.");
 
                 onAuthStateChanged(auth, async (user) => {
                     if (user) {
@@ -1634,11 +1615,9 @@
                     const elapsedSeconds = Math.floor((Date.now() - sessionStartTime) / 1000);
                     sessionTimerDisplay.textContent = formatTime(elapsedSeconds);
                 }, 1000);
-                console.log('Normal timer started.');
             } else { // Pomodoro Mode
                 playSound(pomodoroSounds.start, pomodoroSounds.volume);
                 pomodoroWorker.postMessage({ command: 'start', newSettings: pomodoroSettings });
-                console.log('Pomodoro timer started. Initial settings sent to worker:', pomodoroSettings);
             }
 
             document.getElementById('start-studying-btn').classList.add('hidden');
@@ -1647,7 +1626,6 @@
 
             const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
             await updateDoc(userRef, { studying: { subject: activeSubject, startTime: serverTimestamp() } });
-            console.log('User status set to studying in Firestore.');
         }
         
         async function stopTimer() {
@@ -1659,15 +1637,13 @@
                 if (sessionDurationSeconds > 0) {
                     await saveSession(activeSubject, sessionDurationSeconds);
                 }
-                console.log('Normal timer stopped. Duration:', sessionDurationSeconds);
             } else {
                 pomodoroWorker.postMessage({ command: 'stop' });
-                console.log('Pomodoro timer stop command sent to worker.');
             }
             
             activeSubjectDisplay.textContent = '';
             sessionTimerDisplay.textContent = formatTime(0);
-            updateTotalTimeDisplay(); // Update display immediately
+            updateTotalTimeDisplay();
             timerInterval = null;
             sessionStartTime = 0;
             pomodoroStatusDisplay.textContent = '';
@@ -1679,57 +1655,67 @@
             
             const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
             await updateDoc(userRef, { studying: null });
-            console.log('User status set to idle in Firestore.');
         }
         
         function updateTotalTimeDisplay() {
             totalTimeDisplay.textContent = `Total Today: ${formatTime(totalTimeTodayInSeconds)}`;
-            console.log('Updated total time display:', totalTimeTodayInSeconds);
         }
 
         async function saveSession(subject, durationSeconds) {
-            console.log(`saveSession called: subject=${subject}, durationSeconds=${durationSeconds}`);
             if (!currentUser || durationSeconds <= 0) {
-                console.warn('Attempted to save session with invalid data:', { subject, durationSeconds, currentUser });
                 return;
             }
             try {
-                const oldTotalTimeToday = totalTimeTodayInSeconds; // Capture before increment
-                totalTimeTodayInSeconds += durationSeconds;
-                console.log(`totalTimeTodayInSeconds updated: ${oldTotalTimeToday} -> ${totalTimeTodayInSeconds}`);
-                updateTotalTimeDisplay(); // Update UI immediately
-
                 const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
                 const publicUserRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
                 const sessionsRef = collection(userRef, 'sessions');
-
-                await addDoc(sessionsRef, {
-                    subject: subject,
-                    durationSeconds: durationSeconds,
-                    endedAt: serverTimestamp()
-                });
-                console.log(`Session added to user's sessions: ${durationSeconds}s for ${subject}`);
-
-                // Update total study seconds for lifetime and daily
                 const todayStr = getCurrentDate().toISOString().split('T')[0];
-                await updateDoc(userRef, {
-                    totalStudySeconds: increment(durationSeconds),
-                    totalTimeToday: {
-                        date: todayStr,
-                        seconds: totalTimeTodayInSeconds // Use the accumulated value
+
+                // Use a transaction to ensure atomic updates
+                await runTransaction(db, async (transaction) => {
+                    const userDoc = await transaction.get(userRef);
+                    if (!userDoc.exists()) {
+                        throw "User document does not exist!";
                     }
-                }
-                );
-                console.log(`Firestore user document update initiated: totalStudySeconds incremented, totalTimeToday set to {date: ${todayStr}, seconds: ${totalTimeTodayInSeconds}}`);
 
-                await updateDoc(publicUserRef, {
-                    totalStudySeconds: increment(durationSeconds)
+                    // Get current daily total, resetting if it's a new day
+                    const data = userDoc.data();
+                    let currentDailySeconds = 0;
+                    if (data.totalTimeToday && data.totalTimeToday.date === todayStr) {
+                        currentDailySeconds = data.totalTimeToday.seconds || 0;
+                    }
+                    
+                    const newDailyTotal = currentDailySeconds + durationSeconds;
+
+                    // Add the new session document
+                    transaction.set(doc(sessionsRef), {
+                        subject: subject,
+                        durationSeconds: durationSeconds,
+                        endedAt: serverTimestamp()
+                    });
+
+                    // Update the user document with new totals
+                    transaction.update(userRef, {
+                        totalStudySeconds: increment(durationSeconds),
+                        totalTimeToday: {
+                            date: todayStr,
+                            seconds: newDailyTotal
+                        }
+                    });
+
+                    // Update the public user document
+                    transaction.update(publicUserRef, {
+                        totalStudySeconds: increment(durationSeconds)
+                    });
+                     // Update local state after successful transaction
+                    totalTimeTodayInSeconds = newDailyTotal;
                 });
-                console.log(`Firestore public user document update initiated: totalStudySeconds incremented`);
-
+                
+                updateTotalTimeDisplay();
                 showToast(`Session of ${formatTime(durationSeconds, false)} saved!`, "success");
+
             } catch (error) {
-                console.error("Error saving session: ", error);
+                console.error("Error saving session in transaction: ", error);
                 showToast("Error saving session.", "error");
             }
         }
@@ -1744,22 +1730,18 @@
                 const todayStr = getCurrentDate().toISOString().split('T')[0];
                 if (data.totalTimeToday && data.totalTimeToday.date === todayStr) {
                     totalTimeTodayInSeconds = data.totalTimeToday.seconds || 0;
-                    console.log('Loaded daily total for today from Firestore:', totalTimeTodayInSeconds);
                 } else {
                     totalTimeTodayInSeconds = 0;
-                    console.log('Daily total reset for new day or no data found. Setting to 0 locally.');
-                    // Also update the database to reflect the new day's total
+                    // Update Firestore to reset the daily total for the new day
                     await updateDoc(userRef, {
                         totalTimeToday: {
                             date: todayStr,
                             seconds: 0
                         }
                     });
-                     console.log('Firestore totalTimeToday reset for new day.');
                 }
             } else {
                 totalTimeTodayInSeconds = 0;
-                console.log('User doc not found, daily total initialized to 0 locally.');
             }
             if(totalTimeDisplay) {
                 updateTotalTimeDisplay();
@@ -1771,7 +1753,6 @@
             let userDoc = await getDoc(userDocRef);
 
             if (!userDoc.exists()) {
-                console.log('User document not found, creating new one.');
                 const initialData = {
                     email: user.email,
                     username: user.displayName,
@@ -1794,7 +1775,7 @@
                         break: 'https://assets.mixkit.co/sfx/preview/mixkit-long-pop-2358.mp3',
                         volume: 1.0
                     },
-                    totalTimeToday: { // Initialize totalTimeToday for new users
+                    totalTimeToday: { 
                         date: getCurrentDate().toISOString().split('T')[0],
                         seconds: 0
                     }
@@ -1829,7 +1810,6 @@
             } else {
                 studyGoalValueEl.textContent = 'Not set';
             }
-            console.log('Profile UI updated for user:', username);
         }
 
         function setupRealtimeListeners() {
@@ -1845,25 +1825,20 @@
                 if (doc.exists()) {
                     const data = doc.data();
                     currentUserData = data;
-                     // Check if daily total needs reset on listener trigger
                     const todayStr = getCurrentDate().toISOString().split('T')[0];
                     if (!data.totalTimeToday || data.totalTimeToday.date !== todayStr) {
-                        console.log('User doc snapshot: Daily total date mismatch, reloading daily total.');
-                        loadDailyTotal(); // This will reset the counter and update Firestore
+                        loadDailyTotal(); 
                     } else {
                         totalTimeTodayInSeconds = data.totalTimeToday.seconds;
                         updateTotalTimeDisplay();
-                        console.log('User doc snapshot: Daily total updated from Firestore:', totalTimeTodayInSeconds);
                     }
 
                     if (data.pomodoroSettings) {
                         pomodoroSettings = {...pomodoroSettings, ...data.pomodoroSettings};
                         pomodoroWorker.postMessage({ command: 'updateSettings', newSettings: pomodoroSettings });
-                        console.log('Pomodoro settings updated from Firestore:', pomodoroSettings);
                     }
                     if (data.pomodoroSounds) {
                         pomodoroSounds = {...pomodoroSounds, ...data.pomodoroSounds};
-                        console.log('Pomodoro sounds updated from Firestore:', pomodoroSounds);
                     }
                     updateProfileUI(data);
                     renderJoinedGroups();
@@ -1899,7 +1874,6 @@
                         endedAt: data.endedAt?.toDate()
                     };
                 });
-                console.log('User sessions updated from Firestore.');
                 if (document.getElementById('page-stats').classList.contains('active')) {
                     renderStatsPage(userSessions);
                 }
@@ -1916,7 +1890,6 @@
                     renderPlanner(tasks);
                 }
             });
-            console.log('Realtime listeners set up.');
         }
         
         async function renderLeaderboard(period = 'weekly', containerId = 'ranking-list') {
@@ -1997,7 +1970,6 @@
                     </div>
                 `;
             }).join('') || `<div class="empty-group"><i class="fas fa-trophy"></i><h3>Leaderboard is Empty</h3><p>Start studying to see your rank!</p></div>`;
-            console.log('Leaderboard rendered for period:', period);
         }
 
         function renderStatsPage(focusSessions) {
@@ -2035,7 +2007,6 @@
             
             initializeDashboard(focusSessions, insightsContainer);
             lucide.createIcons();
-            console.log('Stats page rendered.');
         }
 
         function initializeDashboard(focusSessions, insightsContainer) {
@@ -2463,11 +2434,9 @@
 
             try {
                 await deleteDoc(sessionRef);
-                console.log(`Session ${sessionId} deleted from user's sessions.`);
 
                 await updateDoc(userRef, { totalStudySeconds: increment(-durationSeconds) });
                 await updateDoc(publicUserRef, { totalStudySeconds: increment(-durationSeconds) });
-                console.log(`Total study seconds decremented by ${durationSeconds}.`);
 
                 const sessionDateStr = endedAt.toISOString().split('T')[0];
                 const todayStr = getCurrentDate().toISOString().split('T')[0];
@@ -2481,7 +2450,6 @@
                             seconds: totalTimeTodayInSeconds
                         }
                     });
-                    console.log(`Daily total updated after deletion: ${totalTimeTodayInSeconds}`);
                      totalTimeDisplay.textContent = `Total Today: ${formatTime(totalTimeTodayInSeconds)}`;
                 }
 
@@ -2524,7 +2492,6 @@
             });
             html += '</div>';
             container.innerHTML = html;
-            console.log('Joined groups rendered.');
         }
 
         async function renderAvailableGroups() {
@@ -2584,7 +2551,6 @@
                     }
                 });
             });
-            console.log('Available groups rendered.');
         }
 
         async function joinGroup(groupId) {
@@ -2594,7 +2560,6 @@
             await setDoc(userRef, { joinedGroups: arrayUnion(groupId) }, { merge: true });
             await updateDoc(groupRef, { members: arrayUnion(currentUser.uid) });
             showToast("Group joined successfully!", "success");
-            console.log(`User ${currentUser.uid} joined group ${groupId}`);
         }
 
         function renderSubjectSelectionList(subjects) {
@@ -2617,7 +2582,6 @@
                     </div>
                 </div>
             `).join('');
-            console.log('Subject selection list rendered.');
         }
         
         function renderPlanner(tasks) {
@@ -2655,7 +2619,6 @@
 
                 return `<div class="planner-day">${dayHeader}${tasksHtml}</div>`;
             }).join('');
-            console.log('Planner tasks rendered.');
         }
         
         async function renderGroupDetail(groupId) {
@@ -2692,7 +2655,6 @@
                 const container = document.getElementById('group-detail-content');
                 if (!container || !groupDoc.exists()) {
                     showPage('page-my-groups');
-                    console.warn('Group detail container not found or group doc does not exist.');
                     return;
                 }
                 const groupData = groupDoc.data();
@@ -2701,7 +2663,6 @@
 
                 const activeSubPage = document.querySelector('#group-detail-nav .active')?.dataset.subpage || 'home';
                 renderGroupSubPage(activeSubPage);
-                console.log('Group detail rendered for group:', groupId);
             });
             groupDetailUnsubscribers.push(groupUnsub);
         }
@@ -2712,7 +2673,6 @@
             memberTimerIntervals.forEach(clearInterval);
             memberTimerIntervals = [];
             groupRealtimeData = { members: {}, sessions: {} };
-            console.log('Resetting group member listeners and data.');
 
             memberIds.forEach(memberId => {
                 const userDocRef = doc(db, 'artifacts', appId, 'users', memberId);
@@ -2722,7 +2682,6 @@
                     if (activeSubPage === 'home') {
                         renderGroupMembers();
                     }
-                    console.log(`Updated member data for ${memberId}`);
                 });
                 groupDetailUnsubscribers.push(userUnsub);
 
@@ -2735,7 +2694,6 @@
                     } else if (activeSubPage === 'attendance') {
                         renderGroupAttendance();
                     }
-                    console.log(`Updated sessions data for ${memberId}`);
                 });
                 groupDetailUnsubscribers.push(sessionsUnsub);
             });
@@ -2841,7 +2799,6 @@
             } else {
                  container.innerHTML = `<div class="p-8 text-center text-gray-400">${subpage.charAt(0).toUpperCase() + subpage.slice(1)} page is coming soon!</div>`;
             }
-            console.log('Group subpage rendered:', subpage);
         }
         
         function renderGroupMembers() {
@@ -2904,7 +2861,6 @@
                     }
                 }
             });
-            console.log('Group members rendered.');
         }
         
         function renderGroupLeaderboard(period) {
@@ -2966,7 +2922,6 @@
                     </div>
                 `;
             }).join('') || `<div class="empty-group"><i class="fas fa-trophy"></i><h3>Leaderboard is Empty</h3><p>Start studying to see your rank!</p></div>`;
-            console.log('Group leaderboard rendered for period:', period);
         }
 
         function renderGroupAttendance() {
@@ -3076,7 +3031,6 @@
                 }
                 renderGroupAttendance();
             };
-            console.log('Group attendance rendered for:', monthNames[attendanceMonth], attendanceYear);
         }
         
         function isToday(year, month, day) {
@@ -3111,7 +3065,6 @@
                     chatMessagesContainer.appendChild(messageEl);
                 });
                 chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
-                console.log('Chat messages updated.');
             });
             groupDetailUnsubscribers.push(chatUnsub);
 
@@ -3127,7 +3080,6 @@
                         timestamp: serverTimestamp()
                     });
                     chatInput.value = '';
-                    console.log('Chat message sent.');
                 }
             };
         }
@@ -3145,10 +3097,8 @@
             const password = document.getElementById('login-password').value;
             try {
                 await signInWithEmailAndPassword(auth, email, password);
-                console.log('User signed in with email.');
             } catch (error) {
                 authError.textContent = error.message;
-                console.error('Login error:', error.message);
             }
         });
 
@@ -3158,10 +3108,8 @@
             const password = document.getElementById('signup-password').value;
             try {
                 await createUserWithEmailAndPassword(auth, email, password);
-                console.log('User signed up with email.');
             } catch (error) {
                 authError.textContent = error.message;
-                console.error('Signup error:', error.message);
             }
         });
 
@@ -3169,10 +3117,8 @@
             const provider = new GoogleAuthProvider();
             try {
                 await signInWithPopup(auth, provider);
-                console.log('User signed in with Google.');
             } catch (error) {
                 authError.textContent = error.message;
-                console.error('Google sign-in error:', error.message);
             }
         });
 
@@ -3183,15 +3129,12 @@
             document.getElementById('auth-toggle-btn').textContent = isLogin ? 'Sign In' : 'Sign Up';
             document.getElementById('login-toggle-text').textContent = isLogin ? 'Already have an account?' : "Don't have an account?";
             authError.textContent = '';
-            console.log('Auth form toggled.');
         });
 
         ael('sign-out-btn', 'click', () => {
             signOut(auth).catch(error => {
                 showToast(`Sign out failed: ${error.message}`, 'error');
-                console.error('Sign out error:', error.message);
             });
-            console.log('Sign out initiated.');
         });
         
         ael('username-setup-form', 'submit', async (e) => {
@@ -3218,7 +3161,6 @@
             showPage('page-timer');
             setupRealtimeListeners();
             loadDailyTotal();
-            console.log('Username setup complete:', username);
         });
 
         // Navigation
@@ -3227,7 +3169,6 @@
             this.classList.add('active');
             const pageName = this.dataset.page;
             showPage(`page-${pageName}`);
-            console.log('Navigated to page:', pageName);
         }));
 
         document.querySelectorAll('.back-button').forEach(button => button.addEventListener('click', function() {
@@ -3238,13 +3179,12 @@
                  document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
                  navItem.classList.add('active');
             }
-            console.log('Navigated back to page:', targetPage);
         }));
 
-        ael('groups-btn', 'click', () => { renderJoinedGroups(); showPage('page-my-groups'); console.log('Navigated to My Groups.'); });
-        ael('go-to-find-groups-btn', 'click', () => { renderAvailableGroups(); showPage('page-find-groups'); console.log('Navigated to Find Groups.'); });
-        ael('go-to-create-group-btn', 'click', () => { showPage('page-create-group'); console.log('Navigated to Create Group.'); });
-        ael('profile-btn', 'click', () => { showPage('page-profile'); console.log('Navigated to Profile.'); });
+        ael('groups-btn', 'click', () => { renderJoinedGroups(); showPage('page-my-groups'); });
+        ael('go-to-find-groups-btn', 'click', () => { renderAvailableGroups(); showPage('page-find-groups'); });
+        ael('go-to-create-group-btn', 'click', () => { showPage('page-create-group'); });
+        ael('profile-btn', 'click', () => { showPage('page-profile'); });
         
         // Group Creation
         ael('create-group-done-btn', 'click', async () => {
@@ -3279,7 +3219,6 @@
                 renderJoinedGroups();
                 showPage('page-my-groups');
                 showToast('Group created successfully!', 'success');
-                console.log('Group created:', newGroup.name);
             } catch (error) {
                 console.error("Error creating group: ", error);
                 showToast("Failed to create group.", "error");
@@ -3295,24 +3234,22 @@
                 const parent = option.parentElement;
                 parent.querySelectorAll(`.${option.classList[0]}`).forEach(opt => opt.classList.remove('selected'));
                 option.classList.add('selected');
-                console.log('Option selected:', option.textContent);
             });
         });
         
         let capacity = 15;
-        ael('increase-capacity', 'click', () => { if (capacity < 100) { document.getElementById('capacity-value').textContent = ++capacity; console.log('Capacity increased to:', capacity); } else showToast('Maximum capacity is 100', 'info'); });
-        ael('decrease-capacity', 'click', () => { if (capacity > 2) { document.getElementById('capacity-value').textContent = --capacity; console.log('Capacity decreased to:', capacity); } else showToast('Minimum capacity is 2', 'info'); });
+        ael('increase-capacity', 'click', () => { if (capacity < 100) { document.getElementById('capacity-value').textContent = ++capacity; } else showToast('Maximum capacity is 100', 'info'); });
+        ael('decrease-capacity', 'click', () => { if (capacity > 2) { document.getElementById('capacity-value').textContent = --capacity; } else showToast('Minimum capacity is 2', 'info'); });
         
         // Modals
         const addSubjectModal = document.getElementById('add-subject-modal');
-        ael('add-subject-btn', 'click', () => { addSubjectModal.classList.add('active'); console.log('Add Subject modal opened.'); });
-        addSubjectModal.querySelector('.close-modal').addEventListener('click', () => { addSubjectModal.classList.remove('active'); console.log('Add Subject modal closed.'); });
+        ael('add-subject-btn', 'click', () => { addSubjectModal.classList.add('active'); });
+        addSubjectModal.querySelector('.close-modal').addEventListener('click', () => { addSubjectModal.classList.remove('active'); });
         
         addSubjectModal.querySelectorAll('.color-dot').forEach(dot => {
             dot.addEventListener('click', () => {
                 addSubjectModal.querySelectorAll('.color-dot').forEach(d => d.classList.remove('selected'));
                 dot.classList.add('selected');
-                console.log('Subject color selected:', dot.dataset.color);
             });
         });
 
@@ -3333,13 +3270,12 @@
             addSubjectModal.classList.remove('active');
             document.getElementById('add-subject-form').reset();
             showToast("Subject added!", "success");
-            console.log('Subject added:', name, color);
         });
         
         const startSessionModal = document.getElementById('start-session-modal');
-        ael('start-studying-btn', 'click', () => { startSessionModal.classList.add('active'); console.log('Start Session modal opened.'); });
-        ael('close-start-session-modal', 'click', () => { startSessionModal.classList.remove('active'); console.log('Start Session modal closed.'); });
-        ael('open-add-subject-modal-from-start', 'click', () => { addSubjectModal.classList.add('active'); console.log('Opened Add Subject modal from Start Session modal.'); });
+        ael('start-studying-btn', 'click', () => { startSessionModal.classList.add('active'); });
+        ael('close-start-session-modal', 'click', () => { startSessionModal.classList.remove('active'); });
+        ael('open-add-subject-modal-from-start', 'click', () => { addSubjectModal.classList.add('active'); });
 
         ael('start-session-form', 'submit', (e) => {
             e.preventDefault();
@@ -3351,7 +3287,6 @@
             const subject = selectedSubjectEl.dataset.subjectName;
             startSessionModal.classList.remove('active');
             startTimer(subject);
-            console.log('Starting session with subject:', subject);
         });
 
         ael('stop-studying-btn', 'click', stopTimer);
@@ -3359,7 +3294,6 @@
         ael('manual-start-btn', 'click', () => {
             document.getElementById('stop-studying-btn').classList.remove('hidden');
             pomodoroWorker.postMessage({ command: 'startNext' });
-            console.log('Manual start next session command sent to worker.');
         });
         
         // --- Timer Switch Logic ---
@@ -3374,7 +3308,6 @@
             pomodoroTimerBtn.classList.remove('active');
             sessionTimerDisplay.textContent = formatTime(0);
             pomodoroStatusDisplay.textContent = '';
-            console.log('Switched to Normal timer mode.');
         });
         
         ael('pomodoro-timer-btn', 'click', () => {
@@ -3386,12 +3319,11 @@
             pomodoroStatusDisplay.textContent = 'Ready for Pomodoro';
             pomodoroStatusDisplay.style.color = '#9ca3af';
             sessionTimerDisplay.textContent = formatPomodoroTime(pomodoroSettings.work * 60);
-            console.log('Switched to Pomodoro timer mode.');
         });
         
         // --- Worker Message Handling ---
         pomodoroWorker.onmessage = (e) => {
-            const { type, timeLeft, newState, oldState, autoStart, status, color, duration, sessionStart, sessionEnd } = e.data;
+            const { type, timeLeft, newState, oldState, autoStart, status, color, duration } = e.data;
             switch(type) {
                 case 'tick':
                     sessionTimerDisplay.textContent = formatPomodoroTime(timeLeft);
@@ -3403,38 +3335,17 @@
                 case 'transition':
                     const soundToPlay = oldState === 'work' ? pomodoroSounds.break : pomodoroSounds.focus;
                     playSound(soundToPlay, pomodoroSounds.volume);
-                    console.log(`Transition from ${oldState} to ${newState}. Playing sound: ${soundToPlay}`);
                     if (!autoStart) {
                         const manualStartBtn = document.getElementById('manual-start-btn');
                         manualStartBtn.textContent = `Start ${newState.replace('_', ' ')}`;
                         manualStartBtn.classList.remove('hidden');
                         document.getElementById('stop-studying-btn').classList.add('hidden');
                         pomodoroStatusDisplay.textContent = `Ready for ${newState.replace('_', ' ')}`;
-                        console.log('Auto-start is off, showing manual start button.');
                     }
                     break;
                 case 'sessionComplete':
-                    let actualDuration = duration;
-                    const sessionStartTimestamp = sessionStart;
-                    const sessionEndTimestamp = sessionEnd;
-
-                    if (sessionStartTimestamp && sessionEndTimestamp) {
-                        const calculatedDuration = Math.floor((sessionEndTimestamp - sessionStartTimestamp) / 1000);
-                        if (calculatedDuration !== duration) {
-                            console.warn(`Main thread: Worker reported duration ${duration}s, but calculated duration from timestamps is ${calculatedDuration}s. Using calculated.`);
-                            actualDuration = calculatedDuration;
-                        } else {
-                            console.log(`Main thread: Worker reported duration ${duration}s, matches calculated duration ${calculatedDuration}s.`);
-                        }
-                    } else {
-                        console.warn('Main thread: sessionStart or sessionEnd timestamps missing from worker message. Relying on worker-provided duration.');
-                    }
-
-                    if (actualDuration > 0) {
-                        console.log(`Main thread: Calling saveSession with subject: ${activeSubject}, duration: ${actualDuration}s`);
-                        saveSession(activeSubject, actualDuration);
-                    } else {
-                        console.warn('Main thread: Received sessionComplete from worker with zero or negative actualDuration. Skipping save.');
+                    if (duration > 0) {
+                        saveSession(activeSubject, duration);
                     }
                     break;
             }
@@ -3471,20 +3382,18 @@
                         const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
                         await deleteDoc(doc(userRef, 'subjects', subjectId));
                         showToast(`Deleted "${subjectName}"`, 'success');
-                        console.log('Subject deleted:', subjectName);
                     }
                 );
             }
             
             if (e.target.classList.contains('edit-subject-btn')) {
                  showToast("Edit functionality coming soon!", "info");
-                 console.log('Edit subject button clicked.');
             }
         });
         
         const addTaskModal = document.getElementById('add-task-modal');
-        ael('add-task-btn', 'click', () => { addTaskModal.classList.add('active'); console.log('Add Task modal opened.'); });
-        addTaskModal.querySelector('.close-modal').addEventListener('click', () => { addTaskModal.classList.remove('active'); console.log('Add Task modal closed.'); });
+        ael('add-task-btn', 'click', () => { addTaskModal.classList.add('active'); });
+        addTaskModal.querySelector('.close-modal').addEventListener('click', () => { addTaskModal.classList.remove('active'); });
 
         ael('add-task-form', 'submit', async (e) => {
             e.preventDefault();
@@ -3502,7 +3411,6 @@
             addTaskModal.classList.remove('active');
             document.getElementById('add-task-form').reset();
             showToast("Task added!", "success");
-            console.log('Task added:', name, date);
         });
 
         document.getElementById('planner-list').addEventListener('change', async (e) => {
@@ -3512,7 +3420,6 @@
                 const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
                 const taskRef = doc(userRef, 'plannerTasks', taskId);
                 await updateDoc(taskRef, { completed: isCompleted });
-                console.log(`Task ${taskId} completion status updated to ${isCompleted}`);
             }
         });
         
@@ -3520,7 +3427,6 @@
             if (e.target.classList.contains('ranking-tab-btn')) {
                 const period = e.target.dataset.period;
                 renderLeaderboard(period);
-                console.log('Ranking period changed to:', period);
             }
         });
         
@@ -3530,7 +3436,6 @@
                 const groupId = groupCard.dataset.groupId;
                 showPage('page-group-detail');
                 renderGroupDetail(groupId);
-                console.log('Clicked on group card, showing group detail for:', groupId);
             }
         });
         
@@ -3538,7 +3443,6 @@
             const navItem = e.target.closest('.group-nav-item');
             if (navItem) {
                 renderGroupSubPage(navItem.dataset.subpage);
-                console.log('Group detail subpage navigated to:', navItem.dataset.subpage);
             }
         });
 
@@ -3547,14 +3451,12 @@
         ael('settings-account', 'click', () => {
             document.getElementById('edit-username-input').value = currentUserData.username || '';
             editProfileModal.classList.add('active');
-            console.log('Edit Profile modal opened.');
         });
         
         const studyGoalModal = document.getElementById('study-goal-modal');
         ael('settings-study-goal', 'click', () => {
             document.getElementById('study-goal-input').value = currentUserData.studyGoalHours || '';
             studyGoalModal.classList.add('active');
-            console.log('Study Goal modal opened.');
         });
 
         const pomodoroSettingsModal = document.getElementById('pomodoro-settings-modal');
@@ -3587,7 +3489,6 @@
             });
 
             pomodoroSettingsModal.classList.add('active');
-            console.log('Pomodoro Settings modal opened.');
         });
 
         ael('edit-profile-form', 'submit', async (e) => {
@@ -3604,7 +3505,6 @@
             
             editProfileModal.classList.remove('active');
             showToast("Profile updated!", "success");
-            console.log('Profile username updated to:', newUsername);
         });
 
         ael('study-goal-form', 'submit', async (e) => {
@@ -3619,7 +3519,6 @@
 
             studyGoalModal.classList.remove('active');
             showToast("Study goal updated!", "success");
-            console.log('Study goal updated to:', goal, 'hours.');
         });
 
         ael('pomodoro-settings-form', 'submit', async (e) => {
@@ -3655,7 +3554,6 @@
             pomodoroWorker.postMessage({ command: 'updateSettings', newSettings: pomodoroSettings });
             pomodoroSettingsModal.classList.remove('active');
             showToast("Pomodoro settings saved!", "success");
-            console.log('Pomodoro settings saved:', newSettings, newSounds);
         });
         
         ael('edit-session-form', 'submit', async (e) => {
@@ -3698,7 +3596,6 @@
                 
                 modal.classList.remove('active');
                 showToast("Session updated successfully!", "success");
-                console.log(`Session ${sessionId} updated. New duration: ${newDurationSeconds}s`);
             } catch (error) {
                  console.error("Error updating session:", error);
                 showToast("Failed to update session.", "error");
@@ -3712,7 +3609,6 @@
                 document.getElementById('group-ranking-scope-btn').classList.add('active');
                 const activePeriod = document.querySelector('#group-ranking-period-tabs .ranking-tab-btn.active')?.dataset.period || 'weekly';
                 renderGroupLeaderboard(activePeriod);
-                console.log('Switched to Group ranking scope.');
             }
         });
 
@@ -3722,7 +3618,6 @@
                 document.getElementById('global-ranking-scope-btn').classList.add('active');
                 const activePeriod = document.querySelector('#group-ranking-period-tabs .ranking-tab-btn.active')?.dataset.period || 'weekly';
                 renderLeaderboard(activePeriod, 'group-ranking-list');
-                console.log('Switched to Global ranking scope.');
             }
         });
 
@@ -3740,11 +3635,10 @@
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) {
                     modal.classList.remove('active');
-                    console.log('Modal closed by outside click:', modal.id);
                 }
             });
             modal.querySelectorAll('.close-modal').forEach(btn => {
-                btn.addEventListener('click', () => { modal.classList.remove('active'); console.log('Modal closed by button:', modal.id); });
+                btn.addEventListener('click', () => { modal.classList.remove('active'); });
             });
         });
 
@@ -3792,7 +3686,6 @@
                     // If no joined groups, go to the "My Groups" page (which will prompt to find/create)
                     showPage('page-my-groups'); 
                 }
-                console.log('Group Study button clicked.');
             });
         };
 
