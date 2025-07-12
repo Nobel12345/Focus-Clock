@@ -2,7 +2,7 @@
     "name": "FocusFlow",
     "short_name": "FocusFlow",
     "description": "A Progressive Web App for managing focus and tasks.",
-    "start_url": "/index.html",
+    "start_url": "./index.html",
     "display": "standalone",
     "background_color": "#ffffff",
     "theme_color": "#4a5568",
@@ -14,7 +14,7 @@
             "purpose": "any maskable"
         },
         {
-            "src": "icons/icon-512x512.png",
+            "src": "icons/icon-512x192.png",
             "sizes": "512x512",
             "type": "image/png",
             "purpose": "any maskable"
