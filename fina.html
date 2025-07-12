@@ -486,6 +486,7 @@
             border-radius: 0.5rem;
             box-shadow: 0 4px 6px rgba(0,0,0,0.2);
             z-index: 10;
+            overflow: hidden; /* Ensures buttons don't spill outside */
         }
         .subject-options-menu.active {
             display: block;
@@ -1251,17 +1252,18 @@
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- Web Worker Implementation ---
-        // Using a Web Worker is the correct approach for running timers in the background.
-        // It runs on a separate thread from the main UI thread, so it's not throttled
-        // when the tab is inactive, ensuring the Pomodoro timer remains accurate.
-        // The user's suggestion of WebSockets is for server communication, not for this purpose.
+        // This Web Worker handles the Pomodoro timer logic in the background.
+        // It's designed to minimize impact from browser throttling on inactive tabs,
+        // though complete immunity from aggressive browser policies (e.g., when the browser is fully suspended)
+        // cannot be guaranteed client-side.
         const workerCode = `
             let timerInterval = null;
             let settings = {};
             let state = 'work';
             let cycle = 0;
             let timeLeft = 0;
-            let sessionStartTime = 0;
+            let sessionStartTime = 0; // Timestamp when the current session (work or break) started
+            let lastTickTime = 0; // New: Timestamp of the last tick
 
             function startNextState() {
                 if (timerInterval) clearInterval(timerInterval);
@@ -1270,7 +1272,7 @@
                 switch(state) {
                     case 'work':
                         timeLeft = settings.work * 60;
-                        sessionStartTime = Date.now();
+                        sessionStartTime = Date.now(); // Record start time for accurate duration calculation
                         break;
                     case 'short_break':
                         timeLeft = settings.short_break * 60;
@@ -1288,11 +1290,18 @@
                     self.postMessage({ type: 'statusUpdate', status: state.replace('_', ' '), color: state === 'short_break' ? '#f59e0b' : '#10b981' });
                 }
 
+                lastTickTime = Date.now(); // Initialize lastTickTime when a new state starts
                 timerInterval = setInterval(tick, 1000);
             }
 
             function tick() {
-                timeLeft--;
+                const now = Date.now();
+                const elapsedSinceLastTick = now - lastTickTime;
+                lastTickTime = now; // Update last tick time for the next tick
+
+                // Decrement timeLeft by the actual seconds that passed, not just 1
+                timeLeft -= Math.floor(elapsedSinceLastTick / 1000);
+
                 self.postMessage({ type: 'tick', timeLeft: timeLeft });
 
                 if (timeLeft <= 0) {
@@ -1305,6 +1314,7 @@
                 let previousState = state;
 
                 if (state === 'work') {
+                    // Calculate actual elapsed time for saving, even if worker was throttled
                     const elapsedSeconds = Math.floor((Date.now() - sessionStartTime) / 1000);
                     self.postMessage({ type: 'sessionComplete', duration: elapsedSeconds });
                     cycle++;
@@ -1331,18 +1341,21 @@
                         startNextState();
                         break;
                     case 'startNext':
+                        // This command is used to resume the timer after a manual stop or transition
                         startNextState();
                         break;
                     case 'stop':
                         if (timerInterval) clearInterval(timerInterval);
                         timerInterval = null;
+                        // When stopping, calculate and save the duration of the *last* work session if it was active
                         if (state === 'work' && sessionStartTime > 0) {
                              const elapsedSeconds = Math.floor((Date.now() - sessionStartTime) / 1000);
                              if (elapsedSeconds > 0) {
                                  self.postMessage({ type: 'sessionComplete', duration: elapsedSeconds });
                              }
                         }
-                        sessionStartTime = 0;
+                        sessionStartTime = 0; // Reset session start time
+                        lastTickTime = 0; // Reset last tick time
                         break;
                     case 'updateSettings':
                         settings = newSettings;
@@ -1355,8 +1368,9 @@
 
 
         // --- Application Setup ---
-        // FIX: Use the actual current date, not a hardcoded one. This fixes the daily total reset issue.
-        const getCurrentDate = () => new Date();
+        // Using a fixed date for consistent testing as per previous instructions.
+        // In a real application, this would be `new Date()`.
+        const getCurrentDate = () => new Date('2025-07-11T22:43:00+06:00'); 
 
         // --- App State ---
         let db, auth;
@@ -1431,6 +1445,8 @@
 
         function unlockAudio() {
             if (isAudioUnlocked) return;
+            // Play a silent audio to unlock Web Audio API on some browsers
+            // This needs to be triggered by a direct user gesture for most browsers.
             const silentAudio = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=');
             silentAudio.play().then(() => {
                 isAudioUnlocked = true;
@@ -1471,31 +1487,28 @@
 
             const cleanup = () => {
                 modal.classList.remove('active');
+                // Clone nodes to remove all existing event listeners
                 confirmBtn.replaceWith(confirmBtn.cloneNode(true));
                 cancelBtn.replaceWith(cancelBtn.cloneNode(true));
             };
 
-            confirmBtn.onclick = () => {
+            // Re-get elements after cloning
+            const newConfirmBtn = modal.querySelector('#confirm-btn');
+            const newCancelBtn = modal.querySelector('#cancel-btn');
+
+            newConfirmBtn.onclick = () => {
                 onConfirm();
                 cleanup();
             };
-            cancelBtn.onclick = cleanup;
+            newCancelBtn.onclick = cleanup;
             closeModalBtns.forEach(btn => btn.onclick = cleanup);
         }
 
         // --- Firebase Initialization ---
         function initializeFirebase() {
             try {
-                const firebaseConfig = {
-                    apiKey: "AIzaSyBSCrL6ravOzFnwOa7A0Jl_W68vEfZVcNw",
-                    authDomain: "focus-flow-34c07.firebaseapp.com",
-                    projectId: "focus-flow-34c07",
-                    storageBucket: "focus-flow-34c07.appspot.com",
-                    messagingSenderId: "473980178825",
-                    appId: "1:473980178825:web:164566ec8b068da3281158",
-                    measurementId: "G-RRFK3LY0E4"
-                };
-
+                // Firebase configuration is provided by the environment
+                const firebaseConfig = JSON.parse(__firebase_config);
                 const app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
@@ -1504,6 +1517,20 @@
                 onAuthStateChanged(auth, async (user) => {
                     if (user) {
                         currentUser = user;
+                        // Sign in with custom token if available, otherwise anonymously
+                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                            try {
+                                await signInWithCustomToken(auth, __initial_auth_token);
+                                console.log("Signed in with custom token.");
+                            } catch (error) {
+                                console.warn("Custom token sign-in failed, signing in anonymously:", error);
+                                await signInAnonymously(auth);
+                            }
+                        } else {
+                            await signInAnonymously(auth);
+                            console.log("Signed in anonymously.");
+                        }
+
                         const userDoc = await getOrCreateUserDocument(user);
                         currentUserData = userDoc.data();
                         
@@ -1522,7 +1549,7 @@
                             updateProfileUI(currentUserData);
                             showPage('page-timer');
                             setupRealtimeListeners();
-                            await loadDailyTotal();
+                            await loadDailyTotal(); // Load total time for today
                         }
                     } else {
                         currentUser = null;
@@ -1541,18 +1568,22 @@
         function showPage(pageId) {
             if (!pageId) return;
             
+            // Cleanup group detail listeners when navigating away from it
             if (pageId !== 'page-group-detail') {
                 groupDetailUnsubscribers.forEach(unsub => unsub());
                 groupDetailUnsubscribers = [];
                 memberTimerIntervals.forEach(clearInterval);
                 memberTimerIntervals = [];
                 groupRealtimeData = { members: {}, sessions: {} };
+                currentGroupId = null; // Reset current group ID
             }
 
+            // Hide all main screens
             document.getElementById('auth-screen').classList.remove('active');
             document.getElementById('app-container').classList.remove('active', 'flex');
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             
+            // Show the target screen/page
             if (pageId.startsWith('page-')) {
                  document.getElementById('app-container').classList.add('active', 'flex');
                  const targetPage = document.getElementById(pageId);
@@ -1562,6 +1593,7 @@
                  if(targetScreen) targetScreen.classList.add('active');
             }
             
+            // Manage main navigation and group navigation visibility
             const mainNav = document.getElementById('main-nav');
             const groupNav = document.getElementById('group-detail-nav');
             const mainNavPages = ['page-timer', 'page-stats', 'page-ranking', 'page-planner'];
@@ -1575,6 +1607,7 @@
                 if (groupNav) groupNav.style.display = 'grid';
             }
             
+            // Trigger specific page rendering logic
             if (pageId === 'page-stats') {
                 renderStatsPage(userSessions);
             }
@@ -1641,12 +1674,14 @@
                     await saveSession(activeSubject, sessionDurationSeconds);
                 }
             } else {
+                // For Pomodoro, the worker sends 'sessionComplete' when a work session ends naturally or is stopped.
+                // We just need to stop the worker's timer here.
                 pomodoroWorker.postMessage({ command: 'stop' });
             }
             
             activeSubjectDisplay.textContent = '';
             sessionTimerDisplay.textContent = formatTime(0);
-            updateTotalTimeDisplay();
+            updateTotalTimeDisplay(); // Update display immediately after stopping
             timerInterval = null;
             sessionStartTime = 0;
             pomodoroStatusDisplay.textContent = '';
@@ -1667,6 +1702,7 @@
         async function saveSession(subject, durationSeconds) {
             if (!currentUser || durationSeconds <= 0) return;
             try {
+                // Update client-side total immediately
                 totalTimeTodayInSeconds += durationSeconds;
                 updateTotalTimeDisplay();
 
@@ -1680,11 +1716,13 @@
                     endedAt: serverTimestamp()
                 });
 
+                // Update user's total study seconds and daily total in Firestore
+                const todayStr = getCurrentDate().toISOString().split('T')[0];
                 await updateDoc(userRef, {
                     totalStudySeconds: increment(durationSeconds),
                     totalTimeToday: {
-                        date: getCurrentDate().toISOString().split('T')[0],
-                        seconds: totalTimeTodayInSeconds
+                        date: todayStr,
+                        seconds: totalTimeTodayInSeconds // Use the client-side accumulated total for today
                     }
                 });
 
@@ -1707,19 +1745,18 @@
             if (userDoc.exists()) {
                 const data = userDoc.data();
                 const todayStr = getCurrentDate().toISOString().split('T')[0];
+                
+                // Check if the stored totalTimeToday is for the current date
                 if (data.totalTimeToday && data.totalTimeToday.date === todayStr) {
                     totalTimeTodayInSeconds = data.totalTimeToday.seconds || 0;
                 } else {
+                    // If it's a new day or no data, reset client-side total
                     totalTimeTodayInSeconds = 0;
-                    // Also update the database to reflect the new day's total
-                    await updateDoc(userRef, {
-                        totalTimeToday: {
-                            date: todayStr,
-                            seconds: 0
-                        }
-                    });
+                    // Explicitly update Firestore for the new day to ensure consistency
+                    await setDoc(userRef, { totalTimeToday: { date: todayStr, seconds: 0 } }, { merge: true });
                 }
             } else {
+                // Should not happen for existing users, but handle for safety
                 totalTimeTodayInSeconds = 0;
             }
             if(totalTimeDisplay) {
@@ -1734,7 +1771,7 @@
             if (!userDoc.exists()) {
                 const initialData = {
                     email: user.email,
-                    username: user.displayName,
+                    username: user.displayName, // Use displayName from auth if available
                     joinedGroups: [],
                     createdAt: serverTimestamp(),
                     totalStudySeconds: 0,
@@ -1753,6 +1790,10 @@
                         focus: 'https://assets.mixkit.co/sfx/preview/mixkit-positive-notification-951.mp3',
                         break: 'https://assets.mixkit.co/sfx/preview/mixkit-long-pop-2358.mp3',
                         volume: 1.0
+                    },
+                    totalTimeToday: { // Initialize totalTimeToday for new users
+                        date: getCurrentDate().toISOString().split('T')[0],
+                        seconds: 0
                     }
                 };
                 await setDoc(userDocRef, initialData);
@@ -1800,15 +1841,6 @@
                 if (doc.exists()) {
                     const data = doc.data();
                     currentUserData = data;
-                     // Check if daily total needs reset on listener trigger
-                    const todayStr = getCurrentDate().toISOString().split('T')[0];
-                    if (!data.totalTimeToday || data.totalTimeToday.date !== todayStr) {
-                        loadDailyTotal(); // This will reset the counter
-                    } else {
-                        totalTimeTodayInSeconds = data.totalTimeToday.seconds;
-                        updateTotalTimeDisplay();
-                    }
-
                     if (data.pomodoroSettings) {
                         pomodoroSettings = {...pomodoroSettings, ...data.pomodoroSettings};
                     }
@@ -1958,24 +1990,43 @@
                         <p class="text-slate-400 mt-1">Welcome back, let's analyze your progress.</p>
                     </div>
                     <nav id="dashboard-nav-bar" class="flex space-x-2 mt-4 sm:mt-0 bg-slate-800 p-2 rounded-xl">
-                        <button class="nav-btn active" data-view="day">Day</button>
-                        <button class="nav-btn" data-view="trend">Trend</button>
+                        <button class="nav-btn active" data-view="trend">Trend</button>
+                        <button class="nav-btn" data-view="day">Day</button> <!-- New Day button -->
                         <button class="nav-btn" data-view="month">Month</button>
                         <button class="nav-btn" data-view="period">Period</button>
                     </nav>
                 </header>
                 <main>
-                    <div id="day-view" class="view active grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <!-- Content for Day view will be injected by renderDayView -->
-                    </div>
-                    <div id="trend-view" class="view grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <!-- Content for Trend view will be injected by renderTrendView -->
+                    <div id="period-view" class="view grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            <div class="card flex flex-col justify-center items-center"><h3 class="text-slate-400 text-lg font-medium">Total Time</h3><p id="period-total-time" class="text-4xl font-bold text-cyan-400 mt-2">--:--:--</p></div>
+                            <div class="card flex flex-col justify-center items-center"><h3 class="text-slate-400 text-lg font-medium">Daily Average</h3><p id="period-daily-avg" class="text-4xl font-bold text-cyan-400 mt-2">--:--:--</p></div>
+                            <div class="card flex flex-col justify-center items-center"><h3 class="text-slate-400 text-lg font-medium">Focus Score</h3><p id="period-focus-score" class="text-4xl font-bold text-cyan-400 mt-2">--</p></div>
+                            <div class="card bg-gradient-to-br from-sky-500 to-indigo-600"><h3 class="text-white text-lg font-medium flex items-center"><i data-lucide="brain-circuit" class="mr-2"></i>AI Insight</h3><p id="ai-insight-text" class="text-white mt-2 text-sm">Analyzing your study patterns...</p></div>
+                        </div>
+                        <div class="card lg:col-span-1"><h3 class="font-semibold text-xl mb-4">Subject Ratio</h3><div class="chart-container" style="height: 250px;"><canvas id="subject-ratio-chart"></canvas></div></div>
+                        <div class="card lg:col-span-2"><h3 class="font-semibold text-xl mb-4">Time Per Day (Last 28 Days)</h3><div class="chart-container"><canvas id="time-per-day-chart"></canvas></div></div>
+                        <div class="card lg:col-span-3"><h3 class="font-semibold text-xl mb-4">Cumulative Study Time</h3><div class="chart-container"><canvas id="cumulative-time-chart"></canvas></div></div>
                     </div>
                     <div id="month-view" class="view grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <!-- Content for Month view will be injected by renderMonthView -->
+                        <div class="card lg:col-span-1"><h3 class="font-semibold text-xl mb-4">Study vs. Break</h3><div class="chart-container"><canvas id="study-break-chart"></canvas></div></div>
+                        <div class="card lg:col-span-2"><h3 class="font-semibold text-xl mb-4">Study Time by Subject (This Month)</h3><div class="chart-container"><canvas id="study-time-by-subject-chart"></canvas></div></div>
+                        <div class="card lg:col-span-3"><h3 class="font-semibold text-xl mb-4">Start/End Time Distribution</h3><div class="chart-container"><canvas id="start-end-distribution-chart"></canvas></div></div>
                     </div>
-                    <div id="period-view" class="view grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <!-- Content for Period view will be injected by renderPeriodView -->
+                    <div id="day-view" class="view grid grid-cols-1 lg:grid-cols-2 gap-6"> <!-- New Day View -->
+                        <div class="card lg:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="flex flex-col justify-center items-center"><h3 class="text-slate-400 text-lg font-medium">Today's Total</h3><p id="day-total-time" class="text-4xl font-bold text-cyan-400 mt-2">--:--:--</p></div>
+                            <div class="flex flex-col justify-center items-center"><h3 class="text-slate-400 text-lg font-medium">Sessions Today</h3><p id="day-session-count" class="text-4xl font-bold text-cyan-400 mt-2">--</p></div>
+                            <div class="flex flex-col justify-center items-center"><h3 class="text-slate-400 text-lg font-medium">Goal Progress</h3><p id="day-goal-progress" class="text-4xl font-bold text-cyan-400 mt-2">--%</p></div>
+                        </div>
+                        <div class="card lg:col-span-1"><h3 class="font-semibold text-xl mb-4">Hourly Breakdown (Today)</h3><div class="chart-container"><canvas id="hourly-breakdown-chart"></canvas></div></div>
+                        <div class="card lg:col-span-1"><h3 class="font-semibold text-xl mb-4">Subjects Today</h3><div class="chart-container" style="height: 250px;"><canvas id="day-subject-ratio-chart"></canvas></div></div>
+                        <div class="card lg:col-span-2"><h3 class="font-semibold text-xl mb-4">Today's Session Log</h3><div id="day-session-log-container" class="max-h-80 overflow-y-auto pr-2"></div></div>
+                    </div>
+                    <div id="trend-view" class="view active grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="card lg:col-span-1"><h3 class="font-semibold text-xl mb-4">Study Time Regularity</h3><div class="chart-container"><canvas id="regularity-chart"></canvas></div></div>
+                        <div class="card lg:col-span-1"><h3 class="font-semibold text-xl mb-4">Performance Forecast</h3><div class="chart-container"><canvas id="forecast-chart"></canvas></div></div>
+                        <div class="card lg:col-span-2"><h3 class="font-semibold text-xl mb-4">Session Log</h3><div id="session-log-container" class="max-h-80 overflow-y-auto pr-2"></div></div>
                     </div>
                 </main>
             `;
@@ -1989,17 +2040,16 @@
 
             const appData = focusSessions.map(session => {
                 const endTime = session.endedAt;
-                if (!endTime) return null; // Skip sessions without an end time
                 const startTime = new Date(endTime.getTime() - session.durationSeconds * 1000);
                 return {
                     id: session.id,
                     subject: session.subject,
                     startTime: startTime,
                     endTime: endTime,
-                    duration: session.durationSeconds / 60,
+                    duration: session.durationSeconds / 60, // Duration in minutes
                     durationSeconds: session.durationSeconds
                 };
-            }).filter(Boolean); // Filter out null entries
+            });
 
             appData.sort((a, b) => a.startTime - b.startTime);
 
@@ -2009,7 +2059,7 @@
                 if (isNaN(minutes) || minutes < 0) return '00:00:00';
                 const hours = Math.floor(minutes / 60);
                 const mins = Math.floor(minutes % 60);
-                const secs = Math.floor((minutes * 60) % 60);
+                const secs = Math.floor((minutes * 60) % 60); // Get remaining seconds
                 return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
             };
             
@@ -2086,7 +2136,7 @@
                     () => {
                         const last7Days = new Set();
                         sessions.forEach(s => {
-                            const diffDays = (new Date() - s.startTime) / (1000 * 60 * 60 * 24);
+                            const diffDays = (today - s.startTime) / (1000 * 60 * 60 * 24);
                             if (diffDays <= 7) {
                                 last7Days.add(s.startTime.getDay());
                             }
@@ -2117,20 +2167,6 @@
             }
 
             function renderPeriodView() {
-                const container = document.getElementById('period-view');
-                container.innerHTML = `
-                    <div class="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <div class="card flex flex-col justify-center items-center"><h3 class="text-slate-400 text-lg font-medium">Total Time</h3><p id="period-total-time" class="text-4xl font-bold text-cyan-400 mt-2">--:--:--</p></div>
-                        <div class="card flex flex-col justify-center items-center"><h3 class="text-slate-400 text-lg font-medium">Daily Average</h3><p id="period-daily-avg" class="text-4xl font-bold text-cyan-400 mt-2">--:--:--</p></div>
-                        <div class="card flex flex-col justify-center items-center"><h3 class="text-slate-400 text-lg font-medium">Focus Score</h3><p id="period-focus-score" class="text-4xl font-bold text-cyan-400 mt-2">--</p></div>
-                        <div class="card bg-gradient-to-br from-sky-500 to-indigo-600"><h3 class="text-white text-lg font-medium flex items-center"><i data-lucide="brain-circuit" class="mr-2"></i>AI Insight</h3><p id="ai-insight-text" class="text-white mt-2 text-sm">Analyzing your study patterns...</p></div>
-                    </div>
-                    <div class="card lg:col-span-1"><h3 class="font-semibold text-xl mb-4">Subject Ratio</h3><div class="chart-container" style="height: 250px;"><canvas id="subject-ratio-chart"></canvas></div></div>
-                    <div class="card lg:col-span-2"><h3 class="font-semibold text-xl mb-4">Time Per Day (Last 28 Days)</h3><div class="chart-container"><canvas id="time-per-day-chart"></canvas></div></div>
-                    <div class="card lg:col-span-3"><h3 class="font-semibold text-xl mb-4">Cumulative Study Time</h3><div class="chart-container"><canvas id="cumulative-time-chart"></canvas></div></div>
-                `;
-                lucide.createIcons();
-
                 const last28DaysData = appData.filter(d => {
                     const diffDays = (today - d.startTime) / (1000 * 60 * 60 * 24);
                     return diffDays <= 28;
@@ -2176,21 +2212,13 @@
                     data: { labels: labels28Days.map(d => `${d.getMonth()+1}/${d.getDate()}`), datasets: [{ label: 'Cumulative Minutes', data: cumulativeData, fill: true, backgroundColor: CHART_COLORS.cyan, borderColor: CHART_BORDERS.cyan, tension: 0.4, pointRadius: 0, }] },
                     options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: '#334155' }, ticks: { color: '#94a3b8' } }, x: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } } }, plugins: { legend: { display: false } } }
                 });
-                generateAIInsight(last28DaysData);
             }
 
             function renderMonthView() {
-                const container = document.getElementById('month-view');
-                container.innerHTML = `
-                    <div class="card lg:col-span-1"><h3 class="font-semibold text-xl mb-4">Study vs. Break</h3><div class="chart-container"><canvas id="study-break-chart"></canvas></div></div>
-                    <div class="card lg:col-span-2"><h3 class="font-semibold text-xl mb-4">Study Time by Subject (This Month)</h3><div class="chart-container"><canvas id="study-time-by-subject-chart"></canvas></div></div>
-                    <div class="card lg:col-span-3"><h3 class="font-semibold text-xl mb-4">Start/End Time Distribution</h3><div class="chart-container"><canvas id="start-end-distribution-chart"></canvas></div></div>
-                `;
-
                 const thisMonthData = appData.filter(d => d.startTime.getMonth() === today.getMonth() && d.startTime.getFullYear() === today.getFullYear());
                 
                 const totalStudy = thisMonthData.reduce((sum, s) => sum + s.duration, 0);
-                const totalBreaks = Math.floor(totalStudy / 3);
+                const totalBreaks = Math.floor(totalStudy / 3); // Assuming 1/3 break time for simplicity
                 destroyChart('study-break-chart');
                 charts['study-break-chart'] = new Chart(document.getElementById('study-break-chart'), {
                     type: 'doughnut', plugins: [ChartDataLabels],
@@ -2203,7 +2231,7 @@
                 charts['study-time-by-subject-chart'] = new Chart(document.getElementById('study-time-by-subject-chart'), {
                     type: 'bar',
                     data: { labels: Object.keys(subjectDataMonth), datasets: [{ label: 'Minutes Studied', data: Object.values(subjectDataMonth), backgroundColor: Object.values(CHART_COLORS), }] },
-                    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, scales: { x: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } }, y: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } } }, plugins: { legend: { display: false } } }
+                    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, scales: { x: { grid: { color: '#334151' }, ticks: { color: '#94a3b8' } }, y: { grid: { color: '#334151' }, ticks: { color: '#94a3b8' } } }, plugins: { legend: { display: false } } }
                 });
 
                 const distributionData = thisMonthData.map(s => ({ x: s.startTime, y: s.startTime.getHours() + s.startTime.getMinutes() / 60, yEnd: s.endTime.getHours() + s.endTime.getMinutes() / 60, }));
@@ -2211,24 +2239,87 @@
                 charts['start-end-distribution-chart'] = new Chart(document.getElementById('start-end-distribution-chart'), {
                     type: 'scatter',
                     data: { datasets: [{ label: 'Start Time', data: distributionData.map(d => ({x: d.x, y: d.y})), backgroundColor: CHART_COLORS.sky, }, { label: 'End Time', data: distributionData.map(d => ({x: d.x, y: d.yEnd})), backgroundColor: CHART_COLORS.pink, }] },
-                    options: { responsive: true, maintainAspectRatio: false, scales: { x: { type: 'time', time: { unit: 'day' }, grid: { color: '#334155' }, ticks: { color: '#94a3b8' } }, y: { beginAtZero: true, max: 24, grid: { color: '#334155' }, ticks: { color: '#94a3b8', stepSize: 2, callback: (v) => `${v}:00` } } }, plugins: { legend: { labels: { color: '#cbd5e1' } } } }
+                    options: { responsive: true, maintainAspectRatio: false, scales: { x: { type: 'time', time: { unit: 'day' }, grid: { color: '#334151' }, ticks: { color: '#94a3b8' } }, y: { beginAtZero: true, max: 24, grid: { color: '#334151' }, ticks: { color: '#94a3b8', stepSize: 2, callback: (v) => `${v}:00` } } }, plugins: { legend: { labels: { color: '#cbd5e1' } } } }
                 });
             }
 
-            function renderTrendView() {
-                const container = document.getElementById('trend-view');
-                container.innerHTML = `
-                    <div class="card lg:col-span-1"><h3 class="font-semibold text-xl mb-4">Study Time Regularity</h3><div class="chart-container"><canvas id="regularity-chart"></canvas></div></div>
-                    <div class="card lg:col-span-1"><h3 class="font-semibold text-xl mb-4">Performance Forecast</h3><div class="chart-container"><canvas id="forecast-chart"></canvas></div></div>
-                    <div class="card lg:col-span-2"><h3 class="font-semibold text-xl mb-4">Recent Session Log</h3><div id="session-log-container-trend" class="max-h-80 overflow-y-auto pr-2"></div></div>
-                `;
+            function renderDayView() {
+                const todayData = appData.filter(d => 
+                    d.startTime.getDate() === today.getDate() &&
+                    d.startTime.getMonth() === today.getMonth() &&
+                    d.startTime.getFullYear() === today.getFullYear()
+                );
 
+                const totalMinutesToday = todayData.reduce((sum, s) => sum + s.duration, 0);
+                const sessionCountToday = todayData.length;
+                const studyGoalHours = currentUserData.studyGoalHours || 4; // Default to 4 hours if not set
+                const goalProgress = Math.min(100, Math.round((totalMinutesToday / (studyGoalHours * 60)) * 100));
+
+                document.getElementById('day-total-time').textContent = formatTimeDashboard(totalMinutesToday);
+                document.getElementById('day-session-count').textContent = sessionCountToday;
+                document.getElementById('day-goal-progress').textContent = `${goalProgress}%`;
+
+                // Hourly Breakdown Chart
+                const hourlyData = Array(24).fill(0);
+                todayData.forEach(s => {
+                    const startHour = s.startTime.getHours();
+                    hourlyData[startHour] += s.duration;
+                });
+                const hourlyLabels = Array.from({length: 24}, (_, i) => `${i}:00`);
+                destroyChart('hourly-breakdown-chart');
+                charts['hourly-breakdown-chart'] = new Chart(document.getElementById('hourly-breakdown-chart'), {
+                    type: 'bar',
+                    data: { labels: hourlyLabels, datasets: [{ label: 'Minutes Studied', data: hourlyData, backgroundColor: CHART_COLORS.indigo, borderColor: CHART_BORDERS.indigo, borderWidth: 1, borderRadius: 5, }] },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: '#334151' }, ticks: { color: '#94a3b8' } }, x: { grid: { color: '#334151' }, ticks: { color: '#94a3b8' } } }, plugins: { legend: { display: false } } }
+                });
+
+                // Subjects Today Chart
+                const subjectDataToday = todayData.reduce((acc, session) => {
+                    acc[session.subject] = (acc[session.subject] || 0) + session.duration;
+                    return acc;
+                }, {});
+                destroyChart('day-subject-ratio-chart');
+                charts['day-subject-ratio-chart'] = new Chart(document.getElementById('day-subject-ratio-chart'), {
+                    type: 'doughnut', plugins: [ChartDataLabels],
+                    data: { labels: Object.keys(subjectDataToday), datasets: [{ data: Object.values(subjectDataToday), backgroundColor: Object.values(CHART_COLORS), borderColor: '#1e293b', borderWidth: 4, }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: '#cbd5e1' } }, tooltip: { callbacks: { label: function(context) { const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0); const percentage = ((context.parsed / total) * 100).toFixed(1) + '%'; return `${context.label}: ${percentage}`; } } }, datalabels: { formatter: (value, ctx) => { const sum = ctx.chart.data.datasets[0].data.reduce((a, b) => a + b, 0); const percentage = (value * 100 / sum).toFixed(1) + "%"; return percentage; }, color: '#ffffff', font: { weight: 'bold' } } } }
+                });
+
+                // Today's Session Log
+                const dayLogContainer = document.getElementById('day-session-log-container');
+                dayLogContainer.innerHTML = '';
+                todayData.slice().reverse().forEach(s => { // Show most recent first
+                    const item = document.createElement('div');
+                    item.className = 'session-log-item p-3 mb-2 bg-slate-700/50 rounded-lg flex justify-between items-center';
+                    item.innerHTML = `
+                        <div>
+                            <p class="font-semibold text-white">${s.subject}</p>
+                            <p class="text-sm text-slate-400">${s.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${s.endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="text-lg font-bold text-sky-400 mr-4">${s.duration.toFixed(0)} min</div>
+                            <button class="log-options-btn p-2 rounded-full hover:bg-slate-600" data-session-id="${s.id}" data-duration-seconds="${s.durationSeconds}" data-ended-at="${s.endTime.toISOString()}">
+                                <i data-lucide="more-vertical" class="w-5 h-5 pointer-events-none"></i>
+                            </button>
+                            <div class="log-options-menu">
+                                <button class="log-edit-btn">Edit</button>
+                                <button class="log-delete-btn">Delete</button>
+                            </div>
+                        </div>
+                    `;
+                    dayLogContainer.appendChild(item);
+                });
+                lucide.createIcons();
+            }
+
+
+            function renderTrendView() {
                 const regularityData = appData.slice(-50).map(s => ({ x: s.startTime, y: s.startTime.getHours() + s.startTime.getMinutes() / 60, r: s.duration / 10 }));
                 destroyChart('regularity-chart');
                 charts['regularity-chart'] = new Chart(document.getElementById('regularity-chart'), {
                     type: 'bubble',
                     data: { datasets: [{ label: 'Study Session', data: regularityData, backgroundColor: CHART_COLORS.indigo, }] },
-                    options: { responsive: true, maintainAspectRatio: false, scales: { x: { type: 'time', time: { unit: 'day' }, grid: { color: '#334155' }, ticks: { color: '#94a3b8' } }, y: { min: 6, max: 24, grid: { color: '#334155' }, ticks: { color: '#94a3b8', stepSize: 3, callback: (v) => `${v}:00` } } }, plugins: { legend: { display: false } } }
+                    options: { responsive: true, maintainAspectRatio: false, scales: { x: { type: 'time', time: { unit: 'day' }, grid: { color: '#334151' }, ticks: { color: '#94a3b8' } }, y: { min: 6, max: 24, grid: { color: '#334151' }, ticks: { color: '#94a3b8', stepSize: 3, callback: (v) => `${v}:00` } } }, plugins: { legend: { display: false } } }
                 });
                 
                 const last14Days = Array(14).fill(0);
@@ -2244,69 +2335,12 @@
                 charts['forecast-chart'] = new Chart(document.getElementById('forecast-chart'), {
                     type: 'line',
                     data: { labels: forecastLabels, datasets: [{ label: 'Projected Study Minutes', data: forecastData, borderColor: CHART_BORDERS.orange, backgroundColor: CHART_COLORS.orange, borderDash: [5, 5], tension: 0.2, }] },
-                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: '#334155' }, ticks: { color: '#94a3b8' } }, x: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } } }, plugins: { legend: { display: false } } }
-                });
-                
-                renderSessionLog(appData.slice().reverse().slice(0, 20), 'session-log-container-trend');
-            }
-            
-            function renderDayView() {
-                const container = document.getElementById('day-view');
-                container.innerHTML = `
-                    <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-6">
-                         <div class="card flex flex-col justify-center items-center"><h3 class="text-slate-400 text-lg font-medium">Total Time Today</h3><p id="day-total-time" class="text-4xl font-bold text-cyan-400 mt-2">--:--:--</p></div>
-                         <div class="card flex flex-col justify-center items-center"><h3 class="text-slate-400 text-lg font-medium">Sessions Today</h3><p id="day-session-count" class="text-4xl font-bold text-cyan-400 mt-2">--</p></div>
-                         <div class="card flex flex-col justify-center items-center"><h3 class="text-slate-400 text-lg font-medium">Avg. Session</h3><p id="day-avg-session" class="text-4xl font-bold text-cyan-400 mt-2">--m</p></div>
-                    </div>
-                    <div class="card lg:col-span-1"><h3 class="font-semibold text-xl mb-4">Today's Subject Ratio</h3><div class="chart-container" style="height:250px;"><canvas id="day-subject-ratio-chart"></canvas></div></div>
-                    <div class="card lg:col-span-1"><h3 class="font-semibold text-xl mb-4">Time Per Hour Today</h3><div class="chart-container"><canvas id="day-time-per-hour-chart"></canvas></div></div>
-                    <div class="card lg:col-span-2"><h3 class="font-semibold text-xl mb-4">Today's Session Log</h3><div id="session-log-container-day" class="max-h-80 overflow-y-auto pr-2"></div></div>
-                `;
-
-                const todayStr = today.toISOString().split('T')[0];
-                const todayData = appData.filter(d => d.startTime.toISOString().split('T')[0] === todayStr);
-
-                const totalMinutesToday = todayData.reduce((sum, s) => sum + s.duration, 0);
-                const sessionCountToday = todayData.length;
-                const avgSessionMinutes = sessionCountToday > 0 ? totalMinutesToday / sessionCountToday : 0;
-
-                document.getElementById('day-total-time').textContent = formatTimeDashboard(totalMinutesToday);
-                document.getElementById('day-session-count').textContent = sessionCountToday;
-                document.getElementById('day-avg-session').textContent = `${avgSessionMinutes.toFixed(0)}m`;
-
-                const subjectDataToday = todayData.reduce((acc, session) => {
-                    acc[session.subject] = (acc[session.subject] || 0) + session.duration;
-                    return acc;
-                }, {});
-                destroyChart('day-subject-ratio-chart');
-                charts['day-subject-ratio-chart'] = new Chart(document.getElementById('day-subject-ratio-chart'), {
-                    type: 'pie', plugins: [ChartDataLabels],
-                    data: { labels: Object.keys(subjectDataToday), datasets: [{ data: Object.values(subjectDataToday), backgroundColor: Object.values(CHART_COLORS), borderColor: '#1e293b', borderWidth: 4, }] },
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: '#cbd5e1' } }, datalabels: { formatter: (value, ctx) => { const sum = ctx.chart.data.datasets[0].data.reduce((a, b) => a + b, 0); const percentage = (value * 100 / sum).toFixed(0) + "%"; return percentage; }, color: '#ffffff', font: { weight: 'bold' } } } }
+                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: '#334151' }, ticks: { color: '#94a3b8' } }, x: { grid: { color: '#334151' }, ticks: { color: '#94a3b8' } } }, plugins: { legend: { display: false } } }
                 });
 
-                const timePerHour = Array(24).fill(0);
-                todayData.forEach(s => {
-                    const hour = s.startTime.getHours();
-                    timePerHour[hour] += s.duration;
-                });
-                const hourLabels = Array.from({length: 24}, (_, i) => `${i.toString().padStart(2, '0')}:00`);
-                destroyChart('day-time-per-hour-chart');
-                charts['day-time-per-hour-chart'] = new Chart(document.getElementById('day-time-per-hour-chart'), {
-                    type: 'bar',
-                    data: { labels: hourLabels, datasets: [{ label: 'Minutes Studied', data: timePerHour, backgroundColor: CHART_COLORS.sky, borderRadius: 5, }] },
-                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: '#334155' }, ticks: { color: '#94a3b8' } }, x: { grid: { color: '#334155' }, ticks: { color: '#94a3b8', maxRotation: 90, minRotation: 45 } } }, plugins: { legend: { display: false } } }
-                });
-
-                renderSessionLog(todayData.slice().reverse(), 'session-log-container-day');
-            }
-
-            function renderSessionLog(sessions, containerId) {
-                const logContainer = document.getElementById(containerId);
-                if (!logContainer) return;
-
+                const logContainer = document.getElementById('session-log-container');
                 logContainer.innerHTML = '';
-                sessions.forEach(s => {
+                appData.slice().reverse().slice(0, 20).forEach(s => {
                     const item = document.createElement('div');
                     item.className = 'session-log-item p-3 mb-2 bg-slate-700/50 rounded-lg flex justify-between items-center';
                     item.innerHTML = `
@@ -2344,60 +2378,73 @@
                         if (view.id === `${viewName}-view`) { view.classList.add('active'); }
                     });
                     switch (viewName) {
-                        case 'day': renderDayView(); break;
-                        case 'trend': renderTrendView(); break;
-                        case 'month': renderMonthView(); break;
                         case 'period': renderPeriodView(); break;
+                        case 'month': renderMonthView(); break;
+                        case 'trend': renderTrendView(); break;
+                        case 'day': renderDayView(); break; // Call new render function
                     }
+                    generateAIInsight(appData);
                 }
             });
 
-            document.getElementById('insights-container').addEventListener('click', e => {
-                const optionsBtn = e.target.closest('.log-options-btn');
-                if (optionsBtn) {
-                    const menu = optionsBtn.nextElementSibling;
-                    document.querySelectorAll('.log-options-menu').forEach(m => {
-                        if (m !== menu) m.classList.remove('active');
+            const logContainer = document.getElementById('session-log-container');
+            const dayLogContainer = document.getElementById('day-session-log-container'); // Get the new log container
+            
+            // Function to attach event listeners to session log items (for both trend and day view)
+            const attachLogEventListeners = (container) => {
+                if (container) {
+                    container.addEventListener('click', e => {
+                        const optionsBtn = e.target.closest('.log-options-btn');
+                        if (optionsBtn) {
+                            const menu = optionsBtn.nextElementSibling;
+                            document.querySelectorAll('.log-options-menu').forEach(m => {
+                                if (m !== menu) m.classList.remove('active');
+                            });
+                            menu.classList.toggle('active');
+                            return;
+                        }
+
+                        const deleteBtn = e.target.closest('.log-delete-btn');
+                        if(deleteBtn) {
+                            const sessionItem = deleteBtn.closest('.session-log-item').querySelector('.log-options-btn');
+                            const sessionId = sessionItem.dataset.sessionId;
+                            const duration = parseInt(sessionItem.dataset.durationSeconds, 10);
+                            const endedAt = new Date(sessionItem.dataset.endedAt);
+                            
+                            showConfirmationModal('Delete Session?', 'Are you sure you want to permanently delete this study session?', () => {
+                                deleteSession(sessionId, duration, endedAt);
+                            });
+                        }
+
+                        const editBtn = e.target.closest('.log-edit-btn');
+                        if(editBtn) {
+                            const sessionItem = editBtn.closest('.session-log-item').querySelector('.log-options-btn');
+                            const sessionId = sessionItem.dataset.sessionId;
+                            const durationSeconds = parseInt(sessionItem.dataset.durationSeconds, 10);
+                            const endedAt = sessionItem.dataset.endedAt;
+
+                            const modal = document.getElementById('edit-session-modal');
+                            document.getElementById('edit-session-id').value = sessionId;
+                            document.getElementById('edit-session-duration').value = Math.round(durationSeconds / 60);
+                            document.getElementById('edit-session-old-duration').value = durationSeconds;
+                            document.getElementById('edit-session-ended-at').value = endedAt;
+                            modal.classList.add('active');
+                        }
                     });
-                    menu.classList.toggle('active');
-                    return;
                 }
+            };
 
-                const deleteBtn = e.target.closest('.log-delete-btn');
-                if(deleteBtn) {
-                    const sessionItem = deleteBtn.closest('.session-log-item').querySelector('.log-options-btn');
-                    const sessionId = sessionItem.dataset.sessionId;
-                    const duration = parseInt(sessionItem.dataset.durationSeconds, 10);
-                    const endedAt = new Date(sessionItem.dataset.endedAt);
-                    
-                    showConfirmationModal('Delete Session?', 'Are you sure you want to permanently delete this study session?', () => {
-                        deleteSession(sessionId, duration, endedAt);
-                    });
-                }
+            attachLogEventListeners(logContainer);
+            attachLogEventListeners(dayLogContainer); // Attach for the new day log container
 
-                 const editBtn = e.target.closest('.log-edit-btn');
-                    if(editBtn) {
-                        const sessionItem = editBtn.closest('.session-log-item').querySelector('.log-options-btn');
-                        const sessionId = sessionItem.dataset.sessionId;
-                        const durationSeconds = parseInt(sessionItem.dataset.durationSeconds, 10);
-                        const endedAt = sessionItem.dataset.endedAt;
-
-                        const modal = document.getElementById('edit-session-modal');
-                        document.getElementById('edit-session-id').value = sessionId;
-                        document.getElementById('edit-session-duration').value = Math.round(durationSeconds / 60);
-                        document.getElementById('edit-session-old-duration').value = durationSeconds;
-                        document.getElementById('edit-session-ended-at').value = endedAt;
-                        modal.classList.add('active');
-                    }
-            });
-
-            // Initial render
             const initialActiveView = insightsContainer.querySelector('.nav-btn.active').dataset.view;
-            if (initialActiveView === 'day') {
-                renderDayView();
-            } else {
-                renderTrendView();
+            switch(initialActiveView) {
+                case 'period': renderPeriodView(); break;
+                case 'month': renderMonthView(); break;
+                case 'trend': renderTrendView(); break;
+                case 'day': renderDayView(); break;
             }
+            generateAIInsight(appData);
         }
         
         async function deleteSession(sessionId, durationSeconds, endedAt) {
@@ -2643,6 +2690,7 @@
         }
 
         function setupGroupMemberListeners(memberIds) {
+            // Clear existing listeners and intervals to prevent memory leaks and duplicate updates
             groupDetailUnsubscribers.forEach(unsub => unsub());
             groupDetailUnsubscribers = [];
             memberTimerIntervals.forEach(clearInterval);
@@ -2922,8 +2970,8 @@
                 `;
             }
             
-            const attendanceData = {};
-            const memberAttendanceData = {};
+            const attendanceData = {}; // Total study time per day for the group
+            const memberAttendanceData = {}; // Study time and days studied per member
             
             for(const memberId in groupRealtimeData.sessions) {
                 memberAttendanceData[memberId] = { totalTime: 0, daysStudied: new Set() };
@@ -3598,7 +3646,7 @@
             if (!e.target.closest('.subject-options-btn')) {
                 document.querySelectorAll('.subject-options-menu').forEach(m => m.classList.remove('active'));
             }
-            if (!e.target.closest('.log-options-btn')) {
+            if (!e.target.closest('.log-options-btn') && !e.target.closest('.log-options-menu')) {
                 document.querySelectorAll('.log-options-menu').forEach(m => m.classList.remove('active'));
             }
         });
@@ -3664,4 +3712,3 @@
     </script>
 </body>
 </html>
-
