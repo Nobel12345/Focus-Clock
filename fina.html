@@ -1666,36 +1666,41 @@
                 return;
             }
             try {
-                const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
-                const publicUserRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
-                const sessionsRef = collection(userRef, 'sessions');
-                const todayStr = getCurrentDate().toISOString().split('T')[0];
-
-                // Use a transaction to ensure atomic updates
+                // Define document references within the transaction scope
                 await runTransaction(db, async (transaction) => {
-                    const userDoc = await transaction.get(userRef);
+                    const userDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
+                    const publicUserDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
+                    
+                    // ALL READS MUST BE EXECUTED BEFORE ANY WRITES
+                    const userDoc = await transaction.get(userDocRef); // Read 1
+                    const publicUserDoc = await transaction.get(publicUserDocRef); // Read 2
+
                     if (!userDoc.exists()) {
-                        throw "User document does not exist!";
+                        // This indicates a deeper issue, as user document should exist.
+                        // Throwing an error will cause the transaction to fail and retry.
+                        throw new Error("Transaction failed: User document not found.");
                     }
 
-                    // Get current daily total, resetting if it's a new day
+                    // Prepare data based on reads
                     const data = userDoc.data();
+                    const todayStr = getCurrentDate().toISOString().split('T')[0];
                     let currentDailySeconds = 0;
                     if (data.totalTimeToday && data.totalTimeToday.date === todayStr) {
                         currentDailySeconds = data.totalTimeToday.seconds || 0;
                     }
-                    
                     const newDailyTotal = currentDailySeconds + durationSeconds;
 
-                    // Add the new session document
-                    transaction.set(doc(sessionsRef), {
+                    // ALL WRITES MUST COME AFTER ALL READS
+                    // Add the new session document to the user's sessions subcollection
+                    const newSessionDocRef = doc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'sessions'));
+                    transaction.set(newSessionDocRef, {
                         subject: subject,
                         durationSeconds: durationSeconds,
                         endedAt: serverTimestamp()
                     });
 
-                    // Update the user document with new totals
-                    transaction.update(userRef, {
+                    // Update the user's private document with new totals
+                    transaction.update(userDocRef, {
                         totalStudySeconds: increment(durationSeconds),
                         totalTimeToday: {
                             date: todayStr,
@@ -1703,11 +1708,20 @@
                         }
                     });
 
-                    // Update the public user document
-                    transaction.update(publicUserRef, {
+                    // Conditionally create or update the public user document
+                    if (!publicUserDoc.exists()) {
+                        transaction.set(publicUserDocRef, {
+                            username: currentUserData.username || 'Anonymous', // Use currentUserData for initial set
+                            email: currentUserData.email || currentUser.email || '',
+                            totalStudySeconds: 0 // Initialize to 0, then increment below
+                        });
+                    }
+                    // Always update the public user document, whether it was just created or already existed
+                    transaction.update(publicUserDocRef, {
                         totalStudySeconds: increment(durationSeconds)
                     });
-                     // Update local state after successful transaction
+
+                    // Update local state after successful transaction (this is outside Firestore operations)
                     totalTimeTodayInSeconds = newDailyTotal;
                 });
                 
