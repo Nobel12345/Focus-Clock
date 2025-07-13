@@ -11,6 +11,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Tone.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
 
     <style>
         /* Base styles */
@@ -1402,7 +1404,23 @@
             'Pop': "https://www.soundjay.com/misc/ding-dong-01.mp3",
             'Chime': "https://www.soundjay.com/misc/chime-bell-02.mp3",
             'Success': "https://www.soundjay.com/misc/success-sound-effect.mp3",
-            'None': ''
+            'None': '',
+            'Long Beep': 'https://www.soundjay.com/buttons/beep-07a.mp3', // Reusing for example, replace with actual 5s+
+            'Alarm Clock': 'https://www.soundjay.com/misc/alarm-clock-bell-01.mp3', // Example, replace with actual 5s+
+            'Digital Alarm': 'https://www.soundjay.com/misc/digital-alarm-clock-01.mp3', // Example, replace with actual 5s+
+            'Siren': 'https://www.soundjay.com/mechanical/siren-01.mp3', // Example, replace with actual 5s+
+            'Warning': 'https://www.soundjay.com/misc/warning-sound-effect.mp3', // Example, replace with actual 5s+
+            'Long Ding': 'https://www.soundjay.com/misc/ding-01.mp3', // Example, replace with actual 5s+
+            'Deep Chime': 'https://www.soundjay.com/misc/chime-deep-01.mp3', // Example, replace with actual 5s+
+            'Electronic Alert': 'https://www.soundjay.com/misc/electronic-alert-01.mp3', // Example, replace with actual 5s+
+            'Space Alarm': 'https://www.soundjay.com/misc/space-alarm-01.mp3', // Example, replace with actual 5s+
+            'Gentle Bell': 'https://www.soundjay.com/misc/bell-gentle-01.mp3', // Example, replace with actual 5s+
+            // Tone.js sounds
+            'Tone:Synth Pluck': 'tone_synth_pluck',
+            'Tone:Metal Bell': 'tone_metal_bell',
+            'Tone:Noise Alarm': 'tone_noise_alarm',
+            'Tone:Chime Chord': 'tone_chime_chord',
+            'Tone:Simple Beep': 'tone_simple_beep'
         };
 
         // Attendance State
@@ -1413,28 +1431,87 @@
         let authError, sessionTimerDisplay, totalTimeDisplay, activeSubjectDisplay, pomodoroStatusDisplay;
 
         // --- UI Helper Functions ---
-        function playSound(url, volume) {
-            if (!url || url.trim() === '') return;
+        async function playSound(soundId, volume) {
+            if (!soundId || soundId.trim() === '') return;
+            
+            // Ensure audio context is active
+            await Tone.start();
+
             try {
-                const audio = new Audio(url);
-                audio.volume = volume;
-                const playPromise = audio.play();
-                if (playPromise !== undefined) {
-                    playPromise.catch(error => {
-                        console.warn(`Could not play sound: ${url}. Error: ${error.message}`);
-                    });
+                if (soundId.startsWith('tone_')) {
+                    // Handle Tone.js sounds
+                    let synth;
+                    switch (soundId) {
+                        case 'tone_synth_pluck':
+                            synth = new Tone.Synth().toDestination();
+                            synth.volume.value = Tone.gainToDb(volume);
+                            synth.triggerAttackRelease("C4", "8n");
+                            break;
+                        case 'tone_metal_bell':
+                            synth = new Tone.MetalSynth().toDestination();
+                            synth.volume.value = Tone.gainToDb(volume);
+                            synth.envelope.decay = 1.2; // Longer decay for bell
+                            synth.triggerAttackRelease("C5", "1s");
+                            break;
+                        case 'tone_noise_alarm':
+                            synth = new Tone.NoiseSynth({
+                                noise: { type: "pink" },
+                                envelope: { attack: 0.1, decay: 0.5, sustain: 0.1, release: 0.8 }
+                            }).toDestination();
+                            synth.volume.value = Tone.gainToDb(volume);
+                            synth.triggerAttackRelease("1s");
+                            break;
+                        case 'tone_chime_chord':
+                            synth = new Tone.PolySynth(Tone.Synth).toDestination();
+                            synth.volume.value = Tone.gainToDb(volume);
+                            synth.triggerAttackRelease(["C4", "E4", "G4"], "0.5");
+                            break;
+                        case 'tone_simple_beep':
+                            synth = new Tone.Oscillator("C4", "sine").toDestination();
+                            synth.volume.value = Tone.gainToDb(volume);
+                            synth.start().stop("+0.2");
+                            break;
+                        default:
+                            console.warn("Unknown Tone.js sound ID:", soundId);
+                            return;
+                    }
+                    // Dispose of the synth after it's done playing to free up resources
+                    if (synth.triggerAttackRelease) {
+                        setTimeout(() => synth.dispose(), 2000); // Give it some time to play
+                    } else if (synth.start) { // For oscillators that need explicit start/stop
+                        setTimeout(() => synth.dispose(), 2000);
+                    }
+
+                } else {
+                    // Handle URL-based sounds
+                    const audio = new Audio(soundId);
+                    audio.volume = volume;
+                    const playPromise = audio.play();
+                    if (playPromise !== undefined) {
+                        playPromise.catch(error => {
+                            console.warn(`Could not play sound: ${soundId}. Error: ${error.message}`);
+                        });
+                    }
                 }
             } catch (e) {
-                console.warn("Error creating audio element:", e);
+                console.warn("Error playing sound:", e);
             }
         }
 
         function unlockAudio() {
             if (isAudioUnlocked) return;
+            // Attempt to start Tone.js audio context
+            Tone.start().then(() => {
+                isAudioUnlocked = true;
+                console.log("Tone.js audio context started.");
+            }).catch(e => console.warn("Tone.js audio context failed to start:", e));
+
+            // Also play a silent audio for broader browser compatibility
             const silentAudio = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=');
             silentAudio.play().then(() => {
-                isAudioUnlocked = true;
-            }).catch(e => console.warn("Audio unlock failed.", e));
+                // This part might not be strictly necessary if Tone.start() is successful,
+                // but it's a robust fallback for general audio unlock.
+            }).catch(e => console.warn("Silent audio unlock failed.", e));
         }
 
         function showToast(message, type = 'info', duration = 3000) {
@@ -2450,7 +2527,7 @@
                 await deleteDoc(sessionRef);
 
                 await updateDoc(userRef, { totalStudySeconds: increment(-durationSeconds) });
-                await updateDoc(publicUserRef, { totalStudySeconds: increment(-durationSeconds) });
+                await updateDoc(publicUserRef, { totalStudySeconds: increment(-durationDifference) });
 
                 const sessionDateStr = endedAt.toISOString().split('T')[0];
                 const todayStr = getCurrentDate().toISOString().split('T')[0];
