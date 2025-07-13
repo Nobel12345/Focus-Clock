@@ -644,11 +644,6 @@
             font-weight: 600;
             text-align: center;
         }
-        .attendance-calendar {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 4px;
-        }
         .calendar-header {
             text-align: center;
             padding: 8px;
@@ -1761,6 +1756,32 @@
             // Clear break status from UI
             pomodoroStatusDisplay.textContent = ''; // Clear the "On Break" status
 
+            // --- New: Check and save idle time before starting a new study session ---
+            if (currentUser) {
+                const sessionsRef = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'sessions');
+                const q = query(sessionsRef, orderBy('endedAt', 'desc'), limit(1));
+                const lastSessionSnapshot = await getDocs(q);
+
+                if (!lastSessionSnapshot.empty) {
+                    const lastSessionData = lastSessionSnapshot.docs[0].data();
+                    // Ensure lastSessionData.endedAt is a valid Timestamp before calling toDate()
+                    const lastSessionEndedAt = lastSessionData.endedAt && typeof lastSessionData.endedAt.toDate === 'function' 
+                                                ? lastSessionData.endedAt.toDate() 
+                                                : null;
+                    const now = Date.now();
+
+                    // Only track idle break if the last session was a study session and ended before now
+                    if (lastSessionData.type === 'study' && lastSessionEndedAt && lastSessionEndedAt < now) {
+                        const idleDurationSeconds = Math.floor((now - lastSessionEndedAt) / 1000);
+                        if (idleDurationSeconds > 0) {
+                            await saveSession('Idle Break', idleDurationSeconds, 'break');
+                        }
+                    }
+                }
+            }
+            // --- End New idle time tracking ---
+
+
             activeSubject = subject;
             activeSubjectDisplay.textContent = activeSubject;
             
@@ -2097,7 +2118,7 @@
                     return {
                         id: doc.id,
                         ...data,
-                        endedAt: data.endedAt?.toDate(),
+                        endedAt: data.endedAt && typeof data.endedAt.toDate === 'function' ? data.endedAt.toDate() : null, // Ensure endedAt is converted only if it's a Timestamp
                         type: data.type || 'study' // Ensure type is present, default to 'study'
                     };
                 });
@@ -2966,7 +2987,7 @@
                     groupRealtimeData.sessions[memberId] = snapshot.docs.map(doc => ({
                         id: doc.id,
                         ...doc.data(),
-                        endedAt: doc.data().endedAt?.toDate(),
+                        endedAt: doc.data().endedAt && typeof doc.data().endedAt.toDate === 'function' ? doc.data().endedAt.toDate() : null, // Ensure endedAt is converted only if it's a Timestamp
                         type: doc.data().type || 'study' // Ensure type is present
                     }));
                     const activeSubPage = document.querySelector('#group-detail-nav .active')?.dataset.subpage;
@@ -3205,7 +3226,7 @@
                 startDate.setHours(0,0,0,0);
 
                 const totalSeconds = memberSessions
-                    .filter(s => s.endedAt && s.endedAt.toDate() >= startDate && s.type === 'study') // Only count study sessions for ranking
+                    .filter(s => s.endedAt && s.endedAt >= startDate && s.type === 'study') // Only count study sessions for ranking
                     .reduce((sum, s) => sum + s.durationSeconds, 0);
 
                 return {
@@ -3268,7 +3289,8 @@
                 memberAttendanceData[memberId] = { totalTime: 0, daysStudied: new Set() };
                 const memberSessions = groupRealtimeData.sessions[memberId];
                 memberSessions.forEach(session => {
-                    const sessionDate = session.endedAt?.toDate();
+                    // Check if session.endedAt is a Date object before using it
+                    const sessionDate = session.endedAt instanceof Date ? session.endedAt : null;
                     if(sessionDate && sessionDate.getFullYear() === attendanceYear && sessionDate.getMonth() === attendanceMonth && session.type === 'study') { // Filter for study sessions
                         const dateStr = sessionDate.toISOString().split('T')[0];
                         attendanceData[dateStr] = (attendanceData[dateStr] || 0) + session.durationSeconds;
@@ -3638,13 +3660,13 @@
 
         ael('stop-studying-btn', 'click', stopTimer);
         
-        ael('manual-start-btn', 'click', () => {
+        ael('manual-start-btn', 'click', async () => { // Made async to await saveSession
             // Stop and save any active break session before starting a new study session
             if (breakTimerInterval) {
                 clearInterval(breakTimerInterval);
                 const elapsedBreakSeconds = Math.floor((Date.now() - breakStartTime) / 1000);
                 if (elapsedBreakSeconds > 0) {
-                    saveSession('Break', elapsedBreakSeconds, 'break'); // Save break session
+                    await saveSession('Break', elapsedBreakSeconds, 'break'); // Save break session
                 }
                 breakTimerInterval = null;
                 breakStartTime = 0;
