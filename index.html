@@ -454,12 +454,26 @@
             .create-group-btn { bottom: 70px; right: 15px; }
             #session-timer { font-size: 4rem; }
         }
+        .subject-color-picker {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(32px, 1fr)); /* Responsive grid */
+            gap: 8px; /* Space between dots */
+        }
         .subject-color-picker .color-dot {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
             outline: 2px solid transparent;
-            transition: outline-color 0.2s;
+            transition: outline-color 0.2s, transform 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2); /* Subtle shadow */
+        }
+        .subject-color-picker .color-dot:hover {
+            transform: scale(1.1); /* Pop effect on hover */
         }
         .subject-color-picker .color-dot.selected {
-            outline-color: #3B82F6;
+            outline-color: #3B82F6; /* Blue outline for selected */
+            transform: scale(1.05); /* Slightly larger when selected */
         }
         .subject-item {
             cursor: pointer;
@@ -1203,7 +1217,7 @@
     </div>
 
     <div id="toast-container"></div>
-    <div id="add-subject-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Add New Subject</div><button class="close-modal">&times;</button></div><form id="add-subject-form"><div class="mb-4"><label for="add-subject-name" class="block text-gray-300 mb-2">Subject Name</label><input type="text" id="add-subject-name" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required></div><div class="mb-4"><label class="block text-gray-300 mb-2">Color</label><div class="flex space-x-2 subject-color-picker"><div class="w-8 h-8 rounded-full bg-red-500 cursor-pointer color-dot" data-color="bg-red-500"></div><div class="w-8 h-8 rounded-full bg-blue-500 cursor-pointer color-dot selected" data-color="bg-blue-500"></div><div class="w-8 h-8 rounded-full bg-green-500 cursor-pointer color-dot" data-color="bg-green-500"></div><div class="w-8 h-8 rounded-full bg-yellow-500 cursor-pointer color-dot" data-color="bg-yellow-500"></div><div class="w-8 h-8 rounded-full bg-purple-500 cursor-pointer color-dot" data-color="bg-purple-500"></div></div></div><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Add Subject</button></form></div></div>
+    <div id="add-subject-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Add New Subject</div><button class="close-modal">&times;</button></div><form id="add-subject-form"><div class="mb-4"><label for="add-subject-name" class="block text-gray-300 mb-2">Subject Name</label><input type="text" id="add-subject-name" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required></div><div class="mb-4"><label class="block text-gray-300 mb-2">Color</label><div class="subject-color-picker"><div class="color-dot bg-red-500" data-color="bg-red-500"></div><div class="color-dot bg-blue-500 selected" data-color="bg-blue-500"></div><div class="color-dot bg-green-500" data-color="bg-green-500"></div><div class="color-dot bg-yellow-500" data-color="bg-yellow-500"></div><div class="color-dot bg-purple-500" data-color="bg-purple-500"></div><div class="color-dot bg-pink-500" data-color="bg-pink-500"></div><div class="color-dot bg-indigo-500" data-color="bg-indigo-500"></div><div class="color-dot bg-teal-500" data-color="bg-teal-500"></div><div class="color-dot bg-orange-500" data-color="bg-orange-500"></div><div class="color-dot bg-cyan-500" data-color="bg-cyan-500"></div><div class="color-dot bg-lime-500" data-color="bg-lime-500"></div><div class="color-dot bg-fuchsia-500" data-color="bg-fuchsia-500"></div><div class="color-dot bg-rose-500" data-color="bg-rose-500"></div><div class="color-dot bg-sky-500" data-color="bg-sky-500"></div><div class="color-dot bg-emerald-500" data-color="bg-emerald-500"></div><div class="color-dot bg-amber-500" data-color="bg-amber-500"></div><div class="color-dot bg-violet-500" data-color="bg-violet-500"></div></div></div><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Add Subject</button></form></div></div>
     <div id="start-session-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Start New Session</div><button id="close-start-session-modal" class="close-modal">&times;</button></div><form id="start-session-form"><div id="subject-selection-list" class="mb-4 max-h-60 overflow-y-auto space-y-2"></div><div class="flex items-center gap-4 mt-4"><button type="button" id="open-add-subject-modal-from-start" class="w-full text-center py-3 bg-gray-600 hover:bg-gray-500 rounded-lg font-medium transition">Add New Subject</button><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Start Timer</button></div></form></div></div>
     <div id="add-task-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Add New Task</div><button class="close-modal">&times;</button></div><form id="add-task-form"><div class="mb-4"><label for="add-task-name" class="block text-gray-300 mb-2">Task Description</label><input type="text" id="add-task-name" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required></div><div class="mb-4"><label for="add-task-date" class="block text-gray-300 mb-2">Date</label><input type="date" id="add-task-date" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required></div><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Add Task</button></form></div></div>
     <div id="password-prompt-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Enter Group Password</div><button class="close-modal">&times;</button></div><form id="password-prompt-form"><input type="password" id="group-password-prompt-input" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required><div class="flex gap-2 mt-4"><button type="button" class="close-modal w-full py-2 bg-gray-600 rounded-lg">Cancel</button><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-lg transition">Submit</button></div></form></div></div>
@@ -1395,6 +1409,7 @@
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         let userSessions = []; 
         let isAudioUnlocked = false;
+        let isAddingSubjectFromStartSession = false; // Flag to track modal origin
 
         // Timer State
         let timerInterval = null;
@@ -1794,7 +1809,7 @@
                     }
                     const newDailyTotal = currentDailySeconds + durationSeconds;
 
-                    // ALL WRITES MUST COME AFTER ALL READS
+                    // ALL WRITES MUST COME AFTER ALL WRITES
                     // Add the new session document to the user's sessions subcollection
                     const newSessionDocRef = doc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'sessions'));
                     transaction.set(newSessionDocRef, {
@@ -1973,6 +1988,7 @@
             onSnapshot(subjectsCollectionRef, (snapshot) => {
                 const subjects = [];
                 snapshot.forEach(doc => subjects.push({ id: doc.id, ...doc.data() }));
+                // When subjects change, re-render the list in the start session modal
                 renderSubjectSelectionList(subjects);
             });
             
@@ -2561,16 +2577,15 @@
                 if (sessionDateStr === todayStr) {
                     totalTimeTodayInSeconds -= durationSeconds;
                     if (totalTimeTodayInSeconds < 0) totalTimeTodayInSeconds = 0;
-                    
                     await updateDoc(userRef, {
                         totalTimeToday: {
                             date: todayStr,
                             seconds: totalTimeTodayInSeconds
                         }
                     });
-                     totalTimeDisplay.textContent = `Total Today: ${formatTime(totalTimeTodayInSeconds)}`;
                 }
-
+                
+                modal.classList.remove('active');
                 showToast("Session deleted successfully", "success");
             } catch (error) {
                 console.error("Error deleting session:", error);
@@ -2680,7 +2695,7 @@
             showToast("Group joined successfully!", "success");
         }
 
-        function renderSubjectSelectionList(subjects) {
+        function renderSubjectSelectionList(subjects, newlyAddedSubjectName = null) {
             const container = document.getElementById('subject-selection-list');
             if (!container) return;
             if (subjects.length === 0) {
@@ -2700,6 +2715,21 @@
                     </div>
                 </div>
             `).join('');
+
+            // Auto-select the newly added subject if provided
+            if (newlyAddedSubjectName) {
+                const newSubjectElement = container.querySelector(`[data-subject-name="${newlyAddedSubjectName}"]`);
+                if (newSubjectElement) {
+                    // Remove 'selected' from any previously selected subject
+                    container.querySelectorAll('.subject-item.selected').forEach(el => el.classList.remove('selected'));
+                    // Add 'selected' to the new subject
+                    newSubjectElement.classList.add('selected');
+                    newSubjectElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            } else {
+                // If no new subject, ensure no subject is selected by default
+                container.querySelectorAll('.subject-item.selected').forEach(el => el.classList.remove('selected'));
+            }
         }
         
         function renderPlanner(tasks) {
@@ -2896,11 +2926,11 @@
                         <div class="stats-grid">
                             <div class="stat-box">
                                 <div id="total-hours" class="stat-value">0h 0m</div>
-                                <div class="stat-label">Total Hours</div>
+                                <div the="stat-label">Days Studied</div>
                             </div>
                             <div class="stat-box">
                                 <div id="days-studied" class="stat-value">0</div>
-                                <div class="stat-label">Days Studied</div>
+                                <div the="stat-label">Days Studied</div>
                             </div>
                             <div class="stat-box">
                                 <div id="attendance-rate" class="stat-value">0%</div>
@@ -2928,19 +2958,41 @@
             
             const todayStr = getCurrentDate().toISOString().split('T')[0];
 
-            memberList.innerHTML = Object.keys(groupRealtimeData.members).map(memberId => {
+            // Convert members object to an array for sorting
+            const membersArray = Object.keys(groupRealtimeData.members).map(memberId => {
                 const memberData = groupRealtimeData.members[memberId];
-                if (!memberData) return '';
-
                 let totalTodaySeconds = 0;
                 if (memberData.totalTimeToday && memberData.totalTimeToday.date === todayStr) {
                     totalTodaySeconds = memberData.totalTimeToday.seconds;
                 }
-
                 const isStudying = memberData.studying;
-                const initialDisplayTime = isStudying
-                    ? totalTodaySeconds + (Date.now() - memberData.studying.startTime.toDate()) / 1000
-                    : totalTodaySeconds;
+                const currentSessionElapsed = isStudying ? (Date.now() - memberData.studying.startTime.toDate()) / 1000 : 0;
+                const effectiveTotalToday = totalTodaySeconds + currentSessionElapsed;
+
+                return {
+                    id: memberId,
+                    data: memberData,
+                    isStudying: isStudying,
+                    effectiveTotalToday: effectiveTotalToday
+                };
+            });
+
+            // Sort members:
+            // 1. Currently studying (true comes before false)
+            // 2. Then by effectiveTotalToday (descending)
+            membersArray.sort((a, b) => {
+                if (a.isStudying && !b.isStudying) return -1; // a is studying, b is not: a comes first
+                if (!a.isStudying && b.isStudying) return 1;  // a is not studying, b is: b comes first
+                // If both are studying or both are not, sort by effectiveTotalToday
+                return b.effectiveTotalToday - a.effectiveTotalToday;
+            });
+
+
+            memberList.innerHTML = membersArray.map(member => {
+                const memberData = member.data;
+                const memberId = member.id;
+                const isStudying = member.isStudying;
+                const totalTodaySeconds = member.effectiveTotalToday; // Use the calculated effective total
 
                 return `
                     <div class="member-list-card">
@@ -2955,8 +3007,8 @@
                             </div>
                         </div>
                         <div class="text-right">
-                            <div class="text-xl font-semibold text-white" id="member-time-${memberId}" data-base-time="${totalTodaySeconds}" data-start-time="${isStudying ? memberData.studying.startTime.toDate().getTime() : 0}">
-                                ${formatTime(initialDisplayTime)}
+                            <div class="text-xl font-semibold text-white" id="member-time-${memberId}" data-base-time="${member.data.totalTimeToday && member.data.totalTimeToday.date === todayStr ? member.data.totalTimeToday.seconds : 0}" data-start-time="${isStudying ? memberData.studying.startTime.toDate().getTime() : 0}">
+                                ${formatTime(totalTodaySeconds)}
                             </div>
                             <div class="text-xs text-gray-500">Total Today</div>
                         </div>
@@ -2964,8 +3016,10 @@
                 `;
             }).join('');
 
-            Object.keys(groupRealtimeData.members).forEach(memberId => {
-                const memberData = groupRealtimeData.members[memberId];
+            // Set up intervals for actively studying members
+            membersArray.forEach(member => {
+                const memberData = member.data;
+                const memberId = member.id;
                 const timeEl = document.getElementById(`member-time-${memberId}`);
                 if (memberData && memberData.studying && timeEl) {
                     const baseTime = parseInt(timeEl.dataset.baseTime, 10);
@@ -3361,7 +3415,12 @@
         
         // Modals
         const addSubjectModal = document.getElementById('add-subject-modal');
-        ael('add-subject-btn', 'click', () => { addSubjectModal.classList.add('active'); });
+        const startSessionModal = document.getElementById('start-session-modal');
+
+        ael('add-subject-btn', 'click', () => { 
+            isAddingSubjectFromStartSession = false; // Reset flag
+            addSubjectModal.classList.add('active'); 
+        });
         addSubjectModal.querySelector('.close-modal').addEventListener('click', () => { addSubjectModal.classList.remove('active'); });
         
         addSubjectModal.querySelectorAll('.color-dot').forEach(dot => {
@@ -3375,9 +3434,11 @@
             e.preventDefault();
             if (!currentUser) return;
             const name = document.getElementById('add-subject-name').value.trim();
-            const color = addSubjectModal.querySelector('.color-dot.selected').dataset.color;
-            if (!name || !color) {
-                showToast("Please provide a name and select a color.", "error");
+            const selectedColorDot = addSubjectModal.querySelector('.color-dot.selected');
+            const color = selectedColorDot ? selectedColorDot.dataset.color : 'bg-blue-500'; // Default color if none selected
+            
+            if (!name) {
+                showToast("Please provide a name for the subject.", "error");
                 return;
             }
 
@@ -3385,15 +3446,36 @@
             const subjectsRef = collection(userRef, 'subjects');
             await addDoc(subjectsRef, { name, color });
             
-            addSubjectModal.classList.remove('active');
+            addSubjectModal.classList.remove('active'); // This fixes the modal not hiding
             document.getElementById('add-subject-form').reset();
+            // Re-select a default color for the next time the modal opens
+            addSubjectModal.querySelector('.color-dot.selected')?.classList.remove('selected');
+            addSubjectModal.querySelector('.color-dot[data-color="bg-blue-500"]')?.classList.add('selected');
+
+            // After adding, re-render the subject list in the start session modal and select the new subject
+            const subjectsSnapshot = await getDocs(subjectsRef);
+            const subjects = [];
+            subjectsSnapshot.forEach(doc => subjects.push({ id: doc.id, ...doc.data() }));
+            renderSubjectSelectionList(subjects, name); // Pass the newly added subject's name for auto-selection
+
             showToast("Subject added!", "success");
+
+            // If the subject was added from the "Start New Session" modal, re-open it
+            if (isAddingSubjectFromStartSession) {
+                startSessionModal.classList.add('active');
+                isAddingSubjectFromStartSession = false; // Reset flag
+            }
         });
         
-        const startSessionModal = document.getElementById('start-session-modal');
         ael('start-studying-btn', 'click', () => { startSessionModal.classList.add('active'); });
         ael('close-start-session-modal', 'click', () => { startSessionModal.classList.remove('active'); });
-        ael('open-add-subject-modal-from-start', 'click', () => { addSubjectModal.classList.add('active'); });
+        
+        // Modified: When "Add New Subject" is clicked from "Start New Session"
+        ael('open-add-subject-modal-from-start', 'click', () => { 
+            isAddingSubjectFromStartSession = true; // Set flag
+            startSessionModal.classList.remove('active'); // Hide "Start New Session" modal
+            addSubjectModal.classList.add('active'); // Show "Add New Subject" modal
+        });
 
         ael('start-session-form', 'submit', (e) => {
             e.preventDefault();
