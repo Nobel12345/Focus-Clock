@@ -1118,8 +1118,7 @@
                     <div class="settings-item"><div class="settings-label">Notifications</div><div class="settings-value">Enabled</div></div>
                     <div class="settings-item"><div class="settings-label">Appearance</div><div class="settings-value">Dark Mode</div></div>
                     <div class="settings-item"><div class="settings-label">About FocusFlow</div><div class="settings-value">Version 1.0.0</div></div>
-                    <button id="install-app-button" class="w-full mt-8 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-medium transition hidden">Install App</button>
-                    <button id="sign-out-btn" class="w-full mt-4 py-3 bg-red-600 hover:bg-red-700 rounded-lg font-medium transition">Sign Out</button>
+                    <button id="sign-out-btn" class="w-full mt-8 py-3 bg-red-600 hover:bg-red-700 rounded-lg font-medium transition">Sign Out</button>
                 </div>
             </div>
             
@@ -1421,7 +1420,6 @@
         let userSessions = []; 
         let isAudioUnlocked = false;
         let isAddingSubjectFromStartSession = false; // Flag to track modal origin
-        let deferredPrompt; // To store the PWA install prompt event
 
         // Timer State
         let timerInterval = null;
@@ -3690,25 +3688,16 @@
         async function updateSubjectOrderInFirestore() {
             if (!currentUser) return;
             const subjectsRef = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'subjects');
-            
+            const batch = db.batch; // Get a new batch instance
+
             const subjectElements = Array.from(subjectListContainer.children);
             
-            // Use a batch write for efficiency
-            const batch = writeBatch(db);
-
             for (let i = 0; i < subjectElements.length; i++) {
                 const subjectId = subjectElements[i].dataset.subjectId;
                 const subjectDocRef = doc(subjectsRef, subjectId);
-                batch.update(subjectDocRef, { order: i }); // Update each subject's order
+                await updateDoc(subjectDocRef, { order: i }); // Update each subject's order
             }
-            
-            try {
-                await batch.commit();
-                showToast("Subject order updated!", "success");
-            } catch (error) {
-                console.error("Error updating subject order:", error);
-                showToast("Failed to update subject order.", "error");
-            }
+            showToast("Subject order updated!", "success");
         }
 
 
@@ -4002,52 +3991,6 @@
             modal.querySelectorAll('.close-modal').forEach(btn => {
                 btn.addEventListener('click', () => { modal.classList.remove('active'); });
             });
-        });
-
-        // --- PWA Installation Logic ---
-        const installButton = document.getElementById('install-app-button');
-
-        window.addEventListener('beforeinstallprompt', (e) => {
-            // Prevent the mini-infobar from appearing on mobile
-            e.preventDefault();
-            // Stash the event so it can be triggered later.
-            deferredPrompt = e;
-            // Update UI to notify the user they can add to home screen
-            if (installButton) {
-                installButton.classList.remove('hidden');
-            }
-        });
-
-        if (installButton) {
-            installButton.addEventListener('click', async () => {
-                if (deferredPrompt) {
-                    // Show the install prompt
-                    deferredPrompt.prompt();
-                    // Wait for the user to respond to the prompt
-                    const { outcome } = await deferredPrompt.userChoice;
-                    // Optionally, send analytics event with outcome of user choice
-                    console.log(`User response to the install prompt: ${outcome}`);
-                    // We've used the prompt, and it can't be used again, so clear it.
-                    deferredPrompt = null;
-                    // Hide the install button
-                    installButton.classList.add('hidden');
-                    if (outcome === 'accepted') {
-                        showToast('FocusFlow installed successfully!', 'success');
-                    } else {
-                        showToast('FocusFlow installation cancelled.', 'info');
-                    }
-                }
-            });
-        }
-
-        window.addEventListener('appinstalled', () => {
-            // Hide the install button
-            if (installButton) {
-                installButton.classList.add('hidden');
-            }
-            // Clear the deferredPrompt so it can't be used again
-            deferredPrompt = null;
-            showToast('FocusFlow has been installed!', 'success');
         });
 
         // --- Initial Load ---
