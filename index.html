@@ -476,13 +476,23 @@
             transform: scale(1.05); /* Slightly larger when selected */
         }
         .subject-item {
-            cursor: pointer;
+            cursor: grab; /* Indicate draggable */
             border: 2px solid #374151;
             position: relative; /* For options menu positioning */
+            transition: all 0.2s ease; /* Smooth transitions for drag feedback */
         }
         .subject-item.selected {
             border-color: #3B82F6;
             background-color: #2563eb30;
+        }
+        .subject-item.dragging {
+            opacity: 0.5;
+            border: 2px dashed #3B82F6;
+            background-color: #2563eb10;
+        }
+        .subject-item.drag-over {
+            border: 2px solid #10B981; /* Green border for drag over target */
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
         }
         .subject-options-btn {
             position: absolute;
@@ -1069,8 +1079,8 @@
                 <div class="px-4 pt-4 border-b border-gray-800">
                     <div class="flex space-x-1" id="ranking-period-tabs">
                         <button class="ranking-tab-btn flex-1 py-2 px-4 rounded-t-lg font-semibold text-sm" data-period="daily">Daily</button>
-                        <button class="ranking-tab-btn flex-1 py-2 px-4 rounded-t-lg font-semibold text-sm active" data-period="weekly">Weekly</button>
-                        <button class="ranking-tab-btn flex-1 py-2 px-4 rounded-t-lg font-semibold text-sm" data-period="monthly">Monthly</button>
+                        <button class="ranking-tab-btn flex-1 py-2 px-4 rounded-t-lg font-semibold text-sm active" data-period="weekly">Last 7 Days</button>
+                        <button class="ranking-tab-btn flex-1 py-2 px-4 rounded-t-lg font-semibold text-sm" data-period="monthly">Last 30 Days</button>
                     </div>
                 </div>
                 <div id="ranking-list" class="ranking-list">
@@ -1424,6 +1434,9 @@
             sessions: {}
         };
         
+        // Drag & Drop State
+        let draggedItem = null;
+
         // --- Pomodoro State ---
         let timerMode = 'normal'; // 'normal' or 'pomodoro'
         let pomodoroSettings = {
@@ -1950,7 +1963,8 @@
             const groupsCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'groups');
             const usersCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'users');
             const userDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
-            const subjectsCollectionRef = collection(userDocRef, 'subjects');
+            // Fetch subjects ordered by 'order' field
+            const subjectsCollectionRef = query(collection(userDocRef, 'subjects'), orderBy('order', 'asc'));
             const sessionsCollectionRef = collection(userDocRef, 'sessions');
             const plannerTasksRef = collection(userDocRef, 'plannerTasks');
 
@@ -2057,13 +2071,14 @@
                     case 'daily':
                         startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
                         break;
-                    case 'monthly':
-                        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                    case 'monthly': // Last 30 days
+                        startDate = new Date(now);
+                        startDate.setDate(now.getDate() - 30);
                         break;
-                    case 'weekly':
+                    case 'weekly': // Last 7 days
                     default:
-                        const dayOfWeek = now.getDay();
-                        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek);
+                        startDate = new Date(now);
+                        startDate.setDate(now.getDate() - 7);
                         break;
                 }
                 startDate.setHours(0,0,0,0);
@@ -2086,6 +2101,8 @@
             const userScores = await Promise.all(userPromises);
             userScores.sort((a, b) => b.totalStudySeconds - a.totalStudySeconds);
 
+            const periodText = period === 'daily' ? 'today' : period === 'weekly' ? 'in the last 7 days' : 'in the last 30 days';
+
             container.innerHTML = userScores.map((user, index) => {
                 const rank = index + 1;
                 let rankClass = '';
@@ -2099,7 +2116,7 @@
                         <div class="user-avatar bg-gray-600">${(user.username || 'U').charAt(0).toUpperCase()}</div>
                         <div class="user-info">
                             <div class="user-name">${user.username}</div>
-                            <div class="user-time">${formatTime(user.totalStudySeconds, false)} this ${period.slice(0,-2)}</div>
+                            <div class="user-time">${formatTime(user.totalStudySeconds, false)} ${periodText}</div>
                         </div>
                     </div>
                 `;
@@ -2703,7 +2720,11 @@
                 return;
             }
             container.innerHTML = subjects.map(subject => `
-                <div class="subject-item p-3 rounded-lg flex items-center gap-3" data-subject-id="${subject.id}" data-subject-name="${subject.name}">
+                <div class="subject-item p-3 rounded-lg flex items-center gap-3" 
+                     draggable="true" 
+                     data-subject-id="${subject.id}" 
+                     data-subject-name="${subject.name}"
+                     data-order="${subject.order || 0}">
                     <div class="flex-grow flex items-center gap-3">
                         <div class="w-4 h-4 rounded-full ${subject.color}"></div>
                         <span>${subject.name}</span>
@@ -2881,8 +2902,8 @@
                  container.innerHTML = `<div class="px-4 pt-4 border-b border-gray-800">
                     <div class="flex space-x-1" id="group-ranking-period-tabs">
                         <button class="ranking-tab-btn flex-1 py-2 px-4 rounded-t-lg font-semibold text-sm" data-period="daily">Daily</button>
-                        <button class="ranking-tab-btn flex-1 py-2 px-4 rounded-t-lg font-semibold text-sm active" data-period="weekly">Weekly</button>
-                        <button class="ranking-tab-btn flex-1 py-2 px-4 rounded-t-lg font-semibold text-sm" data-period="monthly">Monthly</button>
+                        <button class="ranking-tab-btn flex-1 py-2 px-4 rounded-t-lg font-semibold text-sm active" data-period="weekly">Last 7 Days</button>
+                        <button class="ranking-tab-btn flex-1 py-2 px-4 rounded-t-lg font-semibold text-sm" data-period="monthly">Last 30 Days</button>
                     </div>
                 </div>
                 <div id="group-ranking-list" class="ranking-list"></div>`;
@@ -3054,11 +3075,17 @@
                 const now = getCurrentDate();
                 let startDate;
                 switch (period) {
-                    case 'daily': startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate()); break;
-                    case 'monthly': startDate = new Date(now.getFullYear(), now.getMonth(), 1); break;
-                    case 'weekly': default:
-                        const dayOfWeek = now.getDay();
-                        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek);
+                    case 'daily': 
+                        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate()); 
+                        break;
+                    case 'monthly': // Last 30 days
+                        startDate = new Date(now);
+                        startDate.setDate(now.getDate() - 30);
+                        break;
+                    case 'weekly': // Last 7 days
+                    default:
+                        startDate = new Date(now);
+                        startDate.setDate(now.getDate() - 7);
                         break;
                 }
                 startDate.setHours(0,0,0,0);
@@ -3075,6 +3102,7 @@
             });
 
             userScores.sort((a, b) => b.totalStudySeconds - a.totalStudySeconds);
+            const periodText = period === 'daily' ? 'today' : period === 'weekly' ? 'in the last 7 days' : 'in the last 30 days';
 
             container.innerHTML = userScores.map((user, index) => {
                 const rank = index + 1;
@@ -3089,7 +3117,7 @@
                         <div class="user-avatar bg-gray-600">${(user.username || 'U').charAt(0).toUpperCase()}</div>
                         <div class="user-info">
                             <div class="user-name">${user.username}</div>
-                            <div class="user-time">${formatTime(user.totalStudySeconds, false)} this ${period.slice(0,-2)}</div>
+                            <div class="user-time">${formatTime(user.totalStudySeconds, false)} ${periodText}</div>
                         </div>
                     </div>
                 `;
@@ -3444,7 +3472,12 @@
 
             const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
             const subjectsRef = collection(userRef, 'subjects');
-            await addDoc(subjectsRef, { name, color });
+            
+            // Get current count to set initial order
+            const subjectsSnapshot = await getDocs(subjectsRef);
+            const order = subjectsSnapshot.size;
+
+            await addDoc(subjectsRef, { name, color, order });
             
             addSubjectModal.classList.remove('active'); // This fixes the modal not hiding
             document.getElementById('add-subject-form').reset();
@@ -3453,9 +3486,9 @@
             addSubjectModal.querySelector('.color-dot[data-color="bg-blue-500"]')?.classList.add('selected');
 
             // After adding, re-render the subject list in the start session modal and select the new subject
-            const subjectsSnapshot = await getDocs(subjectsRef);
+            const updatedSubjectsSnapshot = await getDocs(query(subjectsRef, orderBy('order', 'asc')));
             const subjects = [];
-            subjectsSnapshot.forEach(doc => subjects.push({ id: doc.id, ...doc.data() }));
+            updatedSubjectsSnapshot.forEach(doc => subjects.push({ id: doc.id, ...doc.data() }));
             renderSubjectSelectionList(subjects, name); // Pass the newly added subject's name for auto-selection
 
             showToast("Subject added!", "success");
@@ -3551,6 +3584,122 @@
             }
         };
 
+        // --- Drag and Drop Functionality for Subjects ---
+        const subjectListContainer = document.getElementById('subject-selection-list');
+
+        subjectListContainer.addEventListener('dragstart', (e) => {
+            const targetItem = e.target.closest('.subject-item');
+            if (targetItem) {
+                draggedItem = targetItem;
+                e.dataTransfer.effectAllowed = 'move';
+                // Set a small transparent image for drag feedback (optional, but good practice)
+                const img = new Image();
+                img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+                e.dataTransfer.setDragImage(img, 0, 0);
+                setTimeout(() => {
+                    draggedItem.classList.add('dragging');
+                }, 0); // Add class after drag image is set
+            }
+        });
+
+        subjectListContainer.addEventListener('dragover', (e) => {
+            e.preventDefault(); // Necessary to allow dropping
+            const targetItem = e.target.closest('.subject-item');
+            if (targetItem && targetItem !== draggedItem) {
+                const rect = targetItem.getBoundingClientRect();
+                const offsetY = e.clientY - rect.top;
+                const isAfter = offsetY > rect.height / 2;
+
+                // Remove drag-over from all siblings
+                Array.from(subjectListContainer.children).forEach(item => item.classList.remove('drag-over'));
+
+                if (isAfter) {
+                    targetItem.classList.add('drag-over');
+                    // We're dragging over the bottom half, so insert after this element
+                } else {
+                    targetItem.classList.add('drag-over');
+                    // We're dragging over the top half, so insert before this element
+                }
+            }
+        });
+
+        subjectListContainer.addEventListener('dragenter', (e) => {
+            e.preventDefault();
+            const targetItem = e.target.closest('.subject-item');
+            if (targetItem && targetItem !== draggedItem) {
+                targetItem.classList.add('drag-over');
+            }
+        });
+
+        subjectListContainer.addEventListener('dragleave', (e) => {
+            const targetItem = e.target.closest('.subject-item');
+            if (targetItem) {
+                targetItem.classList.remove('drag-over');
+            }
+        });
+
+        subjectListContainer.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            const targetItem = e.target.closest('.subject-item');
+            
+            // Clean up all drag-over classes
+            Array.from(subjectListContainer.children).forEach(item => item.classList.remove('drag-over'));
+
+            if (draggedItem && targetItem && draggedItem !== targetItem) {
+                const subjectId = draggedItem.dataset.subjectId;
+                const allItems = Array.from(subjectListContainer.children);
+                const oldIndex = allItems.indexOf(draggedItem);
+                let newIndex = allItems.indexOf(targetItem);
+
+                const rect = targetItem.getBoundingClientRect();
+                const offsetY = e.clientY - rect.top;
+                const isAfter = offsetY > rect.height / 2;
+
+                if (isAfter && newIndex < allItems.length - 1) {
+                    // If dropping after the target and target is not the last, insert after next sibling
+                    subjectListContainer.insertBefore(draggedItem, targetItem.nextSibling);
+                    newIndex++; // Adjust index as it's inserted after
+                } else {
+                    // Insert before the target
+                    subjectListContainer.insertBefore(draggedItem, targetItem);
+                }
+                
+                // If the item was moved downwards, and inserted before an element, its new index might be the same as the target's original index.
+                // If it was moved upwards, and inserted before an element, its new index will be the target's index.
+                // The key is the final order in the DOM.
+
+                // Recalculate new index after DOM manipulation
+                const finalNewIndex = Array.from(subjectListContainer.children).indexOf(draggedItem);
+
+                // Update Firestore with the new order for all subjects
+                await updateSubjectOrderInFirestore();
+            }
+        });
+
+        subjectListContainer.addEventListener('dragend', () => {
+            if (draggedItem) {
+                draggedItem.classList.remove('dragging');
+            }
+            // Ensure all drag-over classes are removed
+            Array.from(subjectListContainer.children).forEach(item => item.classList.remove('drag-over'));
+            draggedItem = null;
+        });
+
+        async function updateSubjectOrderInFirestore() {
+            if (!currentUser) return;
+            const subjectsRef = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'subjects');
+            const batch = db.batch; // Get a new batch instance
+
+            const subjectElements = Array.from(subjectListContainer.children);
+            
+            for (let i = 0; i < subjectElements.length; i++) {
+                const subjectId = subjectElements[i].dataset.subjectId;
+                const subjectDocRef = doc(subjectsRef, subjectId);
+                await updateDoc(subjectDocRef, { order: i }); // Update each subject's order
+            }
+            showToast("Subject order updated!", "success");
+        }
+
 
         document.getElementById('subject-selection-list').addEventListener('click', async (e) => {
             e.stopPropagation();
@@ -3581,6 +3730,8 @@
                     async () => {
                         const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
                         await deleteDoc(doc(userRef, 'subjects', subjectId));
+                        // After deleting, re-evaluate and update the order of remaining subjects
+                        await updateSubjectOrderInFirestore();
                         showToast(`Deleted "${subjectName}"`, 'success');
                     }
                 );
