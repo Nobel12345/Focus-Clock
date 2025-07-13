@@ -16,7 +16,11 @@
 
     <style>
         /* Base styles */
-        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            -webkit-tap-highlight-color: transparent;
+            overflow-x: hidden; /* Prevent horizontal scrolling on the entire body */
+        }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .nav-item.active svg, .nav-item.active p, .group-nav-item.active i, .group-nav-item.active p { color: #3B82F6; }
@@ -1039,6 +1043,8 @@
                         <p id="pomodoro-status"></p>
                         <h2 id="session-timer" class="text-7xl md:text-8xl timer-text text-white">00:00:00</h2>
                         <p id="total-time-display" class="text-gray-400 mt-2">Total Today: 00:00:00</p>
+                        <!-- New element for Total Break Time -->
+                        <p id="total-break-time-display" class="text-gray-400 mt-1">Total Break: 00:00:00</p>
                         <div id="timer-controls" class="mt-8">
                             <button id="start-studying-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-full text-lg transition-transform transform hover:scale-105">Start Studying</button>
                             <button id="stop-studying-btn" class="hidden bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-10 rounded-full text-lg transition-transform transform hover:scale-105">Stop</button>
@@ -1341,12 +1347,13 @@
 
                 if (state === 'work') {
                     // When work phase ends, the actual duration is currentPhaseDuration
-                    // (or slightly less if stopped manually before timer ran out)
-                    self.postMessage({ type: 'sessionComplete', duration: currentPhaseDuration }); // Use currentPhaseDuration as the target duration for the session
+                    self.postMessage({ type: 'sessionComplete', duration: currentPhaseDuration, sessionType: 'study' }); // Send study duration
                     cycle++;
                     state = (cycle % settings.long_break_interval === 0) ? 'long_break' : 'short_break';
-                } else {
-                    state = 'work';
+                } else { // If it was a break
+                    // The worker should NOT save break sessions directly.
+                    // It just signals the end of the break phase.
+                    state = 'work'; // Always transition back to work after a break
                 }
                 
                 const shouldAutoStart = (state === 'work' && settings.autoStartFocus) || (state !== 'work' && settings.autoStartBreak);
@@ -1373,12 +1380,12 @@
                     case 'stop':
                         if (timerInterval) clearInterval(timerInterval);
                         timerInterval = null;
-                        // When stopping, calculate the actual elapsed time for the current phase
                         if (phaseStartTime > 0) {
                             const elapsedSeconds = Math.floor((Date.now() - phaseStartTime) / 1000);
                             if (state === 'work' && elapsedSeconds > 0) {
-                                self.postMessage({ type: 'sessionComplete', duration: elapsedSeconds });
+                                self.postMessage({ type: 'sessionComplete', duration: elapsedSeconds, sessionType: 'study' });
                             }
+                            // Do NOT send sessionComplete for break here. The main script will handle the idle break.
                         }
                         phaseStartTime = 0;
                         currentPhaseDuration = 0;
@@ -1425,6 +1432,7 @@
         let timerInterval = null;
         let sessionStartTime = 0;
         let totalTimeTodayInSeconds = 0;
+        let totalBreakTimeTodayInSeconds = 0; // New: Track total break time today
         let activeSubject = '';
         let groupDetailUnsubscribers = [];
         let memberTimerIntervals = [];
@@ -1434,6 +1442,10 @@
             sessions: {}
         };
         
+        // Break Timer State (for idle time)
+        let breakTimerInterval = null;
+        let breakStartTime = 0;
+
         // Drag & Drop State
         let draggedItem = null;
 
@@ -1483,7 +1495,7 @@
         let attendanceYear = getCurrentDate().getFullYear();
 
         // --- UI Elements ---
-        let authError, sessionTimerDisplay, totalTimeDisplay, activeSubjectDisplay, pomodoroStatusDisplay;
+        let authError, sessionTimerDisplay, totalTimeDisplay, totalBreakTimeDisplay, activeSubjectDisplay, pomodoroStatusDisplay;
 
         // --- UI Helper Functions ---
         async function playSound(soundId, volume) {
@@ -1736,6 +1748,19 @@
             }
             unlockAudio();
 
+            // Stop and save any active break session before starting a new study session
+            if (breakTimerInterval) {
+                clearInterval(breakTimerInterval);
+                const elapsedBreakSeconds = Math.floor((Date.now() - breakStartTime) / 1000);
+                if (elapsedBreakSeconds > 0) {
+                    await saveSession('Break', elapsedBreakSeconds, 'break'); // Save break session
+                }
+                breakTimerInterval = null;
+                breakStartTime = 0;
+            }
+            // Clear break status from UI
+            pomodoroStatusDisplay.textContent = ''; // Clear the "On Break" status
+
             activeSubject = subject;
             activeSubjectDisplay.textContent = activeSubject;
             
@@ -1757,108 +1782,146 @@
             document.getElementById('manual-start-btn').classList.add('hidden');
 
             const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
-            await updateDoc(userRef, { studying: { subject: activeSubject, startTime: serverTimestamp() } });
+            await updateDoc(userRef, { studying: { subject: activeSubject, startTime: serverTimestamp(), type: 'study' } });
         }
         
         async function stopTimer() {
+            // Stop any active study timer
             if (timerMode === 'normal') {
-                if(timerInterval) clearInterval(timerInterval);
+                if (timerInterval) clearInterval(timerInterval);
                 const elapsedMillis = Date.now() - sessionStartTime;
                 const sessionDurationSeconds = Math.floor(elapsedMillis / 1000);
-
                 if (sessionDurationSeconds > 0) {
-                    await saveSession(activeSubject, sessionDurationSeconds);
+                    await saveSession(activeSubject, sessionDurationSeconds, 'study');
                 }
-            } else {
-                pomodoroWorker.postMessage({ command: 'stop' });
+            } else { // Pomodoro Mode
+                pomodoroWorker.postMessage({ command: 'stop' }); // This will trigger sessionComplete for study if it was work
             }
-            
+
+            // Reset UI for study timer
             activeSubjectDisplay.textContent = '';
             sessionTimerDisplay.textContent = formatTime(0);
-            updateTotalTimeDisplay();
-            timerInterval = null;
-            sessionStartTime = 0;
-            pomodoroStatusDisplay.textContent = '';
+            // pomodoroStatusDisplay.textContent will be set by updateBreakTimerDisplay
 
-
-            document.getElementById('stop-studying-btn').classList.add('hidden');
-            document.getElementById('manual-start-btn').classList.add('hidden');
-            document.getElementById('start-studying-btn').classList.remove('hidden');
+            // Start the explicit break timer
+            breakStartTime = Date.now();
+            breakTimerInterval = setInterval(updateBreakTimerDisplay, 1000); // New function to update break timer UI
             
+            // Update button visibility
+            document.getElementById('start-studying-btn').classList.remove('hidden'); // Show start button
+            document.getElementById('stop-studying-btn').classList.add('hidden'); // Hide stop button
+            document.getElementById('manual-start-btn').classList.add('hidden'); // Keep manual start hidden
+
             const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
-            await updateDoc(userRef, { studying: null });
+            await updateDoc(userRef, { studying: null }); // Set studying to null
+        }
+
+        function updateBreakTimerDisplay() {
+            if (breakStartTime === 0) return;
+            const elapsedSeconds = Math.floor((Date.now() - breakStartTime) / 1000);
+            sessionTimerDisplay.textContent = formatTime(elapsedSeconds); // Show break time on main timer display
+            pomodoroStatusDisplay.textContent = 'On Break'; // Indicate break status
+            pomodoroStatusDisplay.style.color = '#f59e0b'; // Break color
         }
         
         function updateTotalTimeDisplay() {
             totalTimeDisplay.textContent = `Total Today: ${formatTime(totalTimeTodayInSeconds)}`;
+            totalBreakTimeDisplay.textContent = `Total Break: ${formatTime(totalBreakTimeTodayInSeconds)}`;
         }
 
-        async function saveSession(subject, durationSeconds) {
+        async function saveSession(subject, durationSeconds, sessionType = 'study') { // Default to 'study'
             if (!currentUser || durationSeconds <= 0) {
                 return;
             }
+
+            // Cap break time at 3 hours (10800 seconds)
+            const MAX_BREAK_SECONDS = 3 * 3600; // 3 hours in seconds
+            const cappedDuration = (sessionType === 'break' && durationSeconds > MAX_BREAK_SECONDS) ? MAX_BREAK_SECONDS : durationSeconds;
+
             try {
-                // Define document references within the transaction scope
                 await runTransaction(db, async (transaction) => {
                     const userDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
                     const publicUserDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
                     
-                    // ALL READS MUST BE EXECUTED BEFORE ANY WRITES
-                    const userDoc = await transaction.get(userDocRef); // Read 1
-                    const publicUserDoc = await transaction.get(publicUserDocRef); // Read 2
+                    const userDoc = await transaction.get(userDocRef);
+                    const publicUserDoc = await transaction.get(publicUserDocRef);
 
                     if (!userDoc.exists()) {
-                        // This indicates a deeper issue, as user document should exist.
-                        // Throwing an error will cause the transaction to fail and retry.
                         throw new Error("Transaction failed: User document not found.");
                     }
 
-                    // Prepare data based on reads
                     const data = userDoc.data();
                     const todayStr = getCurrentDate().toISOString().split('T')[0];
-                    let currentDailySeconds = 0;
-                    if (data.totalTimeToday && data.totalTimeToday.date === todayStr) {
-                        currentDailySeconds = data.totalTimeToday.seconds || 0;
-                    }
-                    const newDailyTotal = currentDailySeconds + durationSeconds;
 
-                    // ALL WRITES MUST COME AFTER ALL WRITES
-                    // Add the new session document to the user's sessions subcollection
+                    let currentDailyStudySeconds = 0;
+                    if (data.totalTimeToday && data.totalTimeToday.date === todayStr) {
+                        currentDailyStudySeconds = data.totalTimeToday.seconds || 0;
+                    }
+                    let currentDailyBreakSeconds = 0;
+                    if (data.totalBreakTimeToday && data.totalBreakTimeToday.date === todayStr) {
+                        currentDailyBreakSeconds = data.totalBreakTimeToday.seconds || 0;
+                    }
+
                     const newSessionDocRef = doc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'sessions'));
                     transaction.set(newSessionDocRef, {
                         subject: subject,
-                        durationSeconds: durationSeconds,
-                        endedAt: serverTimestamp()
+                        durationSeconds: cappedDuration, // Use capped duration
+                        endedAt: serverTimestamp(),
+                        type: sessionType // Store session type
                     });
 
-                    // Update the user's private document with new totals
-                    transaction.update(userDocRef, {
-                        totalStudySeconds: increment(durationSeconds),
-                        totalTimeToday: {
+                    const updateData = {};
+                    if (sessionType === 'study') {
+                        updateData.totalStudySeconds = increment(cappedDuration);
+                        updateData.totalTimeToday = {
                             date: todayStr,
-                            seconds: newDailyTotal
-                        }
-                    });
+                            seconds: currentDailyStudySeconds + cappedDuration
+                        };
+                    } else { // 'break'
+                        updateData.totalBreakSeconds = increment(cappedDuration);
+                        updateData.totalBreakTimeToday = {
+                            date: todayStr,
+                            seconds: currentDailyBreakSeconds + cappedDuration
+                        };
+                    }
+                    transaction.update(userDocRef, updateData);
 
-                    // Conditionally create or update the public user document
-                    if (!publicUserDoc.exists()) {
-                        transaction.set(publicUserDocRef, {
-                            username: currentUserData.username || 'Anonymous', // Use currentUserData for initial set
-                            email: currentUserData.email || currentUser.email || '',
-                            totalStudySeconds: 0 // Initialize to 0, then increment below
+                    if (sessionType === 'study') {
+                        if (!publicUserDoc.exists()) {
+                            transaction.set(publicUserDocRef, {
+                                username: currentUserData.username || 'Anonymous',
+                                email: currentUserData.email || currentUser.email || '',
+                                totalStudySeconds: 0,
+                                totalBreakSeconds: 0 // Initialize break time for public too
+                            });
+                        }
+                        transaction.update(publicUserDocRef, {
+                            totalStudySeconds: increment(cappedDuration)
+                        });
+                    } else { // 'break' - update public break time
+                         if (!publicUserDoc.exists()) {
+                            transaction.set(publicUserDocRef, {
+                                username: currentUserData.username || 'Anonymous',
+                                email: currentUserData.email || currentUser.email || '',
+                                totalStudySeconds: 0,
+                                totalBreakSeconds: 0
+                            });
+                        }
+                        transaction.update(publicUserDocRef, {
+                            totalBreakSeconds: increment(cappedDuration)
                         });
                     }
-                    // Always update the public user document, whether it was just created or already existed
-                    transaction.update(publicUserDocRef, {
-                        totalStudySeconds: increment(durationSeconds)
-                    });
 
-                    // Update local state after successful transaction (this is outside Firestore operations)
-                    totalTimeTodayInSeconds = newDailyTotal;
+                    // Update local state after successful transaction
+                    if (sessionType === 'study') {
+                        totalTimeTodayInSeconds = currentDailyStudySeconds + cappedDuration;
+                    } else {
+                        totalBreakTimeTodayInSeconds = currentDailyBreakSeconds + cappedDuration;
+                    }
                 });
                 
-                updateTotalTimeDisplay();
-                showToast(`Session of ${formatTime(durationSeconds, false)} saved!`, "success");
+                updateTotalTimeDisplay(); // This now updates both
+                showToast(`Session of ${formatTime(cappedDuration, false)} saved!`, "success");
 
             } catch (error) {
                 console.error("Error saving session in transaction: ", error);
@@ -1874,22 +1937,30 @@
             if (userDoc.exists()) {
                 const data = userDoc.data();
                 const todayStr = getCurrentDate().toISOString().split('T')[0];
+                
                 if (data.totalTimeToday && data.totalTimeToday.date === todayStr) {
                     totalTimeTodayInSeconds = data.totalTimeToday.seconds || 0;
                 } else {
                     totalTimeTodayInSeconds = 0;
-                    // Update Firestore to reset the daily total for the new day
                     await updateDoc(userRef, {
-                        totalTimeToday: {
-                            date: todayStr,
-                            seconds: 0
-                        }
+                        totalTimeToday: { date: todayStr, seconds: 0 }
                     });
                 }
+
+                if (data.totalBreakTimeToday && data.totalBreakTimeToday.date === todayStr) {
+                    totalBreakTimeTodayInSeconds = data.totalBreakTimeToday.seconds || 0;
+                } else {
+                    totalBreakTimeTodayInSeconds = 0;
+                    await updateDoc(userRef, {
+                        totalBreakTimeToday: { date: todayStr, seconds: 0 }
+                    });
+                }
+
             } else {
                 totalTimeTodayInSeconds = 0;
+                totalBreakTimeTodayInSeconds = 0;
             }
-            if(totalTimeDisplay) {
+            if(totalTimeDisplay && totalBreakTimeDisplay) {
                 updateTotalTimeDisplay();
             }
         }
@@ -1905,6 +1976,7 @@
                     joinedGroups: [],
                     createdAt: serverTimestamp(),
                     totalStudySeconds: 0,
+                    totalBreakSeconds: 0, // New field
                     studying: null,
                     studyGoalHours: 4,
                     pomodoroSettings: {
@@ -1924,13 +1996,18 @@
                     totalTimeToday: { 
                         date: getCurrentDate().toISOString().split('T')[0],
                         seconds: 0
+                    },
+                    totalBreakTimeToday: { // New field
+                        date: getCurrentDate().toISOString().split('T')[0],
+                        seconds: 0
                     }
                 };
                 await setDoc(userDocRef, initialData);
                 await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', user.uid), {
                     username: user.displayName,
                     email: user.email,
-                    totalStudySeconds: 0
+                    totalStudySeconds: 0,
+                    totalBreakSeconds: 0 // Initialize for public too
                 });
                 userDoc = await getDoc(userDocRef);
             }
@@ -1973,10 +2050,11 @@
                     const data = doc.data();
                     currentUserData = data;
                     const todayStr = getCurrentDate().toISOString().split('T')[0];
-                    if (!data.totalTimeToday || data.totalTimeToday.date !== todayStr) {
+                    if (!data.totalTimeToday || data.totalTimeToday.date !== todayStr || !data.totalBreakTimeToday || data.totalBreakTimeToday.date !== todayStr) {
                         loadDailyTotal(); 
                     } else {
                         totalTimeTodayInSeconds = data.totalTimeToday.seconds;
+                        totalBreakTimeTodayInSeconds = data.totalBreakTimeToday.seconds;
                         updateTotalTimeDisplay();
                     }
 
@@ -2019,7 +2097,8 @@
                     return {
                         id: doc.id,
                         ...data,
-                        endedAt: data.endedAt?.toDate()
+                        endedAt: data.endedAt?.toDate(),
+                        type: data.type || 'study' // Ensure type is present, default to 'study'
                     };
                 });
                 if (document.getElementById('page-stats').classList.contains('active')) {
@@ -2088,7 +2167,10 @@
                 
                 let totalSeconds = 0;
                 sessionsSnapshot.forEach(sessionDoc => {
-                    totalSeconds += sessionDoc.data().durationSeconds;
+                    // Only count study sessions for ranking
+                    if (sessionDoc.data().type === 'study') {
+                        totalSeconds += sessionDoc.data().durationSeconds;
+                    }
                 });
                 
                 return {
@@ -2168,17 +2250,18 @@
 
             const appData = focusSessions.map(session => {
                 const endTime = session.endedAt;
-                if (!endTime) return null; // Skip sessions without an end time
+                if (!endTime) return null;
                 const startTime = new Date(endTime.getTime() - session.durationSeconds * 1000);
                 return {
                     id: session.id,
                     subject: session.subject,
                     startTime: startTime,
                     endTime: endTime,
-                    duration: session.durationSeconds / 60,
-                    durationSeconds: session.durationSeconds
+                    duration: session.durationSeconds / 60, // in minutes
+                    durationSeconds: session.durationSeconds,
+                    type: session.type || 'study' // Default to 'study' if type is missing
                 };
-            }).filter(Boolean); // Filter out null entries
+            }).filter(Boolean);
 
             appData.sort((a, b) => a.startTime - b.startTime);
 
@@ -2213,7 +2296,7 @@
 
                 const insightFunctions = [
                     () => {
-                        const subjectTotals = sessions.reduce((acc, s) => {
+                        const subjectTotals = sessions.filter(s => s.type === 'study').reduce((acc, s) => {
                             acc[s.subject] = (acc[s.subject] || 0) + s.duration;
                             return acc;
                         }, {});
@@ -2224,7 +2307,7 @@
                         return null;
                     },
                     () => {
-                        const subjectTotals = sessions.reduce((acc, s) => {
+                        const subjectTotals = sessions.filter(s => s.type === 'study').reduce((acc, s) => {
                             acc[s.subject] = (acc[s.subject] || 0) + s.duration;
                             return acc;
                         }, {});
@@ -2240,7 +2323,7 @@
                     },
                     () => {
                         const hourlyTotals = Array(24).fill(0);
-                        sessions.forEach(s => {
+                        sessions.filter(s => s.type === 'study').forEach(s => {
                             const startHour = s.startTime.getHours();
                             hourlyTotals[startHour] += s.duration;
                         });
@@ -2253,7 +2336,7 @@
                         return `You seem to be most productive ${timeOfDay}. Plan your key tasks accordingly!`;
                     },
                      () => {
-                        const avgDuration = sessions.reduce((sum, s) => sum + s.duration, 0) / sessions.length;
+                        const avgDuration = sessions.filter(s => s.type === 'study').reduce((sum, s) => sum + s.duration, 0) / sessions.filter(s => s.type === 'study').length;
                         if (avgDuration > 90) {
                             return "You're tackling long study sessions! Remember that short breaks can boost long-term focus.";
                         }
@@ -2264,7 +2347,7 @@
                     },
                     () => {
                         const last7Days = new Set();
-                        sessions.forEach(s => {
+                        sessions.filter(s => s.type === 'study').forEach(s => {
                             const diffDays = (new Date() - s.startTime) / (1000 * 60 * 60 * 24);
                             if (diffDays <= 7) {
                                 last7Days.add(s.startTime.getDay());
@@ -2312,12 +2395,12 @@
 
                 const last28DaysData = appData.filter(d => {
                     const diffDays = (today - d.startTime) / (1000 * 60 * 60 * 24);
-                    return diffDays <= 28;
+                    return diffDays <= 28 && d.type === 'study'; // Only consider study time
                 });
 
                 const totalMinutes = last28DaysData.reduce((sum, s) => sum + s.duration, 0);
                 const dailyAverage = totalMinutes / 28;
-                const focusScore = Math.round((totalMinutes / last28DaysData.length) / 60 * 100);
+                const focusScore = last28DaysData.length > 0 ? Math.round((totalMinutes / last28DaysData.length) / 60 * 100) : 0; // Avoid division by zero
 
                 document.getElementById('period-total-time').textContent = formatTimeDashboard(totalMinutes);
                 document.getElementById('period-daily-avg').textContent = formatTimeDashboard(dailyAverage);
@@ -2335,7 +2418,7 @@
                 });
 
                 const timePerDay = Array(28).fill(0);
-                last28DaysData.forEach(s => {
+                appData.filter(d => d.type === 'study').forEach(s => { // Only consider study time
                     const dayIndex = 27 - Math.floor((today - s.startTime) / (1000 * 60 * 60 * 24));
                     if (dayIndex >= 0 && dayIndex < 28) { timePerDay[dayIndex] += s.duration; }
                 });
@@ -2368,16 +2451,17 @@
 
                 const thisMonthData = appData.filter(d => d.startTime.getMonth() === today.getMonth() && d.startTime.getFullYear() === today.getFullYear());
                 
-                const totalStudy = thisMonthData.reduce((sum, s) => sum + s.duration, 0);
-                const totalBreaks = Math.floor(totalStudy / 3);
+                const totalStudy = thisMonthData.filter(s => s.type === 'study').reduce((sum, s) => sum + s.duration, 0);
+                const totalBreaks = thisMonthData.filter(s => s.type === 'break').reduce((sum, s) => sum + s.duration, 0);
+
                 destroyChart('study-break-chart');
                 charts['study-break-chart'] = new Chart(document.getElementById('study-break-chart'), {
                     type: 'doughnut', plugins: [ChartDataLabels],
                     data: { labels: ['Study', 'Break'], datasets: [{ data: [totalStudy, totalBreaks], backgroundColor: [CHART_COLORS.indigo, '#475569'], borderColor: '#1e293b', borderWidth: 4, }] },
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels: { color: '#cbd5e1' } }, tooltip: { callbacks: { label: function(context) { const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0); const percentage = ((context.parsed / total) * 100).toFixed(1) + '%'; return `${context.label}: ${percentage}`; } } }, datalabels: { formatter: (value, ctx) => { const sum = ctx.chart.data.datasets[0].data.reduce((a, b) => a + b, 0); const percentage = (value * 100 / sum).toFixed(1) + "%"; return percentage; }, color: '#ffffff', font: { weight: 'bold' } } } }
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels: { color: '#cbd5e1' } }, tooltip: { callbacks: { label: function(context) { const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0); const percentage = (total > 0) ? ((context.parsed / total) * 100).toFixed(1) + '%' : '0%'; return `${context.label}: ${percentage}`; } } }, datalabels: { formatter: (value, ctx) => { const sum = ctx.chart.data.datasets[0].data.reduce((a, b) => a + b, 0); const percentage = (sum > 0) ? (value * 100 / sum).toFixed(1) + "%" : "0%"; return percentage; }, color: '#ffffff', font: { weight: 'bold' } } } }
                 });
 
-                const subjectDataMonth = thisMonthData.reduce((acc, session) => { acc[session.subject] = (acc[session.subject] || 0) + session.duration; return acc; }, {});
+                const subjectDataMonth = thisMonthData.filter(s => s.type === 'study').reduce((acc, session) => { acc[session.subject] = (acc[session.subject] || 0) + session.duration; return acc; }, {});
                 destroyChart('study-time-by-subject-chart');
                 charts['study-time-by-subject-chart'] = new Chart(document.getElementById('study-time-by-subject-chart'), {
                     type: 'bar',
@@ -2385,7 +2469,7 @@
                     options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, scales: { x: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } }, y: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } } }, plugins: { legend: { display: false } } }
                 });
 
-                const distributionData = thisMonthData.map(s => ({ x: s.startTime, y: s.startTime.getHours() + s.startTime.getMinutes() / 60, yEnd: s.endTime.getHours() + s.endTime.getMinutes() / 60, }));
+                const distributionData = thisMonthData.filter(s => s.type === 'study').map(s => ({ x: s.startTime, y: s.startTime.getHours() + s.startTime.getMinutes() / 60, yEnd: s.endTime.getHours() + s.endTime.getMinutes() / 60, }));
                 destroyChart('start-end-distribution-chart');
                 charts['start-end-distribution-chart'] = new Chart(document.getElementById('start-end-distribution-chart'), {
                     type: 'scatter',
@@ -2402,7 +2486,7 @@
                     <div class="card lg:col-span-2"><h3 class="font-semibold text-xl mb-4">Recent Session Log</h3><div id="session-log-container-trend" class="max-h-80 overflow-y-auto pr-2"></div></div>
                 `;
 
-                const regularityData = appData.slice(-50).map(s => ({ x: s.startTime, y: s.startTime.getHours() + s.startTime.getMinutes() / 60, r: s.duration / 10 }));
+                const regularityData = appData.filter(s => s.type === 'study').slice(-50).map(s => ({ x: s.startTime, y: s.startTime.getHours() + s.startTime.getMinutes() / 60, r: s.duration / 10 }));
                 destroyChart('regularity-chart');
                 charts['regularity-chart'] = new Chart(document.getElementById('regularity-chart'), {
                     type: 'bubble',
@@ -2411,7 +2495,7 @@
                 });
                 
                 const last14Days = Array(14).fill(0);
-                appData.filter(d => (today - d.startTime) / (1000 * 60 * 60 * 24) <= 14).forEach(s => {
+                appData.filter(d => (today - d.startTime) / (1000 * 60 * 60 * 24) <= 14 && d.type === 'study').forEach(s => {
                     const dayIndex = 13 - Math.floor((today - s.startTime) / (1000 * 60 * 60 * 24));
                     if (dayIndex >= 0) last14Days[dayIndex] += s.duration;
                 });
@@ -2426,7 +2510,7 @@
                     options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: '#334155' }, ticks: { color: '#94a3b8' } }, x: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } } }, plugins: { legend: { display: false } } }
                 });
                 
-                renderSessionLog(appData.slice().reverse().slice(0, 20), 'session-log-container-trend');
+                renderSessionLog(appData.filter(s => s.type === 'study').slice().reverse().slice(0, 20), 'session-log-container-trend');
             }
             
             function renderDayView() {
@@ -2443,7 +2527,7 @@
                 `;
 
                 const todayStr = today.toISOString().split('T')[0];
-                const todayData = appData.filter(d => d.startTime.toISOString().split('T')[0] === todayStr);
+                const todayData = appData.filter(d => d.startTime.toISOString().split('T')[0] === todayStr && d.type === 'study'); // Only consider study time
 
                 const totalMinutesToday = todayData.reduce((sum, s) => sum + s.duration, 0);
                 const sessionCountToday = todayData.length;
@@ -2490,7 +2574,7 @@
                     item.className = 'session-log-item p-3 mb-2 bg-slate-700/50 rounded-lg flex justify-between items-center';
                     item.innerHTML = `
                         <div>
-                            <p class="font-semibold text-white">${s.subject}</p>
+                            <p class="font-semibold text-white">${s.subject} <span class="text-sm text-gray-500">(${s.type})</span></p>
                             <p class="text-sm text-slate-400">${s.startTime.toLocaleString()}</p>
                         </div>
                         <div class="flex items-center">
@@ -2587,22 +2671,42 @@
             const sessionRef = doc(userRef, 'sessions', sessionId);
 
             try {
+                // Determine if the session being deleted is a study or break session
+                const sessionDoc = await getDoc(sessionRef);
+                const sessionType = sessionDoc.exists() ? sessionDoc.data().type || 'study' : 'study'; // Default to 'study' if type is missing
+
                 await deleteDoc(sessionRef);
 
-                await updateDoc(userRef, { totalStudySeconds: increment(-durationSeconds) });
-                await updateDoc(publicUserRef, { totalStudySeconds: increment(-durationSeconds) });
+                if (sessionType === 'study') {
+                    await updateDoc(userRef, { totalStudySeconds: increment(-durationSeconds) });
+                    await updateDoc(publicUserRef, { totalStudySeconds: increment(-durationSeconds) });
+                } else { // 'break'
+                    await updateDoc(userRef, { totalBreakSeconds: increment(-durationSeconds) });
+                    await updateDoc(publicUserRef, { totalBreakSeconds: increment(-durationSeconds) });
+                }
 
                 const sessionDateStr = endedAt.toISOString().split('T')[0];
                 const todayStr = getCurrentDate().toISOString().split('T')[0];
                 if (sessionDateStr === todayStr) {
-                    totalTimeTodayInSeconds -= durationSeconds;
-                    if (totalTimeTodayInSeconds < 0) totalTimeTodayInSeconds = 0;
-                    await updateDoc(userRef, {
-                        totalTimeToday: {
-                            date: todayStr,
-                            seconds: totalTimeTodayInSeconds
-                        }
-                    });
+                    if (sessionType === 'study') {
+                        totalTimeTodayInSeconds -= durationSeconds;
+                        if (totalTimeTodayInSeconds < 0) totalTimeTodayInSeconds = 0;
+                        await updateDoc(userRef, {
+                            totalTimeToday: {
+                                date: todayStr,
+                                seconds: totalTimeTodayInSeconds
+                            }
+                        });
+                    } else { // 'break'
+                        totalBreakTimeTodayInSeconds -= durationSeconds;
+                        if (totalBreakTimeTodayInSeconds < 0) totalBreakTimeTodayInSeconds = 0;
+                        await updateDoc(userRef, {
+                            totalBreakTimeToday: {
+                                date: todayStr,
+                                seconds: totalBreakTimeTodayInSeconds
+                            }
+                        });
+                    }
                 }
                 
                 modal.classList.remove('active');
@@ -2859,7 +2963,12 @@
 
                 const sessionsRef = collection(userDocRef, 'sessions');
                 const sessionsUnsub = onSnapshot(sessionsRef, (snapshot) => {
-                    groupRealtimeData.sessions[memberId] = snapshot.docs.map(doc => doc.data());
+                    groupRealtimeData.sessions[memberId] = snapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data(),
+                        endedAt: doc.data().endedAt?.toDate(),
+                        type: doc.data().type || 'study' // Ensure type is present
+                    }));
                     const activeSubPage = document.querySelector('#group-detail-nav .active')?.dataset.subpage;
                     if (activeSubPage === 'rankings') {
                         renderGroupLeaderboard();
@@ -2986,11 +3095,13 @@
             const membersArray = Object.keys(groupRealtimeData.members).map(memberId => {
                 const memberData = groupRealtimeData.members[memberId];
                 let totalTodaySeconds = 0;
+                // Only count study time for the member list display
                 if (memberData.totalTimeToday && memberData.totalTimeToday.date === todayStr) {
                     totalTodaySeconds = memberData.totalTimeToday.seconds;
                 }
                 const isStudying = memberData.studying;
-                const currentSessionElapsed = isStudying ? (Date.now() - memberData.studying.startTime.toDate()) / 1000 : 0;
+                // If currently studying, add current session elapsed time to total today
+                const currentSessionElapsed = (isStudying && memberData.studying.type === 'study') ? (Date.now() - memberData.studying.startTime.toDate()) / 1000 : 0;
                 const effectiveTotalToday = totalTodaySeconds + currentSessionElapsed;
 
                 return {
@@ -3045,7 +3156,7 @@
                 const memberData = member.data;
                 const memberId = member.id;
                 const timeEl = document.getElementById(`member-time-${memberId}`);
-                if (memberData && memberData.studying && timeEl) {
+                if (memberData && memberData.studying && memberData.studying.type === 'study' && timeEl) { // Only update for study sessions
                     const baseTime = parseInt(timeEl.dataset.baseTime, 10);
                     const startTime = parseInt(timeEl.dataset.startTime, 10);
                     if (startTime > 0) {
@@ -3094,7 +3205,7 @@
                 startDate.setHours(0,0,0,0);
 
                 const totalSeconds = memberSessions
-                    .filter(s => s.endedAt && s.endedAt.toDate() >= startDate)
+                    .filter(s => s.endedAt && s.endedAt.toDate() >= startDate && s.type === 'study') // Only count study sessions for ranking
                     .reduce((sum, s) => sum + s.durationSeconds, 0);
 
                 return {
@@ -3158,7 +3269,7 @@
                 const memberSessions = groupRealtimeData.sessions[memberId];
                 memberSessions.forEach(session => {
                     const sessionDate = session.endedAt?.toDate();
-                    if(sessionDate && sessionDate.getFullYear() === attendanceYear && sessionDate.getMonth() === attendanceMonth) {
+                    if(sessionDate && sessionDate.getFullYear() === attendanceYear && sessionDate.getMonth() === attendanceMonth && session.type === 'study') { // Filter for study sessions
                         const dateStr = sessionDate.toISOString().split('T')[0];
                         attendanceData[dateStr] = (attendanceData[dateStr] || 0) + session.durationSeconds;
                         memberAttendanceData[memberId].totalTime += session.durationSeconds;
@@ -3528,6 +3639,19 @@
         ael('stop-studying-btn', 'click', stopTimer);
         
         ael('manual-start-btn', 'click', () => {
+            // Stop and save any active break session before starting a new study session
+            if (breakTimerInterval) {
+                clearInterval(breakTimerInterval);
+                const elapsedBreakSeconds = Math.floor((Date.now() - breakStartTime) / 1000);
+                if (elapsedBreakSeconds > 0) {
+                    saveSession('Break', elapsedBreakSeconds, 'break'); // Save break session
+                }
+                breakTimerInterval = null;
+                breakStartTime = 0;
+            }
+            // Clear break status from UI
+            pomodoroStatusDisplay.textContent = ''; 
+
             document.getElementById('stop-studying-btn').classList.remove('hidden');
             pomodoroWorker.postMessage({ command: 'startNext' });
         });
@@ -3559,7 +3683,7 @@
         
         // --- Worker Message Handling ---
         pomodoroWorker.onmessage = (e) => {
-            const { type, timeLeft, newState, oldState, autoStart, status, color, duration } = e.data;
+            const { type, timeLeft, newState, oldState, autoStart, status, color, duration, sessionType } = e.data;
             switch(type) {
                 case 'tick':
                     sessionTimerDisplay.textContent = formatPomodoroTime(timeLeft);
@@ -3572,16 +3696,25 @@
                     const soundToPlay = oldState === 'work' ? pomodoroSounds.break : pomodoroSounds.focus;
                     playSound(soundToPlay, pomodoroSounds.volume);
                     if (!autoStart) {
+                        // If auto-start is off, and we transitioned from work to break, or break to work
+                        // this is where the *idle* break should start counting.
+                        if (breakTimerInterval) clearInterval(breakTimerInterval); // Clear any existing idle break timer
+                        breakStartTime = Date.now();
+                        breakTimerInterval = setInterval(updateBreakTimerDisplay, 1000); // Start idle break timer
+                        
                         const manualStartBtn = document.getElementById('manual-start-btn');
                         manualStartBtn.textContent = `Start ${newState.replace('_', ' ')}`;
                         manualStartBtn.classList.remove('hidden');
                         document.getElementById('stop-studying-btn').classList.add('hidden');
                         pomodoroStatusDisplay.textContent = `Ready for ${newState.replace('_', ' ')}`;
+                    } else { // If auto-start is on, and it's a break, clear the break timer
+                        if (breakTimerInterval) clearInterval(breakTimerInterval);
+                        breakStartTime = 0;
                     }
                     break;
                 case 'sessionComplete':
                     if (duration > 0) {
-                        saveSession(activeSubject, duration);
+                        saveSession(activeSubject, duration, sessionType); // sessionType will be 'study' from worker
                     }
                     break;
             }
@@ -3931,21 +4064,42 @@
             const sessionRef = doc(userRef, 'sessions', sessionId);
 
             try {
+                // Determine if the session being edited is a study or break session
+                const sessionDoc = await getDoc(sessionRef);
+                const sessionType = sessionDoc.exists() ? sessionDoc.data().type || 'study' : 'study'; // Default to 'study' if type is missing
+
                 await updateDoc(sessionRef, { durationSeconds: newDurationSeconds });
-                await updateDoc(userRef, { totalStudySeconds: increment(durationDifference) });
-                await updateDoc(publicUserRef, { totalStudySeconds: increment(durationDifference) });
+                
+                if (sessionType === 'study') {
+                    await updateDoc(userRef, { totalStudySeconds: increment(durationDifference) });
+                    await updateDoc(publicUserRef, { totalStudySeconds: increment(durationDifference) });
+                } else { // 'break'
+                    await updateDoc(userRef, { totalBreakSeconds: increment(durationDifference) });
+                    await updateDoc(publicUserRef, { totalBreakSeconds: increment(durationDifference) });
+                }
 
                 const sessionDateStr = endedAt.toISOString().split('T')[0];
                 const todayStr = getCurrentDate().toISOString().split('T')[0];
                 if (sessionDateStr === todayStr) {
-                    totalTimeTodayInSeconds += durationDifference;
-                    if (totalTimeTodayInSeconds < 0) totalTimeTodayInSeconds = 0;
-                    await updateDoc(userRef, {
-                        totalTimeToday: {
-                            date: todayStr,
-                            seconds: totalTimeTodayInSeconds
-                        }
-                    });
+                    if (sessionType === 'study') {
+                        totalTimeTodayInSeconds += durationDifference;
+                        if (totalTimeTodayInSeconds < 0) totalTimeTodayInSeconds = 0;
+                        await updateDoc(userRef, {
+                            totalTimeToday: {
+                                date: todayStr,
+                                seconds: totalTimeTodayInSeconds
+                            }
+                        });
+                    } else { // 'break'
+                        totalBreakTimeTodayInSeconds += durationDifference;
+                        if (totalBreakTimeTodayInSeconds < 0) totalBreakTimeTodayInSeconds = 0;
+                        await updateDoc(userRef, {
+                            totalBreakTimeToday: {
+                                date: todayStr,
+                                seconds: totalBreakTimeTodayInSeconds
+                            }
+                        });
+                    }
                 }
                 
                 modal.classList.remove('active');
@@ -4001,6 +4155,7 @@
             authError = document.getElementById('auth-error');
             sessionTimerDisplay = document.getElementById('session-timer');
             totalTimeDisplay = document.getElementById('total-time-display');
+            totalBreakTimeDisplay = document.getElementById('total-break-time-display'); // Get the new element
             activeSubjectDisplay = document.getElementById('active-subject-display');
             pomodoroStatusDisplay = document.getElementById('pomodoro-status');
             initializeFirebase();
