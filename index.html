@@ -644,20 +644,11 @@
             font-weight: 600;
             text-align: center;
         }
-        .attendance-calendar {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 4px;
-        }
         .calendar-header {
             text-align: center;
             padding: 8px;
             font-size: 0.8rem;
             color: #9CA3AF;
-            /* Ensure horizontal display for calendar headers */
-            display: flex;
-            align-items: center;
-            justify-content: center;
         }
         .calendar-day {
             aspect-ratio: 1/1;
@@ -1464,6 +1455,12 @@
             autoStartFocus: true
         };
         let pomodoroSounds = {
+            start: "https://www.soundjay.com/buttons/beep-07a.mp3", // Example URL for a beep sound
+            focus: "https://www.soundjay.com/misc/bell-ringing-05.mp3", // Example URL for a bell sound
+            break: "https://www.soundjay.com/misc/ding-dong-01.mp3", // Example URL for a ding-dong sound
+            volume: 1.0
+        };
+        const availableSounds = {
             'Bell': "https://www.soundjay.com/misc/bell-ringing-05.mp3",
             'Notification': "https://www.soundjay.com/buttons/beep-07a.mp3",
             'Pop': "https://www.soundjay.com/misc/ding-dong-01.mp3",
