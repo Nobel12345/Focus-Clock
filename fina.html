@@ -1446,7 +1446,6 @@
 
         // --- Pomodoro State ---
         let timerMode = 'normal'; // 'normal' or 'pomodoro'
-        let pomodoroState = 'idle'; // 'work', 'short_break', 'long_break', 'idle'
         let pomodoroSettings = {
             work: 25,
             short_break: 5,
@@ -1578,50 +1577,6 @@
         let authError, sessionTimerDisplay, totalTimeDisplay, totalBreakTimeDisplay, activeSubjectDisplay, pomodoroStatusDisplay;
 
         // --- UI Helper Functions ---
-        
-        /**
-         * *** NEW FUNCTION ***
-         * Sends a message to the Service Worker to schedule a notification.
-         * This is the key to reliable background timers on mobile.
-         * @param {number} delayInMs - The delay in milliseconds until the notification should be shown.
-         * @param {string} title - The title of the notification.
-         * @param {object} options - The options for the notification (e.g., body, icon, tag).
-         */
-        function scheduleTransitionNotification(delayInMs, title, options) {
-            // First, make sure Service Workers and Notifications are supported.
-            if (!('serviceWorker' in navigator) || !('Notification' in window)) {
-                console.warn('Service Workers or Notifications are not supported in this browser.');
-                return;
-            }
-
-            // Ask for permission if we don't have it yet.
-            // This should ideally be done upon a clear user action, like enabling Pomodoro mode.
-            if (Notification.permission === 'default') {
-                Notification.requestPermission().then(permission => {
-                    if (permission === 'granted') {
-                        // Permission granted, now schedule.
-                        scheduleNow(delayInMs, title, options);
-                    }
-                });
-            } else if (Notification.permission === 'granted') {
-                scheduleNow(delayInMs, title, options);
-            }
-            
-            function scheduleNow(delay, title, opts) {
-                navigator.serviceWorker.ready.then(registration => {
-                    registration.active.postMessage({
-                        type: 'SCHEDULE_NOTIFICATION',
-                        payload: {
-                            delay: delay,
-                            title: title,
-                            options: opts
-                        }
-                    });
-                });
-            }
-        }
-
-
         async function playSound(soundId, volume) {
             if (!soundId || soundId.trim() === '') return;
             
@@ -2032,9 +1987,6 @@
                         case 'tone_wood':
                             triggerSynth(Tone.MembraneSynth, { ...settings, pitchDecay: 0.01, octaves: 1 }, "C3", "16n");
                             break;
-                        case 'tone_xylophone':
-                            triggerSynth(Tone.PluckSynth, { ...settings, attackNoise: 1, dampening: 7000, resonance: 0.98 }, "C5", "4n");
-                            break;
                         case 'tone_zen_garden':
                             triggerSynth(Tone.PluckSynth, { ...settings, attackNoise: 0.1, dampening: 3000, resonance: 0.9, release: 2 }, "C5", "1n");
                             break;
@@ -2404,20 +2356,8 @@
                     sessionTimerDisplay.textContent = formatTime(elapsedSeconds);
                 }, 1000);
             } else { // Pomodoro Mode
-                pomodoroState = 'work';
                 playSound(pomodoroSounds.start, pomodoroSounds.volume);
                 pomodoroWorker.postMessage({ command: 'start', newSettings: pomodoroSettings });
-                
-                // *** ADDED: Schedule notification for the first work session ***
-                const workDurationMs = pomodoroSettings.work * 60 * 1000;
-                scheduleTransitionNotification(
-                    workDurationMs,
-                    'Focus complete!',
-                    {
-                        body: 'Great work! Time to take a short break.',
-                        tag: 'pomodoro-transition'
-                    }
-                );
             }
 
             document.getElementById('start-studying-btn').classList.add('hidden');
@@ -2438,7 +2378,6 @@
                     await saveSession(activeSubject, sessionDurationSeconds, 'study');
                 }
             } else { // Pomodoro Mode
-                pomodoroState = 'idle';
                 pomodoroWorker.postMessage({ command: 'stop' }); // This will trigger sessionComplete for study if it was work
             }
 
