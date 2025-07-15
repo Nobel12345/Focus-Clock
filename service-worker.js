@@ -69,7 +69,6 @@ self.addEventListener('fetch', (event) => {
                 return response || fetch(event.request);
             }).catch(() => {
                 // If both cache and network fail for navigation, return a fallback page
-                // For this app, we don't have a dedicated offline.html, so just return nothing.
                 return new Response('<h1>Offline</h1><p>You are offline and the requested page is not in cache.</p>', {
                     headers: { 'Content-Type': 'text/html' }
                 });
@@ -112,6 +111,25 @@ self.addEventListener('fetch', (event) => {
     );
 });
 
+// *** NEW CODE ADDED HERE ***
+// Listens for messages from the main application to schedule a notification
+self.addEventListener('message', event => {
+    if (event.data && event.data.type === 'SCHEDULE_NOTIFICATION') {
+        const { delay, title, options } = event.data.payload;
+
+        console.log(`[Service Worker] Notification scheduled to show in ${delay / 1000} seconds.`);
+
+        // Use setTimeout to schedule the notification. This is more reliable in a
+        // service worker than in the main browser thread, but can still be delayed
+        // by the OS in extreme battery-saving modes. It's the best client-only solution.
+        setTimeout(() => {
+            console.log(`[Service Worker] Showing scheduled notification: ${title}`);
+            self.registration.showNotification(title, options);
+        }, delay);
+    }
+});
+
+
 // Push Notifications (Requires server-side implementation and user permission)
 self.addEventListener('push', (event) => {
     console.log('[Service Worker] Push Received.');
@@ -129,10 +147,7 @@ self.addEventListener('sync', (event) => {
     if (event.tag === 'sync-study-data') {
         console.log('[Service Worker] Background Sync for study data triggered!');
         // Perform data synchronization here, e.g., send queued study sessions to Firestore
-        // This would involve fetching data from IndexedDB (if used for offline queue)
-        // and sending it to Firestore.
         event.waitUntil(
-            // Example: Replace with actual data sync logic
             new Promise(resolve => {
                 console.log('Simulating background data sync...');
                 setTimeout(() => {
