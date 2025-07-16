@@ -4260,7 +4260,43 @@
                 isAddingSubjectFromStartSession = false; // Reset flag
             }
         });
+        // Event listener for the edit subject form
+ael('edit-subject-form', 'submit', async (e) => {
+    e.preventDefault();
+    if (!currentUser) return;
+
+    const modal = document.getElementById('edit-subject-modal');
+    const subjectId = document.getElementById('edit-subject-id').value;
+    const newName = document.getElementById('edit-subject-name').value.trim();
+    const selectedColorDot = document.querySelector('#edit-subject-color-picker .color-dot.selected');
+    
+    if (!newName) {
+        showToast("Subject name cannot be empty.", "error");
+        return;
+    }
+
+    if (!selectedColorDot) {
+        showToast("Please select a color for the subject.", "error");
+        return;
+    }
+
+    const newColor = selectedColorDot.dataset.color;
+
+    try {
+        const subjectRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'subjects', subjectId);
+        await updateDoc(subjectRef, {
+            name: newName,
+            color: newColor
+        });
         
+        modal.classList.remove('active');
+        showToast("Subject updated successfully!", "success");
+        // The existing onSnapshot listener will automatically refresh the UI.
+    } catch (error) {
+        console.error("Error updating subject:", error);
+        showToast("Failed to update subject.", "error");
+    }
+});
         ael('start-studying-btn', 'click', () => { startSessionModal.classList.add('active'); });
         ael('close-start-session-modal', 'click', () => { startSessionModal.classList.remove('active'); });
         
@@ -4555,9 +4591,37 @@
                 );
             }
             
-            if (e.target.classList.contains('edit-subject-btn')) {
-                 showToast("Edit functionality coming soon!", "info");
-            }
+if (e.target.classList.contains('edit-subject-btn')) {
+    const itemToEdit = e.target.closest('.subject-item');
+    const subjectId = itemToEdit.dataset.subjectId;
+    const subjectName = itemToEdit.dataset.subjectName;
+    // This finds the color div and gets its background color class (e.g., 'bg-red-500')
+    const subjectColorClass = Array.from(itemToEdit.querySelector('.w-4.h-4').classList).find(c => c.startsWith('bg-'));
+
+    const modal = document.getElementById('edit-subject-modal');
+    document.getElementById('edit-subject-id').value = subjectId;
+    document.getElementById('edit-subject-name').value = subjectName;
+
+    const colorPicker = document.getElementById('edit-subject-color-picker');
+    // We can copy the color dots from the "Add Subject" modal to ensure they are the same
+    const addSubjectColorPicker = document.querySelector('#add-subject-modal .subject-color-picker');
+    colorPicker.innerHTML = addSubjectColorPicker.innerHTML;
+
+    // Now, find and select the correct color dot in the new modal
+    colorPicker.querySelectorAll('.color-dot').forEach(dot => {
+        dot.classList.remove('selected');
+        if (dot.dataset.color === subjectColorClass) {
+            dot.classList.add('selected');
+        }
+        // Add a click listener for the color dots in the edit modal
+        dot.addEventListener('click', () => {
+             colorPicker.querySelectorAll('.color-dot').forEach(d => d.classList.remove('selected'));
+             dot.classList.add('selected');
+        });
+    });
+
+    modal.classList.add('active');
+}
         });
         
         const addTaskModal = document.getElementById('add-task-modal');
