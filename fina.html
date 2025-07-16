@@ -4339,26 +4339,61 @@
                     pomodoroStatusDisplay.textContent = status;
                     pomodoroStatusDisplay.style.color = color;
                     break;
-                case 'transition':
+                case 'transition': { // Added curly braces to create a block scope
                     const soundToPlay = oldState === 'work' ? pomodoroSounds.break : pomodoroSounds.focus;
                     playSound(soundToPlay, pomodoroSounds.volume);
+
+                    // --- THIS IS THE NEW LOGIC TO ADD ---
+                    // Determine the duration and message for the NEXT session's notification
+                    let notificationDelayMs = 0;
+                    let notificationTitle = '';
+                    let notificationOptions = {};
+
+                    if (newState === 'short_break') {
+                        notificationDelayMs = pomodoroSettings.short_break * 60 * 1000;
+                        notificationTitle = 'Break is over!';
+                        notificationOptions = {
+                            body: 'Time to get back to focus.',
+                            tag: 'pomodoro-transition'
+                        };
+                    } else if (newState === 'long_break') {
+                        notificationDelayMs = pomodoroSettings.long_break * 60 * 1000;
+                        notificationTitle = 'Long break is over!';
+                        notificationOptions = {
+                            body: 'A new focus session is starting.',
+                            tag: 'pomodoro-transition'
+                        };
+                    } else if (newState === 'work') {
+                        notificationDelayMs = pomodoroSettings.work * 60 * 1000;
+                        notificationTitle = 'Focus complete!';
+                        notificationOptions = {
+                            body: 'Great work! Time to take a short break.',
+                            tag: 'pomodoro-transition'
+                        };
+                    }
+
+                    // Schedule the notification for the end of the upcoming session
+                    if (notificationDelayMs > 0) {
+                        scheduleTransitionNotification(notificationDelayMs, notificationTitle, notificationOptions);
+                    }
+                    // --- END OF NEW LOGIC ---
+
                     if (!autoStart) {
-                        // If auto-start is off, and we transitioned from work to break, or break to work
-                        // this is where the *idle* break should start counting.
-                        if (breakTimerInterval) clearInterval(breakTimerInterval); // Clear any existing idle break timer
+                        if (breakTimerInterval) clearInterval(breakTimerInterval);
                         breakStartTime = Date.now();
-                        breakTimerInterval = setInterval(updateBreakTimerDisplay, 1000); // Start idle break timer
+                        breakTimerInterval = setInterval(updateBreakTimerDisplay, 1000);
                         
                         const manualStartBtn = document.getElementById('manual-start-btn');
                         manualStartBtn.textContent = `Start ${newState.replace('_', ' ')}`;
                         manualStartBtn.classList.remove('hidden');
                         document.getElementById('stop-studying-btn').classList.add('hidden');
                         pomodoroStatusDisplay.textContent = `Ready for ${newState.replace('_', ' ')}`;
-                    } else { // If auto-start is on, and it's a break, clear the break timer
+                    } else {
                         if (breakTimerInterval) clearInterval(breakTimerInterval);
                         breakStartTime = 0;
                     }
                     break;
+                } // Added curly braces to create a block scope
                 case 'sessionComplete':
                     if (duration > 0) {
                         saveSession(activeSubject, duration, sessionType); // sessionType will be 'study' from worker
