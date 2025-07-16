@@ -4362,6 +4362,31 @@ ael('edit-subject-form', 'submit', async (e) => {
             pomodoroStatusDisplay.textContent = 'Ready for Pomodoro';
             pomodoroStatusDisplay.style.color = '#9ca3af';
             sessionTimerDisplay.textContent = formatPomodoroTime(pomodoroSettings.work * 60);
+
+            // --- Add this block for Notification Permissions ---
+    if ("Notification" in window) {
+        // Check if permission needs to be asked
+        if (Notification.permission === 'default') {
+            showConfirmationModal(
+                'Enable Notifications?',
+                'To get alerts when your Pomodoro sessions end, please click "Confirm" to allow notifications.',
+                () => { // This function runs if the user clicks "Confirm"
+                    Notification.requestPermission().then(permission => {
+                        if (permission === 'granted') {
+                            showToast('Notifications have been enabled!', 'success');
+                        } else {
+                            showToast('Notifications were not enabled. You can change this in your browser settings.', 'info');
+                        }
+                    });
+                }
+            );
+        } else if (Notification.permission === 'denied') {
+            // If permission is already blocked, inform the user how to fix it.
+            // This directly addresses the situation from your screenshot.
+            showToast('Notifications are blocked. Please allow them in your browser settings.', 'info', 5000);
+        }
+    }
+    // --- End of Notification Permissions block ---
         });
         
         // --- Worker Message Handling ---
