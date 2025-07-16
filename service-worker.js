@@ -1,53 +1,78 @@
 /**
- * =================================================================
- * SERVICE WORKER (service-worker.js)
- * =================================================================
- * This script runs in the background, separate from your web page.
- * Its primary job is to handle push notifications reliably, even when the screen is off.
- *
- * How it works for notifications:
- * 1. It listens for a 'message' event from the main application.
- * 2. When it receives a 'SCHEDULE_NOTIFICATION' message, it uses setTimeout
- * to wait for the specified delay. This is more reliable than a timer
- * on the main page, which can be paused by the OS.
- * 3. After the delay, it calls self.registration.showNotification(), which
- * tells the device's operating system to display the notification.
- * The OS handles showing it on the lock screen or as a banner.
+ * @file service-worker.js
+ * @description This service worker handles background tasks, primarily for scheduling and displaying notifications
+ * for the Pomodoro timer, ensuring they are delivered even if the app tab is not active or the phone screen is off.
  */
 
-// Listen for messages from the main application thread.
-self.addEventListener('message', event => {
-    // Check if the message is a request to schedule a notification.
+// --- Service Worker Lifecycle Events ---
+
+// This event runs when the service worker is first installed.
+self.addEventListener('install', (event) => {
+    console.log('Service Worker: Installed');
+    // self.skipWaiting() forces the waiting service worker to become the active service worker.
+    // This is useful for ensuring updates to the service worker take effect immediately.
+    self.skipWaiting();
+});
+
+// This event runs when the service worker is activated.
+self.addEventListener('activate', (event) => {
+    console.log('Service Worker: Activated');
+    // event.waitUntil() ensures that the service worker will not be terminated until the promise is resolved.
+    // self.clients.claim() allows an active service worker to take control of all clients (open tabs)
+    // that are in its scope. This is important for the service worker to be able to control the page
+    // immediately on activation.
+    event.waitUntil(self.clients.claim());
+});
+
+
+// --- Message Handling ---
+
+/**
+ * Listens for messages from the main application script.
+ * The primary use case is to receive a payload to schedule a future notification.
+ */
+self.addEventListener('message', (event) => {
+    // We only care about messages with the type 'SCHEDULE_NOTIFICATION'.
     if (event.data && event.data.type === 'SCHEDULE_NOTIFICATION') {
         const { delay, title, options } = event.data.payload;
 
-        console.log(`Service Worker: Notification scheduled for "${title}" in ${delay / 1000} seconds.`);
-
-        // Use setTimeout to wait for the specified delay before showing the notification.
+        // Use setTimeout to schedule the notification. This works reliably in a service worker
+        // for delays up to a few minutes, which is perfect for a Pomodoro timer.
         setTimeout(() => {
-            // self.registration.showNotification is the core API call.
-            // It triggers a system-level notification that can appear on the lock screen.
+            // self.registration.showNotification() is the API to display a system-level notification.
+            // It uses the title and options (body text, icon, tag, etc.) passed from the main script.
+            // The 'tag' option is useful for overwriting a previous notification with the same tag.
             self.registration.showNotification(title, options)
-                .then(() => {
-                    console.log(`Service Worker: Notification shown: "${title}"`);
-                })
-                .catch(err => {
-                    console.error('Service Worker: Error showing notification:', err);
-                });
+                .catch(err => console.error('Notification failed:', err));
         }, delay);
     }
 });
 
-// A basic install event listener to make the service worker install correctly.
-// self.skipWaiting() forces the waiting service worker to become the active service worker.
-self.addEventListener('install', event => {
-    console.log('Service Worker: Installed');
-    self.skipWaiting();
-});
 
-// A basic activate event listener.
-// self.clients.claim() allows an active service worker to take control of all clients within its scope.
-self.addEventListener('activate', event => {
-    console.log('Service Worker: Activated');
-    event.waitUntil(self.clients.claim());
+// --- Notification Click Event ---
+
+/**
+ * Handles what happens when a user clicks on a notification.
+ */
+self.addEventListener('notificationclick', (event) => {
+    // Close the notification pop-up.
+    event.notification.close();
+
+    // This function attempts to focus an existing tab of the app or open a new one.
+    event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+            // If there's an open tab for the app, focus it.
+            if (clientList.length > 0) {
+                let client = clientList[0];
+                for (let i = 0; i < clientList.length; i++) {
+                    if (clientList[i].focused) {
+                        client = clientList[i];
+                    }
+                }
+                return client.focus();
+            }
+            // If no tab is open, open a new one.
+            return clients.openWindow('/');
+        })
+    );
 });
