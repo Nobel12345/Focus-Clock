@@ -1,99 +1,48 @@
 /**
- * @file service-worker.js
- * @description A robust service worker for the Pomodoro timer.
- * This version simplifies logic to ensure reliable background execution.
- * It acts as the primary "alarm clock" for the application.
+ * FocusFlow Service Worker
+ *
+ * This worker handles background tasks, primarily scheduling reliable notifications
+ * that can fire even when the device's screen is off or the app is in the background.
  */
 
-// A Map to store active timers so they can be cancelled.
-const activeTimers = new Map();
+// --- Service Worker Lifecycle ---
 
+// On install, activate the new service worker immediately.
 self.addEventListener('install', (event) => {
-    console.log('Service Worker: Installing...');
-    // Force the waiting service worker to become the active service worker.
-    self.skipWaiting();
+  console.log('Service Worker: Installing...');
+  // skipWaiting() forces the waiting service worker to become the active service worker.
+  self.skipWaiting();
 });
 
+// On activate, take control of all open clients (tabs) immediately.
 self.addEventListener('activate', (event) => {
-    console.log('Service Worker: Activated.');
-    // Take control of all clients (open tabs) in its scope immediately.
-    event.waitUntil(self.clients.claim());
+  console.log('Service Worker: Activating...');
+  // clients.claim() allows an active service worker to set itself as the
+  // controller for all clients within its scope.
+  event.waitUntil(self.clients.claim());
 });
 
-/**
- * Listens for messages from the main application script.
- */
+
+// --- Message Handling ---
+
+// This is the core of our notification logic.
+// It listens for messages from the main application.
 self.addEventListener('message', (event) => {
-    if (!event.data || !event.data.type) return;
+  // We only care about messages with the type 'SCHEDULE_NOTIFICATION'.
+  if (event.data && event.data.type === 'SCHEDULE_NOTIFICATION') {
+    const { delay, title, options } = event.data.payload;
+    console.log(`Service Worker: Received request to schedule notification in ${delay}ms.`);
+    console.log(`Title: ${title}`, options);
 
-    const { type, payload } = event.data;
-
-    // --- Schedule a new "alarm" ---
-    if (type === 'SCHEDULE_ALARM') {
-        const { delay, timerId, transitionMessage } = payload;
-        
-        // If a timer with the same ID already exists, clear it.
-        if (activeTimers.has(timerId)) {
-            clearTimeout(activeTimers.get(timerId));
-        }
-
-        const timeoutId = setTimeout(() => {
-            console.log(`Service Worker: Alarm '${timerId}' fired.`);
-            
-            // Send the transition message back to all open tabs of the app.
-            self.clients.matchAll({
-                type: 'window',
-                includeUncontrolled: true
-            }).then((clientList) => {
-                clientList.forEach(client => {
-                    client.postMessage(transitionMessage);
-                });
-            });
-
-            // Show a system notification using the details from the transition message.
-            self.registration.showNotification(transitionMessage.title, transitionMessage.options)
-                .catch(err => console.error('Service Worker: Notification failed:', err));
-            
-            // Clean up the timer from our map.
-            activeTimers.delete(timerId);
-
-        }, delay);
-
-        // Store the new timer's ID so it can be cancelled.
-        activeTimers.set(timerId, timeoutId);
-        console.log(`Service Worker: Scheduled alarm '${timerId}' for ${delay}ms.`);
-    }
-
-    // --- Cancel a previously scheduled alarm ---
-    if (type === 'CANCEL_ALARM') {
-        const { timerId } = payload;
-        if (activeTimers.has(timerId)) {
-            clearTimeout(activeTimers.get(timerId));
-            activeTimers.delete(timerId);
-            console.log(`Service Worker: Cancelled alarm '${timerId}'`);
-        }
-    }
-});
-
-/**
- * Handles what happens when a user clicks on a notification.
- */
-self.addEventListener('notificationclick', (event) => {
-    event.notification.close();
-    event.waitUntil(
-        clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-            if (clientList.length > 0) {
-                // Try to find a focused client first
-                for (const client of clientList) {
-                    if (client.focused) {
-                        return client.focus();
-                    }
-                }
-                // If none are focused, focus the first one
-                return clientList[0].focus();
-            }
-            // If no tab is open, open a new one.
-            return clients.openWindow('/');
-        })
-    );
+    // Use setTimeout to schedule the notification. The browser gives the
+    // service worker a short window to perform tasks like this when it
+    // receives a message, making this reliable.
+    setTimeout(() => {
+      // self.registration.showNotification is the powerful API that talks
+      // to the device's OS to show a system-level notification.
+      self.registration.showNotification(title, options)
+        .then(() => console.log('Service Worker: Notification shown.'))
+        .catch(err => console.error('Service Worker: Error showing notification:', err));
+    }, delay);
+  }
 });
