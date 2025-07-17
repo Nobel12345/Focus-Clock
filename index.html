@@ -4371,15 +4371,10 @@ ael('edit-subject-form', 'submit', async (e) => {
                 case 'tick':
                     sessionTimerDisplay.textContent = formatPomodoroTime(timeLeft);
                     break;
-                case 'statusUpdate':
-                    pomodoroStatusDisplay.textContent = status;
-                    pomodoroStatusDisplay.style.color = color;
-                    break;
-                pomodoroWorker.onmessage = (e) => {
-            const { type, timeLeft, newState, oldState, autoStart, status, color, duration, sessionType } = e.data;
-            switch(type) {
-                // ... (case 'tick' and case 'statusUpdate' remain the same)
-
+                 case 'statusUpdate':
+            pomodoroStatusDisplay.textContent = status;
+            pomodoroStatusDisplay.style.color = color;
+            break;
                 case 'transition': {
                     const soundToPlay = oldState === 'work' ? pomodoroSounds.break : pomodoroSounds.focus;
                     playSound(soundToPlay, pomodoroSounds.volume);
@@ -4435,9 +4430,8 @@ ael('edit-subject-form', 'submit', async (e) => {
                     }
                     break;
                 }
-                // ... (the rest of the cases remain the same)
-            }
-        };
+                
+    
                 case 'sessionComplete':
                     if (duration > 0) {
                         saveSession(activeSubject, duration, sessionType); // sessionType will be 'study' from worker
