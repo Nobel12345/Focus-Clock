@@ -3,10 +3,10 @@
  *
  * This worker handles two primary functions:
  * 1. Caching the core application shell for offline access.
- * 2. Scheduling reliable background notifications (alarms).
+ * 2. Scheduling reliable background notifications.
  */
 
-const CACHE_NAME = 'focusflow-cache-v3'; // Increment version to trigger update
+const CACHE_NAME = 'focusflow-cache-v1'; // Increment version to trigger update
 // List of essential files for the app to work offline.
 const URLS_TO_CACHE = [
   '/', // The main HTML file
@@ -19,8 +19,6 @@ const URLS_TO_CACHE = [
   'https://unpkg.com/lucide@latest',
   'https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js'
 ];
-
-let scheduledTimers = {}; // Store scheduled timers
 
 // --- Service Worker Lifecycle ---
 
@@ -84,37 +82,14 @@ self.addEventListener('fetch', (event) => {
 });
 
 
-// --- Message Handling (Your existing notification logic) ---
+// --- Message Handling (Notification Logic) ---
 self.addEventListener('message', (event) => {
-  const { type, payload } = event.data;
+  if (event.data && event.data.type === 'SCHEDULE_NOTIFICATION') {
+    const { delay, title, options } = event.data.payload;
 
-  if (type === 'SCHEDULE_ALARM') {
-    const { delay, timerId, transitionMessage } = payload;
-    
-    // Clear any existing timer with the same ID to prevent duplicates
-    if (scheduledTimers[timerId]) {
-      clearTimeout(scheduledTimers[timerId]);
-    }
-
-    scheduledTimers[timerId] = setTimeout(() => {
-      // Show the notification
-      self.registration.showNotification(transitionMessage.title, transitionMessage.options);
-      
-      // Send a message back to all clients (open tabs) that the timer has ended
-      self.clients.matchAll().then(clients => {
-        clients.forEach(client => {
-          client.postMessage(transitionMessage);
-        });
-      });
-
-      // Clean up the completed timer
-      delete scheduledTimers[timerId];
+    setTimeout(() => {
+      self.registration.showNotification(title, options)
+        .catch(err => console.error('Service Worker: Error showing notification:', err));
     }, delay);
-  } else if (type === 'CANCEL_ALARM') {
-    const { timerId } = payload;
-    if (scheduledTimers[timerId]) {
-      clearTimeout(scheduledTimers[timerId]);
-      delete scheduledTimers[timerId];
-    }
   }
 });
