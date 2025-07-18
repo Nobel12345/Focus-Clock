@@ -1430,6 +1430,7 @@ let pauseStartTime = 0;
         // --- Pomodoro State ---
         let timerMode = 'normal'; // 'normal' or 'pomodoro'
         let pomodoroState = 'idle'; // 'work', 'short_break', 'long_break', 'idle'
+        let nextPomodoroPhase = null; // To store the next phase for manual start
         let pomodoroSettings = {
             work: 25,
             short_break: 5,
@@ -4517,22 +4518,20 @@ ael('edit-subject-form', 'submit', async (e) => {
         ael('pause-btn', 'click', pauseTimer);
         ael('resume-btn', 'click', resumeTimer);
 
-        ael('manual-start-btn', 'click', async () => { // Made async to await saveSession
-            // Stop and save any active break session before starting a new study session
-            if (breakTimerInterval) {
-                clearInterval(breakTimerInterval);
-                const elapsedBreakSeconds = Math.floor((Date.now() - breakStartTime) / 1000);
-                if (elapsedBreakSeconds > 0) {
-                    await saveSession('Break', elapsedBreakSeconds, 'break'); // Save break session
-                }
-                breakTimerInterval = null;
-                breakStartTime = 0;
-            }
-            // Clear break status from UI
-            pomodoroStatusDisplay.textContent = ''; 
+        ael('manual-start-btn', 'click', () => {
+            if (nextPomodoroPhase) {
+                // Play the starting sound since this is a manual action
+                playSound(pomodoroSounds.start, pomodoroSounds.volume);
+                
+                // Start the next phase using our stored variable
+                startNextPomodoroPhase(nextPomodoroPhase);
+                nextPomodoroPhase = null; // Clear the variable after use
 
-            document.getElementById('stop-studying-btn').classList.remove('hidden');
-            pomodoroWorker.postMessage({ command: 'startNext' });
+                // Update button visibility to show the running state
+                document.getElementById('manual-start-btn').classList.add('hidden');
+                document.getElementById('stop-studying-btn').classList.remove('hidden');
+                document.getElementById('pause-btn').classList.remove('hidden');
+            }
         });
         
         // --- Timer Switch Logic ---
@@ -4644,6 +4643,8 @@ ael('edit-subject-form', 'submit', async (e) => {
                     // Stop the UI timer and show the "Start Next" button
                     pomodoroWorker.postMessage({ command: 'stop' });
                     pomodoroState = 'idle';
+
+                    nextPomodoroPhase = newState; // Store the next state for the manual button
                     
                     const manualStartBtn = document.getElementById('manual-start-btn');
                     manualStartBtn.textContent = `Start ${newState.replace('_', ' ')}`;
@@ -5113,17 +5114,15 @@ if (e.target.classList.contains('edit-subject-btn')) {
             });
         });
 
-        // --- Initial Load ---
         window.onload = () => {
             authError = document.getElementById('auth-error');
             sessionTimerDisplay = document.getElementById('session-timer');
             totalTimeDisplay = document.getElementById('total-time-display');
-            totalBreakTimeDisplay = document.getElementById('total-break-time-display'); // Get the new element
+            totalBreakTimeDisplay = document.getElementById('total-break-time-display');
             activeSubjectDisplay = document.getElementById('active-subject-display');
             pomodoroStatusDisplay = document.getElementById('pomodoro-status');
             initializeFirebase();
 
-            // Add event listener for sound previews in the settings modal
             const pomodoroSettingsForm = document.getElementById('pomodoro-settings-form');
             if (pomodoroSettingsForm) {
                 pomodoroSettingsForm.addEventListener('change', (e) => {
@@ -5140,40 +5139,44 @@ if (e.target.classList.contains('edit-subject-btn')) {
                 });
             }
 
-            // New: Event listener for the group study button on the timer page
             ael('group-study-timer-btn', 'click', async () => {
                 if (currentUserData.joinedGroups && currentUserData.joinedGroups.length > 0) {
-                    // Try to go to the last viewed group, or the first one if not set
-                    if (currentGroupId && currentUserData.joinedGroups.includes(currentGroupId)) {
-                        showPage('page-group-detail');
-                        renderGroupDetail(currentGroupId);
-                    } else {
-                        // If no currentGroupId or it's invalid, default to the first joined group
-                        const firstJoinedGroup = currentUserData.joinedGroups[0];
-                        currentGroupId = firstJoinedGroup; // Set currentGroupId
-                        showPage('page-group-detail');
-                        renderGroupDetail(firstJoinedGroup);
-                    }
+                    const targetGroupId = currentGroupId && currentUserData.joinedGroups.includes(currentGroupId) ? currentGroupId : currentUserData.joinedGroups[0];
+                    currentGroupId = targetGroupId;
+                    showPage('page-group-detail');
+                    renderGroupDetail(targetGroupId);
                 } else {
-                    // If no joined groups, go to the "My Groups" page (which will prompt to find/create)
-                    showPage('page-my-groups'); 
+                    showPage('page-my-groups');
                 }
             });
 
-            // Service Worker Registration
+            // --- Service Worker Registration (Robust Version) ---
             if ('serviceWorker' in navigator) {
-                window.addEventListener('load', () => {
-                    navigator.serviceWorker.register('/service-worker.js')
-                        .then(registration => {
-                            console.log('Service Worker registered with scope:', registration.scope);
-                        })
-                        .catch(error => {
-                            console.error('Service Worker registration failed:', error);
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(registration => {
+                        console.log('Service Worker registered with scope:', registration.scope);
+                        // Ensure the new service worker is activated.
+                        registration.addEventListener('updatefound', () => {
+                            const newWorker = registration.installing;
+                            newWorker.addEventListener('statechange', () => {
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    // New worker is installed, but the old one is still controlling the page.
+                                    // You might prompt the user to refresh here if needed.
+                                    console.log('New service worker is available. Please refresh.');
+                                }
+                            });
                         });
+                    }).catch(error => {
+                        console.error('Service Worker registration failed:', error);
+                    });
+
+                // This ensures we don't try to use the SW until it's ready.
+                navigator.serviceWorker.ready.then(registration => {
+                    console.log('Service Worker is active and ready.');
                 });
             }
         };
-
+        
     </script>
 </body>
 </html>
