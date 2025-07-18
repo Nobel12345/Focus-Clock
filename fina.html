@@ -1295,6 +1295,14 @@
             runTransaction,
             writeBatch
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        // --- ADD THIS ENTIRE OBJECT HERE ---
+const ACHIEVEMENTS = {
+    'novice_scholar': { name: 'Novice Scholar', description: 'Study for a total of 1 hour.' },
+    'dedicated_learner': { name: 'Dedicated Learner', description: 'Study for a total of 10 hours.' },
+    'marathoner': { name: 'Marathoner', description: 'Complete a single study session over 2 hours.' },
+    'consistent_coder': { name: 'Consistent Coder', description: 'Maintain a 7-day study streak.' }
+};
+// --- END OF ADDITION ---
 
         // --- Web Worker Implementation ---
         const workerCode = `
