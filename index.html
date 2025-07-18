@@ -1044,6 +1044,8 @@
                             <button id="start-studying-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-full text-lg transition-transform transform hover:scale-105">Start Studying</button>
                             <button id="stop-studying-btn" class="hidden bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-10 rounded-full text-lg transition-transform transform hover:scale-105">Stop</button>
                             <button id="manual-start-btn" class="hidden bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-8 rounded-full text-lg transition-transform transform hover:scale-105">Start Next</button>
+                            <button id="pause-btn" class="hidden bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-4 px-10 rounded-full text-lg transition-transform transform hover:scale-105">Pause</button>
+                            <button id="resume-btn" class="hidden bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-8 rounded-full text-lg transition-transform transform hover:scale-105">Resume</button>
                         </div>
                     </div>
                 </div>
@@ -1307,12 +1309,23 @@ const ACHIEVEMENTS = {
         // --- Web Worker Implementation ---
         const workerCode = `
             let timerInterval = null;
-            let timeLeft = 0;
+            let endTime = 0;
+            let remainingTimeOnPause = 0;
+            let isPaused = false;
+            let currentPhaseDuration = 0;
 
             function tick() {
+                if (isPaused) return;
+                const now = Date.now();
+                const timeLeft = Math.round((endTime - now) / 1000);
+
                 if (timeLeft > 0) {
-                    timeLeft--;
                     self.postMessage({ type: 'tick', timeLeft: timeLeft });
+                } else {
+                    self.postMessage({ type: 'tick', timeLeft: 0 });
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                    // The main thread will handle the transition via the Service Worker alarm
                 }
             }
 
@@ -1320,15 +1333,36 @@ const ACHIEVEMENTS = {
                 const { command, duration } = e.data;
                 switch(command) {
                     case 'start':
+                        isPaused = false;
                         if (timerInterval) clearInterval(timerInterval);
-                        timeLeft = duration;
-                        self.postMessage({ type: 'tick', timeLeft: timeLeft }); // Post initial time immediately
+                        currentPhaseDuration = duration;
+                        endTime = Date.now() + duration * 1000;
                         timerInterval = setInterval(tick, 1000);
+                        tick();
+                        break;
+                    case 'pause':
+                        if (timerInterval) {
+                            isPaused = true;
+                            remainingTimeOnPause = endTime - Date.now();
+                            clearInterval(timerInterval); // Stop the interval when paused
+                            timerInterval = null;
+                        }
+                        break;
+                    case 'resume':
+                        if (isPaused && remainingTimeOnPause > 0) {
+                            isPaused = false;
+                            endTime = Date.now() + remainingTimeOnPause;
+                            timerInterval = setInterval(tick, 1000);
+                            tick();
+                            remainingTimeOnPause = 0;
+                        }
                         break;
                     case 'stop':
                         if (timerInterval) clearInterval(timerInterval);
                         timerInterval = null;
-                        timeLeft = 0;
+                        endTime = 0;
+                        remainingTimeOnPause = 0;
+                        isPaused = false;
                         break;
                 }
             };
@@ -1370,6 +1404,9 @@ const ACHIEVEMENTS = {
         let isAddingSubjectFromStartSession = false; // Flag to track modal origin
 
         // Timer State
+        // Add these lines
+let isPaused = false;
+let pauseStartTime = 0;
         let timerInterval = null;
         let sessionStartTime = 0;
         let totalTimeTodayInSeconds = 0;
@@ -2355,13 +2392,17 @@ const ACHIEVEMENTS = {
                 const workDurationSeconds = pomodoroSettings.work * 60;
                 pomodoroWorker.postMessage({ command: 'start', duration: workDurationSeconds });
                 
-                // Use the new reliable SW notification
-                scheduleSWNotification({
+                // Use the new reliable SW alarm
+                scheduleSWAlarm({
                     delay: workDurationSeconds * 1000,
-                    title: 'Focus complete!',
-                    options: { body: 'Great work! Time to take a short break.', tag: 'pomodoro-transition' },
-                    transitionMessage: { type: 'TIMER_ENDED', newState: 'short_break', oldState: 'work' },
-                    timerId: 'pomodoro-transition'
+                    timerId: 'pomodoro-transition',
+                    transitionMessage: { 
+                        type: 'TIMER_ENDED', 
+                        newState: 'short_break', 
+                        oldState: 'work',
+                        title: 'Focus complete!',
+                        options: { body: `Time for a short break.`, tag: 'pomodoro-transition' }
+                    }
                 });
 
                 pomodoroStatusDisplay.textContent = `Work (1/${pomodoroSettings.long_break_interval})`;
@@ -2370,6 +2411,7 @@ const ACHIEVEMENTS = {
 
             document.getElementById('start-studying-btn').classList.add('hidden');
             document.getElementById('stop-studying-btn').classList.remove('hidden');
+            document.getElementById('pause-btn').classList.remove('hidden');
             document.getElementById('manual-start-btn').classList.add('hidden');
 
             const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
@@ -2379,6 +2421,11 @@ const ACHIEVEMENTS = {
         async function stopTimer() {
             // Stop the UI timer in the web worker
             pomodoroWorker.postMessage({ command: 'stop' });
+
+            // --- ADD THIS BLOCK TO RESET PAUSE STATE ---
+            isPaused = false;
+            pauseStartTime = 0;
+            // --- END OF ADDED BLOCK ---
 
             // If a Pomodoro session was running, save any partial time and cancel the background alarm
             if (timerMode === 'pomodoro' && pomodoroState !== 'idle') {
@@ -2416,11 +2463,49 @@ const ACHIEVEMENTS = {
             // Reset button visibility
             document.getElementById('start-studying-btn').classList.remove('hidden');
             document.getElementById('stop-studying-btn').classList.add('hidden');
+            // --- ADD THESE 2 LINES TO HIDE PAUSE/RESUME ---
+            document.getElementById('pause-btn').classList.add('hidden');
+            document.getElementById('resume-btn').classList.add('hidden');
+            // --- END OF ADDED LINES ---
             document.getElementById('manual-start-btn').classList.add('hidden');
 
             // Update user status in Firestore to show they are no longer studying
             const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
             await updateDoc(userRef, { studying: null });
+        }
+
+        function pauseTimer() {
+            if (timerMode === 'normal' && timerInterval) {
+                clearInterval(timerInterval);
+                isPaused = true;
+                pauseStartTime = Date.now();
+                document.getElementById('pause-btn').classList.add('hidden');
+                document.getElementById('resume-btn').classList.remove('hidden');
+            } else if (timerMode === 'pomodoro' && pomodoroState !== 'idle') {
+                pomodoroWorker.postMessage({ command: 'pause' });
+                isPaused = true;
+                document.getElementById('pause-btn').classList.add('hidden');
+                document.getElementById('resume-btn').classList.remove('hidden');
+            }
+        }
+
+        function resumeTimer() {
+            if (timerMode === 'normal' && isPaused) {
+                const pauseDuration = Date.now() - pauseStartTime;
+                sessionStartTime += pauseDuration;
+                isPaused = false;
+                timerInterval = setInterval(() => {
+                    const elapsedSeconds = Math.floor((Date.now() - sessionStartTime) / 1000);
+                    sessionTimerDisplay.textContent = formatTime(elapsedSeconds);
+                }, 1000);
+                document.getElementById('pause-btn').classList.remove('hidden');
+                document.getElementById('resume-btn').classList.add('hidden');
+            } else if (timerMode === 'pomodoro' && isPaused) {
+                pomodoroWorker.postMessage({ command: 'resume' });
+                isPaused = false;
+                document.getElementById('pause-btn').classList.remove('hidden');
+                document.getElementById('resume-btn').classList.add('hidden');
+            }
         }
 
         // --- NEW: Helper to start the next Pomodoro phase ---
@@ -2504,6 +2589,28 @@ const ACHIEVEMENTS = {
                     
                     const userDoc = await transaction.get(userDocRef);
                     const publicUserDoc = await transaction.get(publicUserDocRef);
+                    // --- ADD THE STREAK LOGIC HERE ---
+const userDataForStreak = userDoc.data();
+if (sessionType === 'study') {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const yesterdayStr = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+
+    const lastStudyDay = userDataForStreak.lastStudyDay || '';
+    let currentStreak = userDataForStreak.currentStreak || 0;
+
+    if (lastStudyDay !== todayStr) {
+        if (lastStudyDay === yesterdayStr) {
+            currentStreak++; // Continued the streak
+        } else {
+            currentStreak = 1; // Streak was broken, reset to 1
+        }
+        transaction.update(userDocRef, {
+            currentStreak: currentStreak,
+            lastStudyDay: todayStr
+        });
+    }
+}
+// --- END OF STREAK LOGIC ---
 
                     if (!userDoc.exists()) {
                         throw new Error("Transaction failed: User document not found.");
@@ -2593,6 +2700,49 @@ if (sessionType === 'study') {
                 showToast("Error saving session.", "error");
             }
         }
+        // --- ADD THIS ENTIRE FUNCTION ---
+async function checkAndAwardAchievements(completedSessionDuration) {
+    if (!currentUser) return;
+
+    try {
+        const userDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
+        const userDoc = await getDoc(userDocRef);
+        if (!userDoc.exists()) return;
+
+        const userData = userDoc.data();
+        const unlocked = userData.unlockedAchievements || [];
+        let newlyUnlocked = [];
+
+        // Rule 1: Study for a total of 1 hour
+        if (!unlocked.includes('novice_scholar') && userData.totalStudySeconds >= 3600) {
+            newlyUnlocked.push('novice_scholar');
+        }
+        // Rule 2: Study for a total of 10 hours
+        if (!unlocked.includes('dedicated_learner') && userData.totalStudySeconds >= 36000) {
+            newlyUnlocked.push('dedicated_learner');
+        }
+        // Rule 3: Complete a single session over 2 hours
+        if (!unlocked.includes('marathoner') && completedSessionDuration >= 7200) {
+            newlyUnlocked.push('marathoner');
+        }
+        // Rule 4: Maintain a 7-day study streak
+        if (!unlocked.includes('consistent_coder') && userData.currentStreak >= 7) {
+            newlyUnlocked.push('consistent_coder');
+        }
+
+        if (newlyUnlocked.length > 0) {
+            await updateDoc(userDocRef, { 
+                unlockedAchievements: arrayUnion(...newlyUnlocked) 
+            });
+            
+            const achievement = ACHIEVEMENTS[newlyUnlocked[0]];
+            showToast(`Achievement Unlocked: ${achievement.name}!`, 'success');
+        }
+    } catch (error) {
+        console.error("Error checking achievements:", error);
+    }
+}
+// --- END OF FUNCTION ---
 
         async function loadDailyTotal() {
             if (!currentUser) return;
@@ -4364,6 +4514,9 @@ ael('edit-subject-form', 'submit', async (e) => {
 
         ael('stop-studying-btn', 'click', stopTimer);
         
+        ael('pause-btn', 'click', pauseTimer);
+        ael('resume-btn', 'click', resumeTimer);
+
         ael('manual-start-btn', 'click', async () => { // Made async to await saveSession
             // Stop and save any active break session before starting a new study session
             if (breakTimerInterval) {
