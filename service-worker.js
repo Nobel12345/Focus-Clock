@@ -3,10 +3,10 @@
  *
  * This worker handles two primary functions:
  * 1. Caching the core application shell for offline access.
- * 2. Scheduling reliable background notifications.
+ * 2. Scheduling reliable background alarms and notifications.
  */
 
-const CACHE_NAME = 'focusflow-cache-v1'; // Increment version to trigger update
+const CACHE_NAME = 'focusflow-cache-v2'; // Increment version to trigger update
 // List of essential files for the app to work offline.
 const URLS_TO_CACHE = [
   '/', // The main HTML file
@@ -20,6 +20,9 @@ const URLS_TO_CACHE = [
   'https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js'
 ];
 
+// Store scheduled timers in memory. This will be cleared if the worker is terminated.
+const scheduledTimers = new Map();
+
 // --- Service Worker Lifecycle ---
 
 // On install, open a cache and add the core app files to it.
@@ -29,10 +32,9 @@ self.addEventListener('install', (event) => {
     caches.open(CACHE_NAME)
       .then((cache) => {
         console.log('Service Worker: Caching app shell');
-        // Add all URLs to the cache. If any request fails, the installation fails.
         return cache.addAll(URLS_TO_CACHE);
       })
-      .then(() => self.skipWaiting()) // Force the waiting service worker to become the active worker.
+      .then(() => self.skipWaiting())
   );
 });
 
@@ -43,53 +45,75 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          // If a cache is not our current one, delete it.
           if (cacheName !== CACHE_NAME) {
             console.log('Service Worker: Clearing old cache', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
-    }).then(() => self.clients.claim()) // Take control of all open clients.
+    }).then(() => self.clients.claim())
   );
 });
 
 // On fetch, intercept network requests.
 self.addEventListener('fetch', (event) => {
-  // We only want to cache GET requests.
   if (event.request.method !== 'GET' || event.request.url.startsWith('chrome-extension://')) {
     return;
   }
-
-  // For Firebase and other API requests, always go to the network.
   if (event.request.url.includes('firebase') || event.request.url.includes('googleapis')) {
     event.respondWith(fetch(event.request));
     return;
   }
-
-  // For other requests, use a "Cache first, then network" strategy.
   event.respondWith(
     caches.match(event.request)
       .then((cachedResponse) => {
-        // If we find a match in the cache, return it.
-        if (cachedResponse) {
-          return cachedResponse;
-        }
-        // If not in cache, go to the network.
-        return fetch(event.request);
+        return cachedResponse || fetch(event.request);
       })
   );
 });
 
 
-// --- Message Handling (Notification Logic) ---
+// --- Message Handling (Alarm and Notification Logic) ---
 self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SCHEDULE_NOTIFICATION') {
-    const { delay, title, options } = event.data.payload;
+  if (!event.data) return;
 
-    setTimeout(() => {
+  const { type, payload } = event.data;
+
+  if (type === 'SCHEDULE_ALARM') {
+    const { delay, timerId, transitionMessage } = payload;
+    
+    // If a timer with the same ID already exists, clear it first.
+    if (scheduledTimers.has(timerId)) {
+        clearTimeout(scheduledTimers.get(timerId));
+        scheduledTimers.delete(timerId);
+    }
+
+    const timer = setTimeout(() => {
+      // Show the notification
+      const { title, options } = transitionMessage;
       self.registration.showNotification(title, options)
-        .catch(err => console.error('Service Worker: Error showing notification:', err));
+          .catch(err => console.error('Service Worker: Error showing notification:', err));
+
+      // Send a message back to all clients (the main app)
+      self.clients.matchAll().then(clients => {
+        clients.forEach(client => {
+          client.postMessage(transitionMessage);
+        });
+      });
+      
+      // Clean up the completed timer
+      scheduledTimers.delete(timerId);
+
     }, delay);
+
+    // Store the timer ID so we can cancel it if needed
+    scheduledTimers.set(timerId, timer);
+  } else if (type === 'CANCEL_ALARM') {
+    const { timerId } = payload;
+    if (scheduledTimers.has(timerId)) {
+        clearTimeout(scheduledTimers.get(timerId));
+        scheduledTimers.delete(timerId);
+        console.log(`Service Worker: Canceled alarm with ID: ${timerId}`);
+    }
   }
 });
