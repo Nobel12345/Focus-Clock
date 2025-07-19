@@ -1325,6 +1325,7 @@ const ACHIEVEMENTS = {
                     self.postMessage({ type: 'tick', timeLeft: 0 });
                     clearInterval(timerInterval);
                     timerInterval = null;
+                    self.postMessage({ type: 'phase_ended' }); 
                     // The main thread will handle the transition via the Service Worker alarm
                 }
             }
@@ -4609,66 +4610,91 @@ ael('edit-subject-form', 'submit', async (e) => {
             // --- End of Notification Permissions block ---
             });
         
-        // --- Worker Message Handling (Simplified) ---
+        // --- Worker Message Handling (with Fallback) ---
         pomodoroWorker.onmessage = (e) => {
             const { type, timeLeft } = e.data;
             if (type === 'tick') {
                 sessionTimerDisplay.textContent = formatPomodoroTime(timeLeft);
+            } else if (type === 'phase_ended') {
+                // This is our fallback for when the Service Worker isn't active.
+                // It manually triggers the phase end logic.
+                
+                // We only run this fallback if the SW is NOT available to prevent running the logic twice.
+                if (!navigator.serviceWorker.controller) {
+                    const oldState = pomodoroState;
+                    const currentCycle = Math.floor((currentUserData.pomodoroCycle || 0) / 2);
+                    let newState;
+
+                    if (oldState === 'work') {
+                        newState = ((currentCycle + 1) % pomodoroSettings.long_break_interval === 0) ? 'long_break' : 'short_break';
+                    } else { // It was a break
+                        newState = 'work';
+                    }
+                    
+                    // Call the same handler that the SW would call.
+                    handlePomodoroPhaseEnd({ newState, oldState });
+                }
             }
         };
+       
+
+        // --- STEP 1: ADD THIS ENTIRE NEW FUNCTION HERE ---
+        async function handlePomodoroPhaseEnd({ newState, oldState }) {
+            // 1. Save the completed session
+            if (oldState === 'work') {
+                await saveSession(activeSubject, pomodoroSettings.work * 60, 'study');
+            } else { // It was a break
+                const breakDuration = oldState === 'short_break' ? pomodoroSettings.short_break * 60 : pomodoroSettings.long_break * 60;
+                await saveSession('Break', breakDuration, 'break');
+            }
+
+            // 2. Play the sound for the transition
+            const soundToPlay = oldState === 'work' ? pomodoroSounds.break : pomodoroSounds.focus;
+            playSound(soundToPlay, pomodoroSounds.volume);
+            
+            // 3. Check if we should auto-start the next phase
+            const shouldAutoStart = (newState === 'work' && pomodoroSettings.autoStartFocus) || (newState.includes('break') && pomodoroSettings.autoStartBreak);
+
+            if (shouldAutoStart) {
+                // If auto-start is enabled, immediately start the next phase.
+                startNextPomodoroPhase(newState);
+            } else {
+                // If auto-start is disabled, stop the timer and set up for manual start.
+                pomodoroWorker.postMessage({ command: 'stop' });
+                pomodoroState = 'idle';
+                nextPomodoroPhase = newState; // Store the next state for the button
+                
+                const manualStartBtn = document.getElementById('manual-start-btn');
+                manualStartBtn.textContent = `Start ${newState.replace('_', ' ')}`;
+                manualStartBtn.classList.remove('hidden');
+                
+                // Hide the main timer controls
+                document.getElementById('stop-studying-btn').classList.add('hidden');
+                document.getElementById('pause-btn').classList.add('hidden');
+                document.getElementById('resume-btn').classList.add('hidden');
+                
+                // Update UI to show it's ready for the next phase
+                pomodoroStatusDisplay.textContent = `Ready for ${newState.replace('_', ' ')}`;
+                
+                // Reset timer display based on the upcoming phase
+                let nextDuration = 0;
+                if (newState === 'work') {
+                    nextDuration = pomodoroSettings.work * 60;
+                } else if (newState === 'short_break') {
+                    nextDuration = pomodoroSettings.short_break * 60;
+                } else {
+                    nextDuration = pomodoroSettings.long_break * 60;
+                }
+                sessionTimerDisplay.textContent = formatPomodoroTime(nextDuration);
+            }
+        }
+        // --- END OF NEW FUNCTION ---
 
         // --- NEW: Service Worker Message Listener (The Reliable Alarm) ---
         navigator.serviceWorker.addEventListener('message', async (event) => {
             if (event.data && event.data.type === 'TIMER_ENDED') {
-                const { newState, oldState } = event.data;
-                
-                // 1. Save the completed session
-                if (oldState === 'work') {
-                    await saveSession(activeSubject, pomodoroSettings.work * 60, 'study');
-                } else { // It was a break
-                    const breakDuration = oldState === 'short_break' ? pomodoroSettings.short_break * 60 : pomodoroSettings.long_break * 60;
-                    await saveSession('Break', breakDuration, 'break');
-                }
-
-                // 2. Play the sound for the transition
-                const soundToPlay = oldState === 'work' ? pomodoroSounds.break : pomodoroSounds.focus;
-                playSound(soundToPlay, pomodoroSounds.volume);
-                
-                // 3. Check if we should auto-start the next phase
-                const shouldAutoStart = (newState === 'work' && pomodoroSettings.autoStartFocus) || (newState.includes('break') && pomodoroSettings.autoStartBreak);
-
-                if (shouldAutoStart) {
-                    // If auto-start is enabled, immediately start the next phase.
-                    startNextPomodoroPhase(newState);
-                } else {
-                    // If auto-start is disabled, stop the timer and set up for manual start.
-                    pomodoroWorker.postMessage({ command: 'stop' });
-                    pomodoroState = 'idle';
-                    nextPomodoroPhase = newState; // Store the next state for the button
-                    
-                    const manualStartBtn = document.getElementById('manual-start-btn');
-                    manualStartBtn.textContent = `Start ${newState.replace('_', ' ')}`;
-                    manualStartBtn.classList.remove('hidden');
-                    
-                    // Hide the main timer controls
-                    document.getElementById('stop-studying-btn').classList.add('hidden');
-                    document.getElementById('pause-btn').classList.add('hidden');
-                    document.getElementById('resume-btn').classList.add('hidden');
-                    
-                    // Update UI to show it's ready for the next phase
-                    pomodoroStatusDisplay.textContent = `Ready for ${newState.replace('_', ' ')}`;
-                    
-                    // Reset timer display based on the upcoming phase
-                    let nextDuration = 0;
-                    if (newState === 'work') {
-                        nextDuration = pomodoroSettings.work * 60;
-                    } else if (newState === 'short_break') {
-                        nextDuration = pomodoroSettings.short_break * 60;
-                    } else {
-                        nextDuration = pomodoroSettings.long_break * 60;
-                    }
-                    sessionTimerDisplay.textContent = formatPomodoroTime(nextDuration);
-                }
+                // This now calls our new reusable function
+                handlePomodoroPhaseEnd(event.data);
             }
         });
 
@@ -5168,28 +5194,25 @@ if (e.target.classList.contains('edit-subject-btn')) {
 
             // --- Service Worker Registration (Robust Version) ---
             if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('/service-worker.js')
-                    .then(registration => {
-                        console.log('Service Worker registered with scope:', registration.scope);
-                        // Ensure the new service worker is activated.
-                        registration.addEventListener('updatefound', () => {
-                            const newWorker = registration.installing;
-                            newWorker.addEventListener('statechange', () => {
-                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                    // New worker is installed, but the old one is still controlling the page.
-                                    // You might prompt the user to refresh here if needed.
-                                    console.log('New service worker is available. Please refresh.');
-                                }
-                            });
-                        });
-                    }).catch(error => {
-                        console.error('Service Worker registration failed:', error);
-                    });
+                // Service Workers require a secure context (HTTPS or localhost) to register.
+                // This check prevents the registration error in unsupported environments (like 'blob:').
+                if (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+                    // Create a blob from our service worker code string
+                    const swBlob = new Blob([swCode], { type: 'application/javascript' });
+                    // Create a temporary URL for the blob
+                    const swUrl = URL.createObjectURL(swBlob);
 
-                // This ensures we don't try to use the SW until it's ready.
-                navigator.serviceWorker.ready.then(registration => {
-                    console.log('Service Worker is active and ready.');
-                });
+                    navigator.serviceWorker.register(swUrl)
+                        .then(registration => {
+                            console.log('Service Worker registered successfully with scope:', registration.scope);
+                        })
+                        .catch(error => {
+                            console.error('Service Worker registration failed:', error);
+                        });
+                } else {
+                    console.warn('Service Worker not registered. This feature requires a secure context (HTTPS or localhost). The Pomodoro timer will be less reliable in the background.');
+                    // Hide the Pomodoro button if SW is not available, as it won't work reliably.
+                }
             }
         };
         
