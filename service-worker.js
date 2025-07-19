@@ -1,125 +1,168 @@
-/**
- * FocusFlow Service Worker
- *
- * This worker handles two primary functions:
- * 1. Caching the core application shell for offline access.
- * 2. Scheduling reliable background alarms and sending messages back to the app.
- */
+// Service Worker for FocusFlow
+// Version 1.0.0
 
-const CACHE_NAME = 'focusflow-cache-v4'; // Increment version to trigger update
-// List of essential files for the app to work offline.
-const URLS_TO_CACHE = [
-  '/', // The main HTML file
-  'https://cdn.tailwindcss.com',
-  'https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js',
-  'https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js',
-  'https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js',
-  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap',
-  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
-  'https://unpkg.com/lucide@latest',
-  'https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js'
-];
+let timerInterval;
+let timerEndTime;
+let currentPhase; // 'Work', 'Short Break', 'Long Break'
+let notificationTag = 'pomodoro-timer'; // A tag for notifications to group them
 
-// Store scheduled timers in memory. This will be cleared if the worker is terminated.
-const scheduledTimers = new Map();
-
-// --- Service Worker Lifecycle ---
-
-// On install, open a cache and add the core app files to it.
-self.addEventListener('install', (event) => {
-  console.log('Service Worker: Installing...');
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => {
-        console.log('Service Worker: Caching app shell');
-        return cache.addAll(URLS_TO_CACHE).catch(err => console.warn('SW Cache failed:', err));
-      })
-      .then(() => self.skipWaiting()) // Force the waiting service worker to become the active service worker.
-  );
-});
-
-// On activate, clean up old caches and take control of the page.
-self.addEventListener('activate', (event) => {
-  console.log('Service Worker: Activating...');
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            console.log('Service Worker: Clearing old cache', cacheName);
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    }).then(() => self.clients.claim()) // *** THIS IS THE CRITICAL ADDITION ***
-  );
-});
-
-// On fetch, intercept network requests.
-self.addEventListener('fetch', (event) => {
-  if (event.request.method !== 'GET' || event.request.url.startsWith('chrome-extension://')) {
-    return;
-  }
-  if (event.request.url.includes('firebase') || event.request.url.includes('googleapis')) {
-    event.respondWith(fetch(event.request));
-    return;
-  }
-  event.respondWith(
-    caches.match(event.request)
-      .then((cachedResponse) => {
-        return cachedResponse || fetch(event.request);
-      })
-  );
-});
-
-
-// --- Message Handling (Alarm and Notification Logic) ---
+// Listen for messages from the main page
 self.addEventListener('message', (event) => {
-  if (!event.data || !event.data.type) return;
+    const { type, payload } = event.data;
 
-  const { type, payload } = event.data;
-
-  if (type === 'SCHEDULE_ALARM') {
-    const { delay, timerId, transitionMessage } = payload;
-    
-    if (scheduledTimers.has(timerId)) {
-        clearTimeout(scheduledTimers.get(timerId));
-        scheduledTimers.delete(timerId);
+    switch (type) {
+        case 'INIT':
+            // Establish communication port
+            self.clientPort = event.ports[0];
+            self.clientPort.postMessage({ type: 'SW_READY' });
+            break;
+        case 'START':
+            startTimer(payload.duration, payload.phase, payload.title);
+            break;
+        case 'STOP':
+            stopTimer();
+            break;
+        case 'PAUSE':
+            pauseTimer();
+            break;
+        case 'RESUME':
+            resumeTimer();
+            break;
+        case 'SCHEDULE_NOTIFICATION':
+            scheduleNotification(payload.delay, payload.title, payload.options);
+            break;
+        case 'CANCEL_ALARM':
+            cancelAlarm(payload.timerId);
+            break;
+        case 'UPDATE_SETTINGS':
+            // This might be used to update pomodoro settings if they change mid-session
+            // For now, we'll assume settings are passed with 'START'
+            break;
+        case 'GET_STATUS':
+            sendStatusToClient();
+            break;
     }
-
-    const timer = setTimeout(() => {
-      const { title, options } = transitionMessage;
-      self.registration.showNotification(title, options)
-          .catch(err => console.error('Service Worker: Error showing notification:', err));
-
-      self.clients.matchAll({ includeUncontrolled: true, type: 'window' }).then(clients => {
-        clients.forEach(client => {
-          client.postMessage(transitionMessage);
-        });
-      });
-      
-      scheduledTimers.delete(timerId);
-
-    }, delay);
-
-    scheduledTimers.set(timerId, timer);
-
-  } else if (type === 'CANCEL_ALARM') {
-    const { timerId } = payload;
-    if (scheduledTimers.has(timerId)) {
-        clearTimeout(scheduledTimers.get(timerId));
-        scheduledTimers.delete(timerId);
-        console.log(`Service Worker: Canceled alarm with ID: ${timerId}`);
-    }
-  }
 });
-```
 
-### Final Step: Hard Refresh
+function startTimer(durationSeconds, phase, title) {
+    stopTimer(); // Clear any existing timer
+    currentPhase = phase;
+    timerEndTime = Date.now() + durationSeconds * 1000;
 
-After updating both files, you **must** do a hard refresh one last time to ensure the new service worker is installed and takes control.
+    // Send initial tick immediately
+    sendTick();
 
-* **On Windows/Linux:** Press `Ctrl + Shift + R`
-* **On Mac:** Press `Cmd + Shift + R`
+    timerInterval = setInterval(() => {
+        sendTick();
+        if (Date.now() >= timerEndTime) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+            self.clientPort.postMessage({ type: 'phase_ended', phase: currentPhase });
+        }
+    }, 1000); // Update every second
+}
 
-This combination of fixes ensures that your application and the service worker are properly synchronized, which will make the Pomodoro timer transitions work as expect
+function stopTimer() {
+    if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+    }
+    timerEndTime = 0;
+    currentPhase = null;
+    // Clear any pending notifications
+    self.registration.getNotifications({ tag: notificationTag }).then(notifications => {
+        notifications.forEach(notification => notification.close());
+    });
+}
+
+function pauseTimer() {
+    if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+        // Store remaining time if needed for resume, but for now, just stop the tick
+    }
+}
+
+function resumeTimer() {
+    // This is a simplified resume. A real implementation would need to store
+    // the remaining time when paused and restart from there.
+    // For now, it just restarts the tick from current time, assuming the main app
+    // will re-send the correct duration if needed.
+    if (timerEndTime > Date.now()) {
+        startTimer((timerEndTime - Date.now()) / 1000, currentPhase, 'Resumed');
+    }
+}
+
+function sendTick() {
+    if (timerEndTime > 0) {
+        const remainingTime = Math.max(0, Math.floor((timerEndTime - Date.now()) / 1000));
+        if (self.clientPort) {
+            self.clientPort.postMessage({ type: 'tick', remainingTime: remainingTime });
+        }
+    }
+}
+
+function sendStatusToClient() {
+    if (self.clientPort) {
+        const remainingTime = timerEndTime > 0 ? Math.max(0, Math.floor((timerEndTime - Date.now()) / 1000)) : 0;
+        self.clientPort.postMessage({
+            type: 'STATUS',
+            isRunning: !!timerInterval,
+            remainingTime: remainingTime,
+            currentPhase: currentPhase
+        });
+    }
+}
+
+// --- Notification Scheduling ---
+function scheduleNotification(delay, title, options) {
+    // Ensure the tag is consistent for managing notifications
+    options.tag = notificationTag; 
+    options.renotify = true; // Ensures new notification if one with same tag exists
+
+    // Actions for notification buttons
+    options.actions = [
+        { action: 'pause', title: 'Pause', icon: '/icons/pause.png' }, // Replace with actual icon paths
+        { action: 'resume', title: 'Resume', icon: '/icons/play.png' },
+        { action: 'stop', title: 'Stop', icon: '/icons/stop.png' }
+    ];
+
+    // Clear any existing notifications with the same tag before scheduling a new one
+    self.registration.getNotifications({ tag: notificationTag }).then(notifications => {
+        notifications.forEach(notification => notification.close());
+    });
+
+    setTimeout(() => {
+        self.registration.showNotification(title, options);
+    }, delay);
+}
+
+function cancelAlarm(timerId) {
+    if (timerId === 'pomodoro-transition') {
+        self.registration.getNotifications({ tag: notificationTag }).then(notifications => {
+            notifications.forEach(notification => notification.close());
+        });
+    }
+    // Add logic for other timerIds if needed
+}
+
+// Notification click handler
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close(); // Close the notification
+
+    const action = event.action; // Get the action clicked (e.g., 'pause', 'resume', 'stop')
+
+    // Send a message back to the client (main page)
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
+        clients.forEach(client => {
+            if (client.visibilityState === 'visible') {
+                client.postMessage({ type: 'notification_action', action: action });
+            } else {
+                // If the page is not visible, focus it and then send the message
+                client.focus().then(() => {
+                    client.postMessage({ type: 'notification_action', action: action });
+                });
+            }
+        });
+    });
+});
