@@ -2355,15 +2355,15 @@ let pauseStartTime = 0;
                     duration: workDurationSeconds, 
                     phase: 'Work', 
                     title: `Focus: ${activeSubject}` 
-                }); // <--- Ensure this call is made with correct type and payload
+                });
 
-                // Use the new reliable SW alarm (this is for the end of the phase, not the tick)
+                // Use the new reliable SW alarm
                 scheduleSWAlarm({
                     delay: workDurationSeconds * 1000,
                     timerId: 'pomodoro-transition',
                     transitionMessage: { 
                         type: 'TIMER_ENDED', 
-                        newState: 'short_break', // This needs to be dynamic based on your cycle
+                        newState: 'short_break', 
                         oldState: 'work',
                         title: 'Focus complete!',
                         options: { body: `Time for a short break.`, tag: 'pomodoro-transition' }
@@ -4657,8 +4657,8 @@ ael('edit-subject-form', 'submit', async (e) => {
                 if (event.data && event.data.type === 'TIMER_ENDED') {
                     // This now calls our new reusable function
                     handlePomodoroPhaseEnd(event.data);
-                } else if (event.data && event.data.type === 'tick') { // <--- This is the key part
-                    sessionTimerDisplay.textContent = formatPomodoroTime(event.data.remainingTime); // <--- This line updates the display
+                } else if (event.data && event.data.type === 'tick') { // Ensure tick messages are handled
+                    sessionTimerDisplay.textContent = formatPomodoroTime(event.data.remainingTime);
                 } else if (event.data && event.data.type === 'notification_action') { // Handle notification actions
                     if (event.data.action === 'pause') pauseTimer();
                     else if (event.data.action === 'resume') resumeTimer();
