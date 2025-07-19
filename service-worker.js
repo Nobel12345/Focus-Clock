@@ -57,7 +57,14 @@ function startTimer(durationSeconds, phase, title) {
         if (Date.now() >= timerEndTime) {
             clearInterval(timerInterval);
             timerInterval = null;
-            self.clientPort.postMessage({ type: 'phase_ended', phase: currentPhase });
+            // Changed to also include newState and oldState for consistency with handlePomodoroPhaseEnd
+            // This ensures the main app knows what the next phase should be.
+            self.clientPort.postMessage({ 
+                type: 'phase_ended', 
+                phase: currentPhase, // Old state
+                newState: getNextPhase(currentPhase), // New state
+                oldState: currentPhase // Explicitly pass oldState
+            });
         }
     }, 1000); // Update every second
 }
@@ -166,3 +173,19 @@ self.addEventListener('notificationclick', (event) => {
         });
     });
 });
+
+// Helper function to determine the next phase for consistency with the main app
+function getNextPhase(currentPhase) {
+    // This simplified logic assumes a basic work -> short_break -> work -> long_break cycle.
+    // In a full application, this would need to consider the current pomodoro cycle count.
+    if (currentPhase === 'Work') {
+        // For simplicity, always go to short break after work.
+        // A more complex logic would alternate short and long breaks.
+        return 'short_break'; 
+    } else if (currentPhase === 'short_break') {
+        return 'Work';
+    } else if (currentPhase === 'Long Break') {
+        return 'Work';
+    }
+    return 'Work'; // Default to work if phase is unknown
+}
