@@ -1561,6 +1561,7 @@ const ACHIEVEMENTS = {
         let currentUser = null;
         let currentUserData = {};
         let dashboardCharts = {};
+        let unsubscribers = []; // This will store functions to detach listeners
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         let userSessions = []; 
         let isAudioUnlocked = false;
@@ -3063,6 +3064,11 @@ if (achievementsGrid) {
 
         function setupRealtimeListeners() {
             if (!currentUser) return;
+
+            // Clear existing listeners to prevent duplicates
+            unsubscribers.forEach(unsub => unsub());
+            unsubscribers = [];
+
             const groupsCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'groups');
             const usersCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'users');
             const userDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
@@ -3071,7 +3077,8 @@ if (achievementsGrid) {
             const sessionsCollectionRef = collection(userDocRef, 'sessions');
             const plannerTasksRef = collection(userDocRef, 'plannerTasks');
 
-            onSnapshot(userDocRef, (doc) => {
+            // Store the unsubscribe function for each listener
+            unsubscribers.push(onSnapshot(userDocRef, (doc) => {
                 if (doc.exists()) {
                     const data = doc.data();
                     currentUserData = data;
@@ -3094,30 +3101,30 @@ if (achievementsGrid) {
                     updateProfileUI(data);
                     renderJoinedGroups();
                 }
-            });
+            }));
             
-            onSnapshot(groupsCollectionRef, () => {
+            unsubscribers.push(onSnapshot(groupsCollectionRef, () => {
                 if (document.getElementById('page-my-groups').classList.contains('active') || document.getElementById('page-find-groups').classList.contains('active')) {
                     renderAvailableGroups();
                     renderJoinedGroups();
                 }
-            });
+            }));
 
-            onSnapshot(subjectsCollectionRef, (snapshot) => {
+            unsubscribers.push(onSnapshot(subjectsCollectionRef, (snapshot) => {
                 const subjects = [];
                 snapshot.forEach(doc => subjects.push({ id: doc.id, ...doc.data() }));
                 // When subjects change, re-render the list in the start session modal
                 renderSubjectSelectionList(subjects);
-            });
+            }));
             
-            onSnapshot(usersCollectionRef, () => {
+            unsubscribers.push(onSnapshot(usersCollectionRef, () => {
                 if (document.getElementById('page-ranking').classList.contains('active')) {
                     const activeTab = document.querySelector('#ranking-period-tabs .ranking-tab-btn.active');
                     renderLeaderboard(activeTab ? activeTab.dataset.period : 'weekly');
                 }
-            });
+            }));
 
-            onSnapshot(query(sessionsCollectionRef, orderBy("endedAt", "desc")), (snapshot) => {
+            unsubscribers.push(onSnapshot(query(sessionsCollectionRef, orderBy("endedAt", "desc")), (snapshot) => {
                 userSessions = snapshot.docs.map(doc => {
                     const data = doc.data();
                     return {
@@ -3134,16 +3141,15 @@ if (achievementsGrid) {
                     const activeTab = document.querySelector('#ranking-period-tabs .ranking-tab-btn.active');
                     renderLeaderboard(activeTab ? activeTab.dataset.period : 'weekly');
                 }
-            });
+            }));
 
-            onSnapshot(query(plannerTasksRef, orderBy("date")), (snapshot) => {
-                // BEFORE: if (document.getElementById('page-planner').classList.contains('active')) {
-                // This condition has been removed to ensure the planner always updates in the background.
-                    const tasks = [];
-                    snapshot.forEach(doc => tasks.push({ id: doc.id, ...doc.data() }));
-                    renderPlanner(tasks);
-                // BEFORE: }
-            });
+            unsubscribers.push(onSnapshot(query(plannerTasksRef, orderBy("date")), (snapshot) => {
+                console.log("Planner tasks onSnapshot triggered."); // Keep this line
+                const tasks = [];
+                snapshot.forEach(doc => tasks.push({ id: doc.id, ...doc.data() }));
+                console.log("Tasks received by onSnapshot:", tasks); // Keep this line
+                renderPlanner(tasks);
+            }));
         }
         
         async function renderLeaderboard(period = 'weekly', containerId = 'ranking-list') {
@@ -3887,12 +3893,17 @@ if (achievementsGrid) {
         }
         
         function renderPlanner(tasks) {
-            const container = document.getElementById('planner-list');
-            if (!container) return;
-            if (tasks.length === 0) {
-                container.innerHTML = `<div class="text-center text-gray-500 py-8">No tasks scheduled. Add one to get started!</div>`;
-                return;
-            }
+                console.log("renderPlanner called with tasks:", tasks); // ADD THIS LINE
+                const container = document.getElementById('planner-list');
+                if (!container) {
+                    console.error("Planner list container not found!"); // ADD THIS LINE
+                    return;
+                }
+                if (tasks.length === 0) {
+                    container.innerHTML = `<div class="text-center text-gray-500 py-8">No tasks scheduled. Add one to get started!</div>`;
+                    console.log("No tasks, displaying empty message."); // ADD THIS LINE
+                    return;
+                }
 
             const groupedTasks = tasks.reduce((acc, task) => {
                 const date = task.date;
@@ -5134,7 +5145,36 @@ if (e.target.classList.contains('edit-subject-btn')) {
         addTaskModal.querySelector('.close-modal').addEventListener('click', () => { addTaskModal.classList.remove('active'); });
 
         ael('add-task-form', 'submit', async (e) => {
-            // ... code for adding a task ...
+            e.preventDefault();
+            if (!currentUser) return;
+
+            const taskName = document.getElementById('add-task-name').value.trim();
+            const taskDate = document.getElementById('add-task-date').value; // YYYY-MM-DD format
+
+            if (!taskName || !taskDate) {
+                showToast("Please enter both a task description and a date.", "error");
+                return;
+            }
+
+            try {
+                const plannerTasksRef = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'plannerTasks');
+                await addDoc(plannerTasksRef, {
+                    name: taskName,
+                    date: taskDate, // Store as YYYY-MM-DD string
+                    completed: false,
+                    createdAt: serverTimestamp(),
+                    notes: '', // Initialize notes
+                    priority: 'none', // Initialize priority
+                    subtasks: [] // Initialize subtasks
+                });
+                
+                showToast("Task added successfully!", "success");
+                addTaskModal.classList.remove('active');
+                document.getElementById('add-task-form').reset(); // Clear the form
+            } catch (error) {
+                console.error("Error adding task: ", error);
+                showToast("Failed to add task.", "error");
+            }
         });
 
         document.getElementById('planner-list').addEventListener('change', async (e) => {
@@ -5144,6 +5184,29 @@ if (e.target.classList.contains('edit-subject-btn')) {
         });
         
         // --- START OF ADDED CODE BLOCK ---
+
+        // Function to open and populate the task detail modal
+        function openTaskDetailModal(task) {
+            const modal = document.getElementById('task-detail-modal');
+            document.getElementById('task-detail-id').value = task.id;
+            document.getElementById('task-detail-title').textContent = task.name;
+            document.getElementById('task-detail-name').value = task.name;
+            document.getElementById('task-detail-notes').value = task.notes || '';
+            document.getElementById('task-detail-date').value = task.date || '';
+
+            // Set priority buttons
+            document.querySelectorAll('#task-priority-selector button').forEach(btn => {
+                btn.classList.remove('ring-2', 'ring-offset-2', 'ring-offset-gray-800');
+                if (btn.dataset.priority === task.priority) {
+                    btn.classList.add('ring-2', 'ring-offset-2', 'ring-offset-gray-800');
+                }
+            });
+
+            // Render subtasks
+            renderSubtasks(task.subtasks || []);
+
+            modal.classList.add('active');
+        }
 
         // Event listener for task options button ("...")
         document.getElementById('planner-list').addEventListener('click', async (e) => {
@@ -5218,6 +5281,29 @@ if (e.target.classList.contains('edit-subject-btn')) {
             renderSubtasks(updatedTaskDoc.data().subtasks || []);
             subtaskNameInput.value = '';
         });
+
+        // Function to render subtasks within the task detail modal
+        function renderSubtasks(subtasks) {
+            const subtaskList = document.getElementById('subtask-list');
+            if (!subtaskList) return;
+
+            if (subtasks.length === 0) {
+                subtaskList.innerHTML = '<p class="text-gray-500 text-sm italic">No sub-tasks yet.</p>';
+                return;
+            }
+
+            subtaskList.innerHTML = subtasks.map((subtask, index) => `
+                <div class="flex items-center justify-between bg-gray-800 p-2 rounded-lg">
+                    <label class="flex items-center flex-grow cursor-pointer">
+                        <input type="checkbox" class="subtask-checkbox w-4 h-4 text-blue-500 bg-gray-700 rounded border-gray-600 focus:ring-blue-500" data-subtask-index="${index}" ${subtask.completed ? 'checked' : ''}>
+                        <span class="ml-2 ${subtask.completed ? 'line-through text-gray-500' : 'text-white'}">${subtask.name}</span>
+                    </label>
+                    <button type="button" class="delete-subtask-btn text-red-400 hover:text-red-500 ml-2" data-subtask-index="${index}">
+                        <i class="fas fa-trash-alt pointer-events-none"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
 
         // Event listener for sub-task list changes (completion/deletion)
         ael('subtask-list', 'click', async (e) => {
@@ -5498,12 +5584,8 @@ if (e.target.classList.contains('edit-subject-btn')) {
                 // Service Workers require a secure context (HTTPS or localhost) to register.
                 // This check prevents the registration error in unsupported environments (like 'blob:').
                 if (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
-                    // Create a blob from our service worker code string
-                    const swBlob = new Blob([swCode], { type: 'application/javascript' });
-                    // Create a temporary URL for the blob
-                    const swUrl = URL.createObjectURL(swBlob);
-
-                    navigator.serviceWorker.register(swUrl)
+                    // Register the Service Worker directly from its file path
+                    navigator.serviceWorker.register('/sw.js') // <--- This is the crucial change
                         .then(registration => {
                             console.log('Service Worker registered successfully with scope:', registration.scope);
                         })
