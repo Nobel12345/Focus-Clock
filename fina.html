@@ -1131,6 +1131,7 @@
                     <div id="settings-account" class="settings-item"><div class="settings-label">Account</div><div class="settings-value">Edit profile information</div></div>
                     <div id="settings-pomodoro" class="settings-item"><div class="settings-label">Pomodoro Timer</div><div class="settings-value">Customize durations & sounds</div></div>
                     <div id="settings-study-goal" class="settings-item"><div class="settings-label">Study Goals</div><div id="study-goal-value" class="settings-value">Not set</div></div>
+                    <div id="settings-background-help" class="settings-item"><div class="settings-label">Background Timer Help</div><div class="settings-value">Ensure timer runs correctly</div></div>
                     <div class="settings-item"><div class="settings-label">Notifications</div><div class="settings-value">Enabled</div></div>
                     <div class="settings-item"><div class="settings-label">Appearance</div><div class="settings-value">Dark Mode</div></div>
                     <div class="settings-item"><div class="settings-label">About FocusFlow</div><div class="settings-value">Version 1.0.0</div></div>
@@ -1264,6 +1265,26 @@
     <!-- Edit Subject Modal -->
     <div id="edit-subject-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Edit Subject</div><button class="close-modal">&times;</button></div><form id="edit-subject-form"><input type="hidden" id="edit-subject-id"><div class="mb-4"><label for="edit-subject-name" class="block text-gray-300 mb-2">Subject Name</label><input type="text" id="edit-subject-name" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required></div><div class="mb-4"><label class="block text-gray-300 mb-2">Color</label><div class="subject-color-picker" id="edit-subject-color-picker"></div></div><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Save Changes</button></form></div></div>
 
+    <div id="permissions-guide-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <div class="modal-title">Permissions for Background Timing</div>
+            <button class="close-modal">&times;</button>
+        </div>
+        <div class="space-y-4 text-gray-300 text-sm">
+            <p>To prevent the timer from being stopped by the system, please check the following settings for your browser app (e.g., Chrome, Firefox).</p>
+            <div class="p-3 bg-gray-800 rounded-lg">
+                <h4 class="font-semibold text-white">Ignore Battery Optimization</h4>
+                <p>Steps: Settings -> Apps -> Manage apps -> [Your Browser] -> Battery saver -> Select 'No restrictions'.</p>
+            </div>
+            <div class="p-3 bg-gray-800 rounded-lg">
+                <h4 class="font-semibold text-white">Allow Auto-startup</h4>
+                <p>Steps: Settings -> Apps -> Manage apps -> [Your Browser] -> Turn on 'Autostart'.</p>
+            </div>
+            <p class="text-xs text-gray-500">*Note: The exact paths and names of menus may be different in various Android versions.</p>
+        </div>
+    </div>
+</div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -1306,70 +1327,6 @@ const ACHIEVEMENTS = {
 };
 // --- END OF ADDITION ---
 
-        // --- Web Worker Implementation ---
-        const workerCode = `
-            let timerInterval = null;
-            let endTime = 0;
-            let remainingTimeOnPause = 0;
-            let isPaused = false;
-            let currentPhaseDuration = 0;
-
-            function tick() {
-                if (isPaused) return;
-                const now = Date.now();
-                const timeLeft = Math.round((endTime - now) / 1000);
-
-                if (timeLeft > 0) {
-                    self.postMessage({ type: 'tick', timeLeft: timeLeft });
-                } else {
-                    self.postMessage({ type: 'tick', timeLeft: 0 });
-                    clearInterval(timerInterval);
-                    timerInterval = null;
-                    self.postMessage({ type: 'phase_ended' }); 
-                    // The main thread will handle the transition via the Service Worker alarm
-                }
-            }
-
-            self.onmessage = function(e) {
-                const { command, duration } = e.data;
-                switch(command) {
-                    case 'start':
-                        isPaused = false;
-                        if (timerInterval) clearInterval(timerInterval);
-                        currentPhaseDuration = duration;
-                        endTime = Date.now() + duration * 1000;
-                        timerInterval = setInterval(tick, 1000);
-                        tick();
-                        break;
-                    case 'pause':
-                        if (timerInterval) {
-                            isPaused = true;
-                            remainingTimeOnPause = endTime - Date.now();
-                            clearInterval(timerInterval); // Stop the interval when paused
-                            timerInterval = null;
-                        }
-                        break;
-                    case 'resume':
-                        if (isPaused && remainingTimeOnPause > 0) {
-                            isPaused = false;
-                            endTime = Date.now() + remainingTimeOnPause;
-                            timerInterval = setInterval(tick, 1000);
-                            tick();
-                            remainingTimeOnPause = 0;
-                        }
-                        break;
-                    case 'stop':
-                        if (timerInterval) clearInterval(timerInterval);
-                        timerInterval = null;
-                        endTime = 0;
-                        remainingTimeOnPause = 0;
-                        isPaused = false;
-                        break;
-                }
-            };
-        `;
-        const blob = new Blob([workerCode], { type: 'application/javascript' });
-        const pomodoroWorker = new Worker(URL.createObjectURL(blob));
 
         // --- Service Worker Communication Functions ---
         function scheduleSWAlarm(payload) {
@@ -1400,6 +1357,7 @@ const ACHIEVEMENTS = {
         let currentUserData = {};
         let dashboardCharts = {};
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
         let userSessions = []; 
         let isAudioUnlocked = false;
         let isAddingSubjectFromStartSession = false; // Flag to track modal origin
@@ -2243,7 +2201,7 @@ let pauseStartTime = 0;
                         if (currentUserData.pomodoroSounds) {
                             pomodoroSounds = {...pomodoroSounds, ...currentUserData.pomodoroSounds};
                         }
-                        pomodoroWorker.postMessage({ command: 'updateSettings', newSettings: pomodoroSettings });
+                        postToSW('updateSettings', pomodoroSettings);
 
 
                         if (!currentUserData || !currentUserData.username) {
@@ -2392,8 +2350,13 @@ let pauseStartTime = 0;
                 playSound(pomodoroSounds.start, pomodoroSounds.volume);
                 
                 const workDurationSeconds = pomodoroSettings.work * 60;
-                pomodoroWorker.postMessage({ command: 'start', duration: workDurationSeconds });
-                
+                // NEW: Send command to the Service Worker
+                postToSW('start', { 
+                    duration: workDurationSeconds, 
+                    phase: 'Work', 
+                    title: `Focus: ${activeSubject}` 
+                });
+
                 // Use the new reliable SW alarm
                 scheduleSWAlarm({
                     delay: workDurationSeconds * 1000,
@@ -2421,8 +2384,10 @@ let pauseStartTime = 0;
         }
         
         async function stopTimer() {
-            // Stop the UI timer in the web worker
-            pomodoroWorker.postMessage({ command: 'stop' });
+            localStorage.removeItem('pomodoro_phase_end');
+
+            // Stop the UI timer in the Service worker
+            postToSW('stop');
 
             // --- ADD THIS BLOCK TO RESET PAUSE STATE ---
             isPaused = false;
@@ -2476,39 +2441,45 @@ let pauseStartTime = 0;
             await updateDoc(userRef, { studying: null });
         }
 
-        function pauseTimer() {
-            if (timerMode === 'normal' && timerInterval) {
-                clearInterval(timerInterval);
-                isPaused = true;
-                pauseStartTime = Date.now();
-                document.getElementById('pause-btn').classList.add('hidden');
-                document.getElementById('resume-btn').classList.remove('hidden');
-            } else if (timerMode === 'pomodoro' && pomodoroState !== 'idle') {
-                pomodoroWorker.postMessage({ command: 'pause' });
-                isPaused = true;
-                document.getElementById('pause-btn').classList.add('hidden');
-                document.getElementById('resume-btn').classList.remove('hidden');
-            }
-        }
+        function postToSW(type, payload) {
+    if (navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({ type, payload });
+    }
+}
 
-        function resumeTimer() {
-            if (timerMode === 'normal' && isPaused) {
-                const pauseDuration = Date.now() - pauseStartTime;
-                sessionStartTime += pauseDuration;
-                isPaused = false;
-                timerInterval = setInterval(() => {
-                    const elapsedSeconds = Math.floor((Date.now() - sessionStartTime) / 1000);
-                    sessionTimerDisplay.textContent = formatTime(elapsedSeconds);
-                }, 1000);
-                document.getElementById('pause-btn').classList.remove('hidden');
-                document.getElementById('resume-btn').classList.add('hidden');
-            } else if (timerMode === 'pomodoro' && isPaused) {
-                pomodoroWorker.postMessage({ command: 'resume' });
-                isPaused = false;
-                document.getElementById('pause-btn').classList.remove('hidden');
-                document.getElementById('resume-btn').classList.add('hidden');
-            }
-        }
+    function pauseTimer() {
+    if (timerMode === 'normal' && timerInterval) {
+        clearInterval(timerInterval);
+        isPaused = true;
+        pauseStartTime = Date.now();
+        document.getElementById('pause-btn').classList.add('hidden');
+        document.getElementById('resume-btn').classList.remove('hidden');
+    } else if (timerMode === 'pomodoro' && pomodoroState !== 'idle') {
+        postToSW('pause'); // Correct command is lowercase 'pause'
+        isPaused = true;
+        document.getElementById('pause-btn').classList.add('hidden');
+        document.getElementById('resume-btn').classList.remove('hidden');
+    }
+}
+
+function resumeTimer() {
+    if (timerMode === 'normal' && isPaused) {
+        const pauseDuration = Date.now() - pauseStartTime;
+        sessionStartTime += pauseDuration;
+        isPaused = false;
+        timerInterval = setInterval(() => {
+            const elapsedSeconds = Math.floor((Date.now() - sessionStartTime) / 1000);
+            sessionTimerDisplay.textContent = formatTime(elapsedSeconds);
+        }, 1000);
+        document.getElementById('pause-btn').classList.remove('hidden');
+        document.getElementById('resume-btn').classList.add('hidden');
+    } else if (timerMode === 'pomodoro' && isPaused) {
+        postToSW('resume'); // Correct command is lowercase 'resume'
+        isPaused = false;
+        document.getElementById('pause-btn').classList.remove('hidden');
+        document.getElementById('resume-btn').classList.add('hidden');
+    }
+}
 
         // --- NEW: Helper to start the next Pomodoro phase ---
         function startNextPomodoroPhase(state) {
@@ -2518,11 +2489,17 @@ let pauseStartTime = 0;
             let statusText = '';
             let transitionMessage = {};
 
+            let nextStateForStorage;
+            let autoStartForStorage;
+
             const currentCycle = Math.floor((currentUserData.pomodoroCycle || 0) / 2);
             
             if (state === 'work') {
                 durationSeconds = pomodoroSettings.work * 60;
                 const nextState = ((currentCycle + 1) % pomodoroSettings.long_break_interval === 0) ? 'long_break' : 'short_break';
+
+                nextStateForStorage = nextState;
+                autoStartForStorage = pomodoroSettings.autoStartBreak;
                 statusText = `Work (${currentCycle + 1}/${pomodoroSettings.long_break_interval})`;
                 transitionMessage = {
                     type: 'TIMER_ENDED',
@@ -2533,6 +2510,9 @@ let pauseStartTime = 0;
                 };
             } else { // It's a break
                 durationSeconds = state === 'short_break' ? pomodoroSettings.short_break * 60 : pomodoroSettings.long_break * 60;
+
+                nextStateForStorage = 'work';
+                autoStartForStorage = pomodoroSettings.autoStartFocus;
                 statusText = state.replace('_', ' ');
                 transitionMessage = {
                     type: 'TIMER_ENDED',
@@ -2543,8 +2523,19 @@ let pauseStartTime = 0;
                 };
             }
             
+            const phaseEndTime = Date.now() + durationSeconds * 1000;
+            localStorage.setItem('pomodoro_phase_end', JSON.stringify({
+                endTime: phaseEndTime,
+                currentState: state, // The phase that is starting now
+                nextState: nextStateForStorage, // The phase that will come after this one
+            }));
+
             // Start the UI timer
-            pomodoroWorker.postMessage({ command: 'start', duration: durationSeconds });
+            postToSW('start', { 
+    duration: durationSeconds, 
+    phase: state, 
+    title: transitionMessage.title // Use the title from the transition message
+});
             pomodoroStatusDisplay.textContent = statusText;
             pomodoroStatusDisplay.style.color = state.includes('break') ? '#f59e0b' : '#3b82f6';
 
@@ -2902,7 +2893,7 @@ if (achievementsGrid) {
 
                     if (data.pomodoroSettings) {
                         pomodoroSettings = {...pomodoroSettings, ...data.pomodoroSettings};
-                        pomodoroWorker.postMessage({ command: 'updateSettings', newSettings: pomodoroSettings });
+                        postToSW('updateSettings', pomodoroSettings); // Pass newSettings directly as payload
                     }
                     if (data.pomodoroSounds) {
                         pomodoroSounds = {...pomodoroSounds, ...data.pomodoroSounds};
@@ -4559,31 +4550,29 @@ ael('edit-subject-form', 'submit', async (e) => {
             pomodoroStatusDisplay.style.color = '#9ca3af';
             sessionTimerDisplay.textContent = formatPomodoroTime(pomodoroSettings.work * 60);
 
-            // --- Add this block for Notification Permissions ---
-    if ("Notification" in window) {
-        // Check if permission needs to be asked
-        if (Notification.permission === 'default') {
-            showConfirmationModal(
-                'Enable Notifications?',
-                'To get alerts when your Pomodoro sessions end, please click "Confirm" to allow notifications.',
-                () => { // This function runs if the user clicks "Confirm"
-                    Notification.requestPermission().then(permission => {
-                        if (permission === 'granted') {
-                            showToast('Notifications have been enabled!', 'success');
-                        } else {
-                            showToast('Notifications were not enabled. You can change this in your browser settings.', 'info');
+            // --- NEW Notification Permission Logic ---
+            if ("Notification" in window) {
+                if (Notification.permission === 'default') {
+                    showConfirmationModal(
+                        'Enable Notifications?',
+                        'To get alerts and lock screen controls for your timer, please allow notifications.',
+                        () => { // This runs if the user clicks "Confirm"
+                            Notification.requestPermission().then(permission => {
+                                if (permission === 'granted') {
+                                    showToast('Notifications enabled!', 'success');
+                                } else {
+                                    showToast('Notifications were not enabled.', 'info');
+                                }
+                            });
                         }
-                    });
+                    );
+                } else if (Notification.permission === 'denied') {
+                    showToast('Notifications are blocked. Please enable them in your browser/app settings for lock screen controls.', 'error', 5000);
                 }
-            );
-        } else if (Notification.permission === 'denied') {
-            // If permission is already blocked, inform the user how to fix it.
-            // This directly addresses the situation from your screenshot.
-            showToast('Notifications are blocked. Please allow them in your browser settings.', 'info', 5000);
-        }
-    }
-    // --- End of Notification Permissions block ---
-    // --- Add this block for Notification Permissions ---
+            }
+            // --- End of NEW Logic ---..
+
+            // --- Add this block for Notification Permissions ---
             if ("Notification" in window) {
                 // Check if permission needs to be asked
                 if (Notification.permission === 'default') {
@@ -4609,94 +4598,73 @@ ael('edit-subject-form', 'submit', async (e) => {
             }
             // --- End of Notification Permissions block ---
             });
-        
-        // --- Worker Message Handling (with Fallback) ---
-        pomodoroWorker.onmessage = (e) => {
-            const { type, timeLeft } = e.data;
-            if (type === 'tick') {
-                sessionTimerDisplay.textContent = formatPomodoroTime(timeLeft);
-            } else if (type === 'phase_ended') {
-                // This is our fallback for when the Service Worker isn't active.
-                // It manually triggers the phase end logic.
-                
-                // We only run this fallback if the SW is NOT available to prevent running the logic twice.
-                if (!navigator.serviceWorker.controller) {
-                    const oldState = pomodoroState;
-                    const currentCycle = Math.floor((currentUserData.pomodoroCycle || 0) / 2);
-                    let newState;
-
-                    if (oldState === 'work') {
-                        newState = ((currentCycle + 1) % pomodoroSettings.long_break_interval === 0) ? 'long_break' : 'short_break';
-                    } else { // It was a break
-                        newState = 'work';
-                    }
-                    
-                    // Call the same handler that the SW would call.
-                    handlePomodoroPhaseEnd({ newState, oldState });
-                }
-            }
-        };
        
-
-        // --- STEP 1: ADD THIS ENTIRE NEW FUNCTION HERE ---
-        async function handlePomodoroPhaseEnd({ newState, oldState }) {
-            // 1. Save the completed session
-            if (oldState === 'work') {
-                await saveSession(activeSubject, pomodoroSettings.work * 60, 'study');
-            } else { // It was a break
-                const breakDuration = oldState === 'short_break' ? pomodoroSettings.short_break * 60 : pomodoroSettings.long_break * 60;
-                await saveSession('Break', breakDuration, 'break');
-            }
-
-            // 2. Play the sound for the transition
-            const soundToPlay = oldState === 'work' ? pomodoroSounds.break : pomodoroSounds.focus;
-            playSound(soundToPlay, pomodoroSounds.volume);
-            
-            // 3. Check if we should auto-start the next phase
-            const shouldAutoStart = (newState === 'work' && pomodoroSettings.autoStartFocus) || (newState.includes('break') && pomodoroSettings.autoStartBreak);
-
-            if (shouldAutoStart) {
-                // If auto-start is enabled, immediately start the next phase.
-                startNextPomodoroPhase(newState);
-            } else {
-                // If auto-start is disabled, stop the timer and set up for manual start.
-                pomodoroWorker.postMessage({ command: 'stop' });
-                pomodoroState = 'idle';
-                nextPomodoroPhase = newState; // Store the next state for the button
-                
-                const manualStartBtn = document.getElementById('manual-start-btn');
-                manualStartBtn.textContent = `Start ${newState.replace('_', ' ')}`;
-                manualStartBtn.classList.remove('hidden');
-                
-                // Hide the main timer controls
-                document.getElementById('stop-studying-btn').classList.add('hidden');
-                document.getElementById('pause-btn').classList.add('hidden');
-                document.getElementById('resume-btn').classList.add('hidden');
-                
-                // Update UI to show it's ready for the next phase
-                pomodoroStatusDisplay.textContent = `Ready for ${newState.replace('_', ' ')}`;
-                
-                // Reset timer display based on the upcoming phase
-                let nextDuration = 0;
-                if (newState === 'work') {
-                    nextDuration = pomodoroSettings.work * 60;
-                } else if (newState === 'short_break') {
-                    nextDuration = pomodoroSettings.short_break * 60;
-                } else {
-                    nextDuration = pomodoroSettings.long_break * 60;
+            // --- THIS IS THE CORRECT, INTENDED FUNCTION. DO NOT DELETE THIS ONE. ---
+           // --- THIS IS THE CORRECT, INTENDED FUNCTION. DO NOT DELETE THIS ONE. ---
+            async function handlePomodoroPhaseEnd({ newState, oldState }) {
+                // 1. Save the completed session
+                if (oldState === 'work') {
+                    await saveSession(activeSubject, pomodoroSettings.work * 60, 'study');
+                } else { // It was a break
+                    const breakDuration = oldState === 'short_break' ? pomodoroSettings.short_break * 60 : pomodoroSettings.long_break * 60;
+                    await saveSession('Break', breakDuration, 'break');
                 }
-                sessionTimerDisplay.textContent = formatPomodoroTime(nextDuration);
-            }
-        }
-        // --- END OF NEW FUNCTION ---
 
-        // --- NEW: Service Worker Message Listener (The Reliable Alarm) ---
-        navigator.serviceWorker.addEventListener('message', async (event) => {
-            if (event.data && event.data.type === 'TIMER_ENDED') {
-                // This now calls our new reusable function
-                handlePomodoroPhaseEnd(event.data);
+                // 2. Play the sound for the transition
+                const soundToPlay = oldState === 'work' ? pomodoroSounds.break : pomodoroSounds.focus;
+                playSound(soundToPlay, pomodoroSounds.volume);
+                
+                // 3. Check if we should auto-start the next phase
+                const shouldAutoStart = (newState === 'work' && pomodoroSettings.autoStartFocus) || (newState.includes('break') && pomodoroSettings.autoStartBreak);
+
+                if (shouldAutoStart) {
+                    // If auto-start is enabled, immediately start the next phase.
+                    startNextPomodoroPhase(newState);
+                } else {
+                    // If auto-start is disabled, stop the timer and set up for manual start.
+                    postToSW('stop'); // Use postToSW to send message to SW
+                    pomodoroState = 'idle';
+                    nextPomodoroPhase = newState; // Store the next state for the button
+                    
+                    const manualStartBtn = document.getElementById('manual-start-btn');
+                    manualStartBtn.textContent = `Start ${newState.replace('_', ' ')}`;
+                    manualStartBtn.classList.remove('hidden');
+                    
+                    // Hide the main timer controls
+                    document.getElementById('stop-studying-btn').classList.add('hidden');
+                    document.getElementById('pause-btn').classList.add('hidden');
+                    document.getElementById('resume-btn').classList.add('hidden');
+                    
+                    // Update UI to show it's ready for the next phase
+                    pomodoroStatusDisplay.textContent = `Ready for ${newState.replace('_', ' ')}`;
+                    
+                    // Reset timer display based on the upcoming phase
+                    let nextDuration = 0;
+                    if (newState === 'work') {
+                        nextDuration = pomodoroSettings.work * 60;
+                    } else if (newState === 'short_break') {
+                        nextDuration = pomodoroSettings.short_break * 60;
+                    } else {
+                        nextDuration = pomodoroSettings.long_break * 60;
+                    }
+                    sessionTimerDisplay.textContent = formatPomodoroTime(nextDuration);
+                }
             }
-        });
+            // --- END OF NEW FUNCTION ---
+
+            // --- NEW: Service Worker Message Listener (The Reliable Alarm) ---
+            navigator.serviceWorker.addEventListener('message', async (event) => {
+                if (event.data && event.data.type === 'TIMER_ENDED') {
+                    // This now calls our new reusable function
+                    handlePomodoroPhaseEnd(event.data);
+                } else if (event.data && event.data.type === 'tick') { // Ensure tick messages are handled
+                    sessionTimerDisplay.textContent = formatPomodoroTime(event.data.remainingTime);
+                } else if (event.data && event.data.type === 'notification_action') { // Handle notification actions
+                    if (event.data.action === 'pause') pauseTimer();
+                    else if (event.data.action === 'resume') resumeTimer();
+                    else if (event.data.action === 'stop') stopTimer();
+                }
+            });
 
         // --- Drag and Drop Functionality for Subjects ---
         const subjectListContainer = document.getElementById('subject-selection-list');
@@ -4952,6 +4920,10 @@ if (e.target.classList.contains('edit-subject-btn')) {
             studyGoalModal.classList.add('active');
         });
 
+        ael('settings-background-help', 'click', () => {
+            document.getElementById('permissions-guide-modal').classList.add('active');
+        });
+
         const pomodoroSettingsModal = document.getElementById('pomodoro-settings-modal');
         ael('settings-pomodoro', 'click', () => {
             document.getElementById('pomodoro-work-duration').value = pomodoroSettings.work;
@@ -5192,26 +5164,48 @@ if (e.target.classList.contains('edit-subject-btn')) {
                 }
             });
 
-            // --- Service Worker Registration (Robust Version) ---
+            // --- Service Worker Registration (Consolidated and Corrected) ---
             if ('serviceWorker' in navigator) {
                 // Service Workers require a secure context (HTTPS or localhost) to register.
-                // This check prevents the registration error in unsupported environments (like 'blob:').
                 if (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
-                    // Create a blob from our service worker code string
-                    const swBlob = new Blob([swCode], { type: 'application/javascript' });
-                    // Create a temporary URL for the blob
-                    const swUrl = URL.createObjectURL(swBlob);
-
-                    navigator.serviceWorker.register(swUrl)
+                    // Register directly using the file path
+                    navigator.serviceWorker.register('./sw.js')
                         .then(registration => {
                             console.log('Service Worker registered successfully with scope:', registration.scope);
+
+                            // Setup two-way communication channel
+                            const channel = new MessageChannel();
+                            // If the controller is already active, send INIT immediately
+                            if (registration.active) {
+                                registration.active.postMessage({ type: 'INIT' }, [channel.port2]);
+                            } else {
+                                // If not active yet, wait for it to become active
+                                navigator.serviceWorker.ready.then(reg => {
+                                    if (reg.active) {
+                                        reg.active.postMessage({ type: 'INIT' }, [channel.port2]);
+                                    }
+                                });
+                            }
+
+                            // Listen for messages FROM the service worker
+                            channel.port1.onmessage = (event) => {
+                                const { type, remainingTime, action, phase, newState, oldState } = event.data; // Destructure newState and oldState
+                                if (type === 'tick') {
+                                    sessionTimerDisplay.textContent = formatPomodoroTime(remainingTime);
+                                } else if (type === 'phase_ended' || type === 'TIMER_ENDED') { // Handle both types
+                                    handlePomodoroPhaseEnd({ newState: newState, oldState: oldState || phase }); // Pass both states
+                                } else if (type === 'notification_action') {
+                                    if (action === 'pause') pauseTimer();
+                                    else if (action === 'resume') resumeTimer();
+                                    else if (action === 'stop') stopTimer();
+                                }
+                            };
                         })
                         .catch(error => {
                             console.error('Service Worker registration failed:', error);
                         });
                 } else {
                     console.warn('Service Worker not registered. This feature requires a secure context (HTTPS or localhost). The Pomodoro timer will be less reliable in the background.');
-                    // Hide the Pomodoro button if SW is not available, as it won't work reliably.
                 }
             }
         };
