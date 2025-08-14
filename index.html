@@ -951,6 +951,9 @@
             pointer-events: none;
         }
     </style>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4a5568">
+    <meta name="apple-mobile-web-app-capable" content="yes">
 </head>
 <body class="bg-gray-900 text-white flex flex-col h-screen antialiased">
 
@@ -1481,7 +1484,7 @@ const ACHIEVEMENTS = {
             };
         `;
         const blob = new Blob([workerCode], { type: 'application/javascript' });
-        const pomodoroWorker = new Worker(URL.createObjectURL(blob));
+        const pomodoroWorker = new Worker('pomodoro-worker.js'));
 
         // --- NEW: Service Worker Code Definition ---
         const swCode = `
@@ -5585,7 +5588,7 @@ if (e.target.classList.contains('edit-subject-btn')) {
                 // This check prevents the registration error in unsupported environments (like 'blob:').
                 if (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
                     // Register the Service Worker directly from its file path
-                    navigator.serviceWorker.register('/sw.js') // <--- This is the crucial change
+                    navigator.serviceWorker.register('./service-worker.js') // <--- This is the crucial change
                         .then(registration => {
                             console.log('Service Worker registered successfully with scope:', registration.scope);
                         })
