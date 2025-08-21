@@ -2,7 +2,7 @@
   "name": "FocusFlow",
   "short_name": "FocusFlow",
   "description": "A Pomodoro timer and task management app to help you focus.",
-  "start_url": ".",
+  "start_url": "https://nobel12345.github.io/Focus-Clock/",
   "display": "standalone",
   "background_color": "#111827",
   "theme_color": "#1f2937",
