@@ -2,14 +2,98 @@
 // Restores original background timer & notification message handling,
 // and adds minimal lifecycle events to ensure control.
 
+const CACHE_NAME = 'focusflow-cache-v1'; // Cache version
+const urlsToCache = [
+    '/', // Caches the root URL (your index.html)
+    'index.html', // Explicitly cache index.html
+    'manifest.json', // Your web app manifest
+    // UPDATED: Online icons from manifest.json for caching
+    'https://placehold.co/192x192/0a0a0a/e0e0e0?text=Flow+192',
+    'https://placehold.co/512x512/0a0a0a/e0e0e0?text=Flow+512',
+    // Notification action icons (ensure these paths are correct on your server)
+    // These are kept as relative paths, assuming you host them locally.
+    '/icons/pause.png',
+    '/icons/play.png',
+    '/icons/stop.png',
+    // Add any other critical assets (CSS, JS files) that make up your app shell
+    // e.g., '/styles/main.css', '/js/app.js'
+];
+
 // --- Minimal lifecycle to ensure control ---
 self.addEventListener('install', (event) => {
-  self.skipWaiting();
+    self.skipWaiting();
+    event.waitUntil(
+        caches.open(CACHE_NAME)
+            .then(cache => {
+                console.log('Service Worker: Caching essential app shell assets');
+                return cache.addAll(urlsToCache);
+            })
+            .catch(error => {
+                console.error('Service Worker: Failed to cache during install:', error);
+            })
+    );
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim());
+    event.waitUntil(
+        caches.keys().then(cacheNames => {
+            return Promise.all(
+                cacheNames.map(cacheName => {
+                    if (cacheName !== CACHE_NAME) {
+                        console.log('Service Worker: Deleting old cache:', cacheName);
+                        return caches.delete(cacheName);
+                    }
+                    return null; // Return null for the current cache
+                }).filter(Boolean) // Filter out null values
+            );
+        }).then(() => self.clients.claim())
+    );
 });
+
+// --- Fetch event handler for caching and offline support ---
+self.addEventListener('fetch', (event) => {
+    // Only cache GET requests
+    if (event.request.method !== 'GET') {
+        return;
+    }
+
+    event.respondWith(
+        caches.match(event.request).then(cachedResponse => {
+            // If a response is found in cache, return it
+            if (cachedResponse) {
+                return cachedResponse;
+            }
+
+            // Otherwise, fetch from the network
+            return fetch(event.request).then(networkResponse => {
+                // Check if we received a valid response
+                if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
+                    return networkResponse;
+                }
+
+                // IMPORTANT: Clone the response. A response is a stream
+                // and can only be consumed once. We're consuming it once
+                // to cache it, and once to return it.
+                const responseToCache = networkResponse.clone();
+
+                caches.open(CACHE_NAME).then(cache => {
+                    cache.put(event.request, responseToCache);
+                });
+
+                return networkResponse;
+            }).catch(error => {
+                // This catch is for network errors, e.g., offline
+                console.error('Service Worker: Fetch failed:', event.request.url, error);
+                // You could serve an offline page here if desired
+                // return caches.match('/offline.html');
+                return new Response('<h1>You are offline!</h1>', {
+                    headers: { 'Content-Type': 'text/html' }
+                });
+            });
+        })
+    );
+});
+
 
 // --- Original logic below ---
 // Service Worker for FocusFlow
@@ -73,8 +157,8 @@ function startTimer(durationSeconds, phase, title) {
             timerInterval = null;
             // Changed to also include newState and oldState for consistency with handlePomodoroPhaseEnd
             // This ensures the main app knows what the next phase should be.
-            self.clientPort.postMessage({ 
-                type: 'phase_ended', 
+            self.clientPort.postMessage({
+                type: 'phase_ended',
                 phase: currentPhase, // Old state
                 newState: getNextPhase(currentPhase), // New state
                 oldState: currentPhase // Explicitly pass oldState
@@ -138,7 +222,7 @@ function sendStatusToClient() {
 // --- Notification Scheduling ---
 function scheduleNotification(delay, title, options) {
     // Ensure the tag is consistent for managing notifications
-    options.tag = notificationTag; 
+    options.tag = notificationTag;
     options.renotify = true; // Ensures new notification if one with same tag exists
 
     // Actions for notification buttons
@@ -195,7 +279,7 @@ function getNextPhase(currentPhase) {
     if (currentPhase === 'Work') {
         // For simplicity, always go to short break after work.
         // A more complex logic would alternate short and long breaks.
-        return 'short_break'; 
+        return 'short_break';
     } else if (currentPhase === 'short_break') {
         return 'Work';
     } else if (currentPhase === 'Long Break') {
@@ -203,4 +287,3 @@ function getNextPhase(currentPhase) {
     }
     return 'Work'; // Default to work if phase is unknown
 }
-
