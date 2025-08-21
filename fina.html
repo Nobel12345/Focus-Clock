@@ -2486,6 +2486,7 @@ let pauseStartTime = 0;
                 document.getElementById('resume-btn').classList.remove('hidden');
             } else if (timerMode === 'pomodoro' && pomodoroState !== 'idle') {
                 pomodoroWorker.postMessage({ command: 'pause' });
+                cancelSWAlarm('pomodoro-transition');
                 isPaused = true;
                 document.getElementById('pause-btn').classList.add('hidden');
                 document.getElementById('resume-btn').classList.remove('hidden');
@@ -2505,6 +2506,18 @@ let pauseStartTime = 0;
                 document.getElementById('resume-btn').classList.add('hidden');
             } else if (timerMode === 'pomodoro' && isPaused) {
                 pomodoroWorker.postMessage({ command: 'resume' });
+                // You'll need to know the remaining time when resuming
+// For pomodoro, the pomodoroWorker would send 'tick' with timeLeft on resume.
+// Or you could track `timerEndTime` in the main thread for simpler calculation.
+// Example (assuming you track timerEndTime consistently across pause/resume):
+const remainingTimeSeconds = Math.max(0, Math.floor((timerEndTime - Date.now()) / 1000));
+if (remainingTimeSeconds > 0) {
+    scheduleTransitionNotification(
+        remainingTimeSeconds * 1000,
+        `${pomodoroState === 'work' ? 'Focus' : 'Break'} in progress!`,
+        { body: `You have ${formatPomodoroTime(remainingTimeSeconds)} left.`, tag: 'pomodoro-transition' }
+    );
+}
                 isPaused = false;
                 document.getElementById('pause-btn').classList.remove('hidden');
                 document.getElementById('resume-btn').classList.add('hidden');
