@@ -951,9 +951,6 @@
             pointer-events: none;
         }
     </style>
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#4a5568">
-    <meta name="apple-mobile-web-app-capable" content="yes">
 </head>
 <body class="bg-gray-900 text-white flex flex-col h-screen antialiased">
 
@@ -1118,21 +1115,19 @@
                     <div class="w-6"></div> </header>
                 <div class="profile-container">
                     <div class="profile-header"><div id="profile-page-avatar" class="profile-avatar">U</div><div><div id="profile-page-name" class="profile-name">User Name</div><div id="profile-page-email" class="profile-email">user@example.com</div></div></div>
-                    
                     <!-- --- ADD THIS NEW HTML BLOCK HERE --- -->
-                    <div class="card text-center p-4 bg-yellow-500/10 border-yellow-500/30 mb-6 rounded-lg">
-                        <h3 class="font-bold text-lg text-yellow-400">Current Streak</h3>
-                        <p class="text-4xl font-black text-white" id="profile-streak-display">0 days</p>
-                    </div>
+<div class="card text-center p-4 bg-yellow-500/10 border-yellow-500/30 mb-6 rounded-lg">
+    <h3 class="font-bold text-lg text-yellow-400">Current Streak</h3>
+    <p class="text-4xl font-black text-white" id="profile-streak-display">0 days</p>
+</div>
 
-                    <div>
-                        <h3 class="text-xl font-bold mb-4">Achievements</h3>
-                        <div id="achievements-grid" class="grid grid-cols-3 sm:grid-cols-4 gap-4 text-center">
-                            <!-- Achievements will be rendered here by JavaScript -->
-                        </div>
-                    </div>
-                    <!-- --- END OF NEW HTML BLOCK --- -->
-
+<div>
+    <h3 class="text-xl font-bold mb-4">Achievements</h3>
+    <div id="achievements-grid" class="grid grid-cols-3 sm:grid-cols-4 gap-4 text-center">
+        <!-- Achievements will be rendered here by JavaScript -->
+    </div>
+</div>
+<!-- --- END OF NEW HTML BLOCK --- -->
                     <div id="settings-account" class="settings-item"><div class="settings-label">Account</div><div class="settings-value">Edit profile information</div></div>
                     <div id="settings-pomodoro" class="settings-item"><div class="settings-label">Pomodoro Timer</div><div class="settings-value">Customize durations & sounds</div></div>
                     <div id="settings-study-goal" class="settings-item"><div class="settings-label">Study Goals</div><div id="study-goal-value" class="settings-value">Not set</div></div>
@@ -1248,66 +1243,8 @@
     </div>
 
     <div id="toast-container"></div>
-    
-    <!-- Add Subject Modal -->
-<div id="add-subject-modal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <div class="modal-title">Add New Subject</div>
-            <button class="close-modal">&times;</button>
-        </div>
-        <form id="add-subject-form">
-            <div class="mb-4">
-                <label for="add-subject-name" class="block text-gray-300 mb-2">Subject Name</label>
-                <input type="text" id="add-subject-name" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-            </div>
-            <div class="mb-6">
-                <label class="block text-gray-300 mb-2">Color</label>
-                <div class="subject-color-picker">
-                    <div class="color-dot selected" data-color="bg-red-500" style="background-color: #ef4444;"></div>
-                    <div class="color-dot" data-color="bg-orange-500" style="background-color: #f97316;"></div>
-                    <div class="color-dot" data-color="bg-yellow-500" style="background-color: #eab308;"></div>
-                    <div class="color-dot" data-color="bg-green-500" style="background-color: #22c55e;"></div>
-                    <div class="color-dot" data-color="bg-teal-500" style="background-color: #14b8a6;"></div>
-                    <div class="color-dot" data-color="bg-cyan-500" style="background-color: #06b6d4;"></div>
-                    <div class="color-dot" data-color="bg-blue-500" style="background-color: #3b82f6;"></div>
-                    <div class="color-dot" data-color="bg-indigo-500" style="background-color: #6366f1;"></div>
-                    <div class="color-dot" data-color="bg-purple-500" style="background-color: #8b5cf6;"></div>
-                    <div class="color-dot" data-color="bg-pink-500" style="background-color: #ec4899;"></div>
-                </div>
-            </div>
-            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Add Subject</button>
-        </form>
-    </div>
-</div>
-    
-    <!-- REPLACED: Start Session Modal (This is the correct one to keep) -->
-    <div id="start-session-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <div class="modal-title">Start New Session</div>
-                <button id="close-start-session-modal" class="close-modal">&times;</button>
-            </div>
-            <form id="start-session-form">
-                <div class="mb-4">
-                    <label class="block text-gray-300 mb-2 font-semibold">1. Select a Subject</label>
-                    <div id="subject-selection-list" class="max-h-40 overflow-y-auto space-y-2 p-1 bg-gray-800 rounded-lg"></div>
-                </div>
-                
-                <div class="mb-4">
-                    <label class="block text-gray-300 mb-2 font-semibold">2. Link to a Task (Optional)</label>
-                    <div id="task-selection-list" class="max-h-40 overflow-y-auto space-y-2 p-1 bg-gray-800 rounded-lg">
-                        <!-- Tasks for today will be rendered here -->
-                    </div>
-                </div>
-
-                <div class="flex items-center gap-4 mt-4">
-                    <button type="button" id="open-add-subject-modal-from-start" class="w-full text-center py-3 bg-gray-600 hover:bg-gray-500 rounded-lg font-medium transition">Add New Subject</button>
-                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Start Timer</button>
-                </div>
-            </form>
-        </div>
-    </div>
+    <div id="add-subject-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Add New Subject</div><button class="close-modal">&times;</button></div><form id="add-subject-form"><div class="mb-4"><label for="add-subject-name" class="block text-gray-300 mb-2">Subject Name</label><input type="text" id="add-subject-name" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required></div><div class="mb-4"><label class="block text-gray-300 mb-2">Color</label><div class="subject-color-picker"><div class="color-dot bg-red-500" data-color="bg-red-500"></div><div class="color-dot bg-blue-500 selected" data-color="bg-blue-500"></div><div class="color-dot bg-green-500" data-color="bg-green-500"></div><div class="color-dot bg-yellow-500" data-color="bg-yellow-500"></div><div class="color-dot bg-purple-500" data-color="bg-purple-500"></div><div class="color-dot bg-pink-500" data-color="bg-pink-500"></div><div class="color-dot bg-indigo-500" data-color="bg-indigo-500"></div><div class="color-dot bg-teal-500" data-color="bg-teal-500"></div><div class="color-dot bg-orange-500" data-color="bg-orange-500"></div><div class="color-dot bg-cyan-500" data-color="bg-cyan-500"></div><div class="color-dot bg-lime-500" data-color="bg-lime-500"></div><div class="color-dot bg-fuchsia-500" data-color="bg-fuchsia-500"></div><div class="color-dot bg-rose-500" data-color="bg-rose-500"></div><div class="color-dot bg-sky-500" data-color="bg-sky-500"></div><div class="color-dot bg-emerald-500" data-color="bg-emerald-500"></div><div class="color-dot bg-amber-500" data-color="bg-amber-500"></div><div class="color-dot bg-violet-500" data-color="bg-violet-500"></div></div></div><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Add Subject</button></form></div></div>
+    <div id="start-session-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Start New Session</div><button id="close-start-session-modal" class="close-modal">&times;</button></div><form id="start-session-form"><div id="subject-selection-list" class="mb-4 max-h-60 overflow-y-auto space-y-2"></div><div class="flex items-center gap-4 mt-4"><button type="button" id="open-add-subject-modal-from-start" class="w-full text-center py-3 bg-gray-600 hover:bg-gray-500 rounded-lg font-medium transition">Add New Subject</button><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Start Timer</button></div></form></div></div>
     <div id="add-task-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Add New Task</div><button class="close-modal">&times;</button></div><form id="add-task-form"><div class="mb-4"><label for="add-task-name" class="block text-gray-300 mb-2">Task Description</label><input type="text" id="add-task-name" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required></div><div class="mb-4"><label for="add-task-date" class="block text-gray-300 mb-2">Date</label><input type="date" id="add-task-date" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required></div><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Add Task</button></form></div></div>
     <div id="password-prompt-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Enter Group Password</div><button class="close-modal">&times;</button></div><form id="password-prompt-form"><input type="password" id="group-password-prompt-input" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required><div class="flex gap-2 mt-4"><button type="button" class="close-modal w-full py-2 bg-gray-600 rounded-lg">Cancel</button><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-lg transition">Submit</button></div></form></div></div>
     <div id="confirmation-modal" class="modal"><div class="modal-content"><div class="modal-header"><h2 id="confirmation-modal-title" class="modal-title">Are you sure?</h2><button class="close-modal">&times;</button></div><p id="confirmation-modal-message">This action cannot be undone.</p><div id="confirmation-modal-buttons"><button id="cancel-btn">Cancel</button><button id="confirm-btn">Confirm</button></div></div></div>
@@ -1327,58 +1264,6 @@
     <!-- Edit Subject Modal -->
     <div id="edit-subject-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Edit Subject</div><button class="close-modal">&times;</button></div><form id="edit-subject-form"><input type="hidden" id="edit-subject-id"><div class="mb-4"><label for="edit-subject-name" class="block text-gray-300 mb-2">Subject Name</label><input type="text" id="edit-subject-name" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required></div><div class="mb-4"><label class="block text-gray-300 mb-2">Color</label><div class="subject-color-picker" id="edit-subject-color-picker"></div></div><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Save Changes</button></form></div></div>
 
-    <div id="task-detail-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <div class="modal-title" id="task-detail-title">Task Details</div>
-                <button class="close-modal">&times;</button>
-            </div>
-            <form id="task-detail-form" class="space-y-4">
-                <input type="hidden" id="task-detail-id">
-                <div>
-                    <label for="task-detail-name" class="block text-gray-300 mb-2">Task Name</label>
-                    <input type="text" id="task-detail-name" class="w-full bg-gray-700 rounded-lg p-3 text-white" required>
-                </div>
-                <div>
-                    <label for="task-detail-notes" class="block text-gray-300 mb-2">Notes</label>
-                    <textarea id="task-detail-notes" class="w-full bg-gray-700 rounded-lg p-3 text-white" rows="4"></textarea>
-                </div>
-
-                <!-- NEW: Priority Section -->
-                <div class="mt-4">
-                    <label class="block text-gray-300 mb-2">Priority</label>
-                    <div id="task-priority-selector" class="flex gap-2">
-                        <button type="button" data-priority="none" class="flex-1 py-2 px-3 rounded-lg bg-gray-600 text-white font-semibold text-sm">None</button>
-                        <button type="button" data-priority="low" class="flex-1 py-2 px-3 rounded-lg bg-blue-600 text-white font-semibold text-sm">Low</button>
-                        <button type="button" data-priority="medium" class="flex-1 py-2 px-3 rounded-lg bg-yellow-500 text-white font-semibold text-sm">Medium</button>
-                        <button type="button" data-priority="high" class="flex-1 py-2 px-3 rounded-lg bg-red-600 text-white font-semibold text-sm">High</button>
-                    </div>
-                </div>
-
-                <div>
-                    <label for="task-detail-date" class="block text-gray-300 mb-2">Due Date</label>
-                    <input type="date" id="task-detail-date" class="w-full bg-gray-700 rounded-lg p-3 text-white">
-                </div>
-
-                <!-- NEW: Sub-tasks Section -->
-                <div class="mt-4">
-                    <label class="block text-gray-300 mb-2">Sub-tasks</label>
-                    <div id="subtask-list" class="space-y-2 max-h-40 overflow-y-auto pr-2">
-                        <!-- Sub-tasks will be rendered here by JavaScript -->
-                    </div>
-                    <div class="flex gap-2 mt-2">
-                        <input type="text" id="new-subtask-name" class="flex-grow bg-gray-800 rounded-lg p-2 text-white" placeholder="Add a new sub-task...">
-                        <button type="button" id="add-subtask-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-3 rounded-lg">+</button>
-                    </div>
-                </div>
-
-                 <div class="flex justify-end gap-2 mt-4">
-                    <button type="button" id="task-detail-delete-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg">Delete</button>
-                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">Save Changes</button>
-                </div>
-            </form>
-        </div>
-    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -1484,57 +1369,7 @@ const ACHIEVEMENTS = {
             };
         `;
         const blob = new Blob([workerCode], { type: 'application/javascript' });
-        const pomodoroWorker = new Worker('pomodoro-worker.js'));
-
-        // --- NEW: Service Worker Code Definition ---
-        const swCode = `
-            const scheduledTimers = new Map();
-
-            self.addEventListener('install', (event) => {
-                self.skipWaiting();
-            });
-
-            self.addEventListener('activate', (event) => {
-                event.waitUntil(self.clients.claim());
-            });
-
-            self.addEventListener('message', (event) => {
-                const { type, payload } = event.data;
-
-                if (type === 'SCHEDULE_ALARM') {
-                    const { delay, timerId, transitionMessage } = payload;
-                    
-                    // If a timer with the same ID already exists, cancel it first.
-                    if (scheduledTimers.has(timerId)) {
-                        clearTimeout(scheduledTimers.get(timerId));
-                    }
-
-                    const timeoutId = setTimeout(() => {
-                        // Show the notification
-                        self.registration.showNotification(transitionMessage.title, transitionMessage.options);
-                        
-                        // Notify all open client windows that the timer has ended
-                        self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
-                            clients.forEach(client => {
-                                client.postMessage(transitionMessage);
-                            });
-                        });
-
-                        // Clean up the completed timer
-                        scheduledTimers.delete(timerId);
-
-                    }, delay);
-
-                    scheduledTimers.set(timerId, timeoutId);
-                } else if (type === 'CANCEL_ALARM') {
-                    const { timerId } = payload;
-                    if (scheduledTimers.has(timerId)) {
-                        clearTimeout(scheduledTimers.get(timerId));
-                        scheduledTimers.delete(timerId);
-                    }
-                }
-            });
-        `;
+        const pomodoroWorker = new Worker(URL.createObjectURL(blob));
 
         // --- Service Worker Communication Functions ---
         function scheduleSWAlarm(payload) {
@@ -1564,7 +1399,6 @@ const ACHIEVEMENTS = {
         let currentUser = null;
         let currentUserData = {};
         let dashboardCharts = {};
-        let unsubscribers = []; // This will store functions to detach listeners
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         let userSessions = []; 
         let isAudioUnlocked = false;
@@ -2473,12 +2307,6 @@ let pauseStartTime = 0;
             
             if (pageId === 'page-stats') {
                 renderStatsPage(userSessions);
-            } else if (pageId === 'page-planner') {
-                // Show a loading indicator while tasks are being fetched by onSnapshot
-                const plannerList = document.getElementById('planner-list');
-                if (plannerList) {
-                    plannerList.innerHTML = '<div class="text-center text-gray-500 py-8"><i class="fas fa-spinner fa-spin fa-2x"></i><p class="mt-2">Loading tasks...</p></div>';
-                }
             }
         }
 
@@ -2502,7 +2330,7 @@ let pauseStartTime = 0;
             return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
         }
 
-        async function startTimer(subject, taskId = null) { // Add taskId parameter
+        async function startTimer(subject) {
             if (!subject) {
                 showToast("Please select a subject first.", "error");
                 return;
@@ -2589,7 +2417,7 @@ let pauseStartTime = 0;
             document.getElementById('manual-start-btn').classList.add('hidden');
 
             const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
-            await updateDoc(userRef, { studying: { subject: activeSubject, startTime: serverTimestamp(), type: 'study', taskId: taskId } }); // Add taskId
+            await updateDoc(userRef, { studying: { subject: activeSubject, startTime: serverTimestamp(), type: 'study' } });
         }
         
         async function stopTimer() {
@@ -2609,23 +2437,20 @@ let pauseStartTime = 0;
                 const timeLeftInSeconds = (parseInt(displayTime.split(':')[0], 10) * 60) + parseInt(displayTime.split(':')[1], 10);
                 const elapsedSeconds = workDuration - timeLeftInSeconds;
                 
-                const activeTaskId = currentUserData.studying?.taskId || null;
                 if (pomodoroState === 'work' && elapsedSeconds > 0) {
-                    await saveSession(activeSubject, elapsedSeconds, 'study', activeTaskId);
+                    await saveSession(activeSubject, elapsedSeconds, 'study');
                 }
                 
                 // Crucially, cancel the reliable alarm in the Service Worker
                 cancelSWAlarm('pomodoro-transition');
             }
             // If a normal timer was running, stop it and save the session
-            
             else if (timerMode === 'normal' && timerInterval) {
                 clearInterval(timerInterval);
                 const elapsedMillis = Date.now() - sessionStartTime;
                 const sessionDurationSeconds = Math.floor(elapsedMillis / 1000);
                 if (sessionDurationSeconds > 0) {
-                    const activeTaskId = currentUserData.studying?.taskId || null;
-                    await saveSession(activeSubject, sessionDurationSeconds, 'study', activeTaskId);
+                    await saveSession(activeSubject, sessionDurationSeconds, 'study');
                 }
             }
             
@@ -2750,7 +2575,7 @@ let pauseStartTime = 0;
             totalBreakTimeDisplay.textContent = `Total Break: ${formatTime(totalBreakTimeTodayInSeconds)}`;
         }
 
-        async function saveSession(subject, durationSeconds, sessionType = 'study', taskId = null) { // Add taskId parameter
+        async function saveSession(subject, durationSeconds, sessionType = 'study') { // Default to 'study'
             if (!currentUser || durationSeconds <= 0) {
                 return;
             }
@@ -2767,27 +2592,27 @@ let pauseStartTime = 0;
                     const userDoc = await transaction.get(userDocRef);
                     const publicUserDoc = await transaction.get(publicUserDocRef);
                     // --- ADD THE STREAK LOGIC HERE ---
-                    const userDataForStreak = userDoc.data();
-                    if (sessionType === 'study') {
-                        const todayStr = new Date().toISOString().split('T')[0];
-                        const yesterdayStr = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+const userDataForStreak = userDoc.data();
+if (sessionType === 'study') {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const yesterdayStr = new Date(Date.now() - 86400000).toISOString().split('T')[0];
 
-                        const lastStudyDay = userDataForStreak.lastStudyDay || '';
-                        let currentStreak = userDataForStreak.currentStreak || 0;
+    const lastStudyDay = userDataForStreak.lastStudyDay || '';
+    let currentStreak = userDataForStreak.currentStreak || 0;
 
-                        if (lastStudyDay !== todayStr) {
-                            if (lastStudyDay === yesterdayStr) {
-                                currentStreak++; // Continued the streak
-                            } else {
-                                currentStreak = 1; // Streak was broken, reset to 1
-                            }
-                            transaction.update(userDocRef, {
-                                currentStreak: currentStreak,
-                                lastStudyDay: todayStr
-                            });
-                        }
-                    }
-                    // --- END OF STREAK LOGIC ---
+    if (lastStudyDay !== todayStr) {
+        if (lastStudyDay === yesterdayStr) {
+            currentStreak++; // Continued the streak
+        } else {
+            currentStreak = 1; // Streak was broken, reset to 1
+        }
+        transaction.update(userDocRef, {
+            currentStreak: currentStreak,
+            lastStudyDay: todayStr
+        });
+    }
+}
+// --- END OF STREAK LOGIC ---
 
                     if (!userDoc.exists()) {
                         throw new Error("Transaction failed: User document not found.");
@@ -2806,27 +2631,14 @@ let pauseStartTime = 0;
                     }
 
                     const newSessionDocRef = doc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'sessions'));
-                    const sessionData = {
+                    transaction.set(newSessionDocRef, {
                         subject: subject,
-                        durationSeconds: cappedDuration,
+                        durationSeconds: cappedDuration, // Use capped duration
                         endedAt: serverTimestamp(),
-                        type: sessionType
-                    };
-                    if (taskId) {
-                        sessionData.taskId = taskId;
-                    }
-                    transaction.set(newSessionDocRef, sessionData);
-
-                    // If a task was linked, update the task doc to create a two-way link
-                    if (taskId) {
-                        const taskRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'plannerTasks', taskId);
-                        transaction.update(taskRef, {
-                            sessionIds: arrayUnion(newSessionDocRef.id)
-                        });
-                    }
+                        type: sessionType // Store session type
+                    });
 
                     const updateData = {};
-
                     if (sessionType === 'study') {
                         updateData.totalStudySeconds = increment(cappedDuration);
                         updateData.totalTimeToday = {
@@ -3067,11 +2879,6 @@ if (achievementsGrid) {
 
         function setupRealtimeListeners() {
             if (!currentUser) return;
-
-            // Clear existing listeners to prevent duplicates
-            unsubscribers.forEach(unsub => unsub());
-            unsubscribers = [];
-
             const groupsCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'groups');
             const usersCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'users');
             const userDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
@@ -3080,8 +2887,7 @@ if (achievementsGrid) {
             const sessionsCollectionRef = collection(userDocRef, 'sessions');
             const plannerTasksRef = collection(userDocRef, 'plannerTasks');
 
-            // Store the unsubscribe function for each listener
-            unsubscribers.push(onSnapshot(userDocRef, (doc) => {
+            onSnapshot(userDocRef, (doc) => {
                 if (doc.exists()) {
                     const data = doc.data();
                     currentUserData = data;
@@ -3104,30 +2910,30 @@ if (achievementsGrid) {
                     updateProfileUI(data);
                     renderJoinedGroups();
                 }
-            }));
+            });
             
-            unsubscribers.push(onSnapshot(groupsCollectionRef, () => {
+            onSnapshot(groupsCollectionRef, () => {
                 if (document.getElementById('page-my-groups').classList.contains('active') || document.getElementById('page-find-groups').classList.contains('active')) {
                     renderAvailableGroups();
                     renderJoinedGroups();
                 }
-            }));
+            });
 
-            unsubscribers.push(onSnapshot(subjectsCollectionRef, (snapshot) => {
+            onSnapshot(subjectsCollectionRef, (snapshot) => {
                 const subjects = [];
                 snapshot.forEach(doc => subjects.push({ id: doc.id, ...doc.data() }));
                 // When subjects change, re-render the list in the start session modal
                 renderSubjectSelectionList(subjects);
-            }));
+            });
             
-            unsubscribers.push(onSnapshot(usersCollectionRef, () => {
+            onSnapshot(usersCollectionRef, () => {
                 if (document.getElementById('page-ranking').classList.contains('active')) {
                     const activeTab = document.querySelector('#ranking-period-tabs .ranking-tab-btn.active');
                     renderLeaderboard(activeTab ? activeTab.dataset.period : 'weekly');
                 }
-            }));
+            });
 
-            unsubscribers.push(onSnapshot(query(sessionsCollectionRef, orderBy("endedAt", "desc")), (snapshot) => {
+            onSnapshot(query(sessionsCollectionRef, orderBy("endedAt", "desc")), (snapshot) => {
                 userSessions = snapshot.docs.map(doc => {
                     const data = doc.data();
                     return {
@@ -3144,15 +2950,15 @@ if (achievementsGrid) {
                     const activeTab = document.querySelector('#ranking-period-tabs .ranking-tab-btn.active');
                     renderLeaderboard(activeTab ? activeTab.dataset.period : 'weekly');
                 }
-            }));
+            });
 
-            unsubscribers.push(onSnapshot(query(plannerTasksRef, orderBy("date")), (snapshot) => {
-                console.log("Planner tasks onSnapshot triggered."); // Keep this line
-                const tasks = [];
-                snapshot.forEach(doc => tasks.push({ id: doc.id, ...doc.data() }));
-                console.log("Tasks received by onSnapshot:", tasks); // Keep this line
-                renderPlanner(tasks);
-            }));
+            onSnapshot(query(plannerTasksRef, orderBy("date")), (snapshot) => {
+                if (document.getElementById('page-planner').classList.contains('active')) {
+                    const tasks = [];
+                    snapshot.forEach(doc => tasks.push({ id: doc.id, ...doc.data() }));
+                    renderPlanner(tasks);
+                }
+            });
         }
         
         async function renderLeaderboard(period = 'weekly', containerId = 'ranking-list') {
@@ -3896,17 +3702,12 @@ if (achievementsGrid) {
         }
         
         function renderPlanner(tasks) {
-                console.log("renderPlanner called with tasks:", tasks); // ADD THIS LINE
-                const container = document.getElementById('planner-list');
-                if (!container) {
-                    console.error("Planner list container not found!"); // ADD THIS LINE
-                    return;
-                }
-                if (tasks.length === 0) {
-                    container.innerHTML = `<div class="text-center text-gray-500 py-8">No tasks scheduled. Add one to get started!</div>`;
-                    console.log("No tasks, displaying empty message."); // ADD THIS LINE
-                    return;
-                }
+            const container = document.getElementById('planner-list');
+            if (!container) return;
+            if (tasks.length === 0) {
+                container.innerHTML = `<div class="text-center text-gray-500 py-8">No tasks scheduled. Add one to get started!</div>`;
+                return;
+            }
 
             const groupedTasks = tasks.reduce((acc, task) => {
                 const date = task.date;
@@ -3926,28 +3727,12 @@ if (achievementsGrid) {
                     </div>
                 `;
 
-                const tasksHtml = groupedTasks[dateStr].map(task => {
-                    const subtasks = task.subtasks || [];
-                    const completedSubtasks = subtasks.filter(st => st.completed).length;
-                    const subtaskProgress = subtasks.length > 0 
-                        ? `<span class="text-xs text-gray-500 ml-2">${completedSubtasks}/${subtasks.length}</span>` 
-                        : '';
-                    
-                    const priorityClass = {
-                        'low': 'border-l-4 border-blue-500',
-                        'medium': 'border-l-4 border-yellow-500',
-                        'high': 'border-l-4 border-red-500'
-                    }[task.priority] || 'border-l-4 border-transparent';
-
-                    return `
-                    <div class="planner-task ${priorityClass}">
+                const tasksHtml = groupedTasks[dateStr].map(task => `
+                    <div class="planner-task">
                         <input type="checkbox" class="task-checkbox w-5 h-5 bg-gray-700 rounded text-blue-500 focus:ring-blue-500" data-task-id="${task.id}" ${task.completed ? 'checked' : ''}>
-                        <div class="task-name ${task.completed ? 'completed' : ''}">${task.name} ${subtaskProgress}</div>
-                        <button class="task-options-btn ml-auto p-2 rounded-full hover:bg-gray-700 text-gray-400" data-task-id='${task.id}'>
-                            <i class="fas fa-ellipsis-h pointer-events-none"></i>
-                        </button>
+                        <div class="task-name ${task.completed ? 'completed' : ''}">${task.name}</div>
                     </div>
-                `}).join('');
+                `).join('');
 
                 return `<div class="planner-day">${dayHeader}${tasksHtml}</div>`;
             }).join('');
@@ -4607,38 +4392,10 @@ if (achievementsGrid) {
                 option.classList.add('selected');
             });
         });
-
-        // --- NEW: Helper function to render tasks in the start session modal ---
-        function renderTaskSelectionList(tasks) {
-            const container = document.getElementById('task-selection-list');
-            if (!container) return;
-            if (tasks.length === 0) {
-                container.innerHTML = `<p class="text-gray-400 text-center p-4">No tasks for today.</p>`;
-                return;
-            }
-            container.innerHTML = tasks.map(task => `
-                <div class="subject-item p-3 rounded-lg flex items-center gap-3" data-task-id="${task.id}">
-                    <div class="flex-grow">
-                        <span>${task.name}</span>
-                    </div>
-                </div>
-            `).join('');
-
-            container.addEventListener('click', (e) => {
-                const taskItem = e.target.closest('.subject-item');
-                if (taskItem) {
-                    // Toggle selection
-                    if (taskItem.classList.contains('selected')) {
-                        taskItem.classList.remove('selected');
-                    } else {
-                        container.querySelectorAll('.subject-item.selected').forEach(el => el.classList.remove('selected'));
-                        taskItem.classList.add('selected');
-                    }
-                }
-            });
-        }
         
-        
+        let capacity = 15;
+        ael('increase-capacity', 'click', () => { if (capacity < 100) { document.getElementById('capacity-value').textContent = ++capacity; } else showToast('Maximum capacity is 100', 'info'); });
+        ael('decrease-capacity', 'click', () => { if (capacity > 2) { document.getElementById('capacity-value').textContent = --capacity; } else showToast('Minimum capacity is 2', 'info'); });
         
         // Modals
         const addSubjectModal = document.getElementById('add-subject-modal');
@@ -4735,18 +4492,7 @@ ael('edit-subject-form', 'submit', async (e) => {
         showToast("Failed to update subject.", "error");
     }
 });
-        ael('start-studying-btn', 'click', async () => { 
-            // Fetch today's incomplete tasks
-            if (currentUser) {
-                const todayStr = new Date().toISOString().split('T')[0];
-                const tasksRef = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'plannerTasks');
-                const q = query(tasksRef, where('date', '==', todayStr), where('completed', '==', false));
-                const snapshot = await getDocs(q);
-                const tasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                renderTaskSelectionList(tasks);
-            }
-            startSessionModal.classList.add('active'); 
-        });
+        ael('start-studying-btn', 'click', () => { startSessionModal.classList.add('active'); });
         ael('close-start-session-modal', 'click', () => { startSessionModal.classList.remove('active'); });
         
         // Modified: When "Add New Subject" is clicked from "Start New Session"
@@ -4759,17 +4505,13 @@ ael('edit-subject-form', 'submit', async (e) => {
         ael('start-session-form', 'submit', (e) => {
             e.preventDefault();
             const selectedSubjectEl = document.querySelector('#subject-selection-list .subject-item.selected');
-            const selectedTaskEl = document.querySelector('#task-selection-list .subject-item.selected'); // Get selected task
-            
             if (!selectedSubjectEl) {
                 showToast("Please select a subject to start studying.", "error");
                 return;
             }
             const subject = selectedSubjectEl.dataset.subjectName;
-            const taskId = selectedTaskEl ? selectedTaskEl.dataset.taskId : null; // Get taskId
-            
             startSessionModal.classList.remove('active');
-            startTimer(subject, taskId); // Pass taskId to startTimer
+            startTimer(subject);
         });
 
         ael('stop-studying-btn', 'click', stopTimer);
@@ -4898,10 +4640,9 @@ ael('edit-subject-form', 'submit', async (e) => {
 
         // --- STEP 1: ADD THIS ENTIRE NEW FUNCTION HERE ---
         async function handlePomodoroPhaseEnd({ newState, oldState }) {
-            const activeTaskId = currentUserData.studying?.taskId || null;
             // 1. Save the completed session
             if (oldState === 'work') {
-                await saveSession(activeSubject, pomodoroSettings.work * 60, 'study', activeTaskId);
+                await saveSession(activeSubject, pomodoroSettings.work * 60, 'study');
             } else { // It was a break
                 const breakDuration = oldState === 'short_break' ? pomodoroSettings.short_break * 60 : pomodoroSettings.long_break * 60;
                 await saveSession('Break', breakDuration, 'break');
@@ -5150,187 +4891,56 @@ if (e.target.classList.contains('edit-subject-btn')) {
         ael('add-task-form', 'submit', async (e) => {
             e.preventDefault();
             if (!currentUser) return;
-
-            const taskName = document.getElementById('add-task-name').value.trim();
-            const taskDate = document.getElementById('add-task-date').value; // YYYY-MM-DD format
-
-            if (!taskName || !taskDate) {
-                showToast("Please enter both a task description and a date.", "error");
+            const name = document.getElementById('add-task-name').value.trim();
+            const date = document.getElementById('add-task-date').value;
+            if (!name || !date) {
+                showToast("Please provide a name and date for the task.", "error");
                 return;
             }
-
-            try {
-                const plannerTasksRef = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'plannerTasks');
-                await addDoc(plannerTasksRef, {
-                    name: taskName,
-                    date: taskDate, // Store as YYYY-MM-DD string
-                    completed: false,
-                    createdAt: serverTimestamp(),
-                    notes: '', // Initialize notes
-                    priority: 'none', // Initialize priority
-                    subtasks: [] // Initialize subtasks
-                });
-                
-                showToast("Task added successfully!", "success");
-                addTaskModal.classList.remove('active');
-                document.getElementById('add-task-form').reset(); // Clear the form
-            } catch (error) {
-                console.error("Error adding task: ", error);
-                showToast("Failed to add task.", "error");
-            }
+            const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
+            const plannerTasksRef = collection(userRef, 'plannerTasks');
+            await addDoc(plannerTasksRef, { name, date, completed: false });
+            
+            addTaskModal.classList.remove('active');
+            document.getElementById('add-task-form').reset();
+            showToast("Task added!", "success");
         });
 
         document.getElementById('planner-list').addEventListener('change', async (e) => {
             if (e.target.classList.contains('task-checkbox')) {
-                // ... code for checking off a task ...
-            }
-        });
-        
-        // --- START OF ADDED CODE BLOCK ---
-
-        // Function to open and populate the task detail modal
-        function openTaskDetailModal(task) {
-            const modal = document.getElementById('task-detail-modal');
-            document.getElementById('task-detail-id').value = task.id;
-            document.getElementById('task-detail-title').textContent = task.name;
-            document.getElementById('task-detail-name').value = task.name;
-            document.getElementById('task-detail-notes').value = task.notes || '';
-            document.getElementById('task-detail-date').value = task.date || '';
-
-            // Set priority buttons
-            document.querySelectorAll('#task-priority-selector button').forEach(btn => {
-                btn.classList.remove('ring-2', 'ring-offset-2', 'ring-offset-gray-800');
-                if (btn.dataset.priority === task.priority) {
-                    btn.classList.add('ring-2', 'ring-offset-2', 'ring-offset-gray-800');
-                }
-            });
-
-            // Render subtasks
-            renderSubtasks(task.subtasks || []);
-
-            modal.classList.add('active');
-        }
-
-        // Event listener for task options button ("...")
-        document.getElementById('planner-list').addEventListener('click', async (e) => {
-            if (e.target.closest('.task-options-btn')) {
-                const button = e.target.closest('.task-options-btn');
-                const taskId = button.dataset.taskId;
+                const taskId = e.target.dataset.taskId;
+                const isCompleted = e.target.checked;
                 const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
                 const taskRef = doc(userRef, 'plannerTasks', taskId);
-                const taskDoc = await getDoc(taskRef);
-                if (taskDoc.exists()) {
-                    openTaskDetailModal({ id: taskDoc.id, ...taskDoc.data() });
-                }
+                await updateDoc(taskRef, { completed: isCompleted });
             }
-        });
-
-        // Event listener for the task detail form submission (Save Changes)
-        ael('task-detail-form', 'submit', async (e) => {
-            e.preventDefault();
-            const taskId = document.getElementById('task-detail-id').value;
-            const updatedTask = {
-                name: document.getElementById('task-detail-name').value,
-                notes: document.getElementById('task-detail-notes').value,
-                date: document.getElementById('task-detail-date').value
-            };
-            const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
-            const taskRef = doc(userRef, 'plannerTasks', taskId);
-            await updateDoc(taskRef, updatedTask);
-            showToast('Task updated successfully!', 'success');
-            document.getElementById('task-detail-modal').classList.remove('active');
         });
         
-        // Event listener for the delete task button
-        ael('task-detail-delete-btn', 'click', async () => {
-            const taskId = document.getElementById('task-detail-id').value;
-            showConfirmationModal('Delete Task?', 'Are you sure you want to delete this task?', async () => {
-                const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
-                const taskRef = doc(userRef, 'plannerTasks', taskId);
-                await deleteDoc(taskRef);
-                showToast('Task deleted.', 'success');
-                document.getElementById('task-detail-modal').classList.remove('active');
-            });
+        document.getElementById('ranking-period-tabs').addEventListener('click', (e) => {
+            if (e.target.classList.contains('ranking-tab-btn')) {
+                const period = e.target.dataset.period;
+                renderLeaderboard(period);
+            }
         });
-
-        // Event listener for priority selection
-        ael('task-priority-selector', 'click', async (e) => {
-            const button = e.target.closest('button');
-            if (!button) return;
-            const taskId = document.getElementById('task-detail-id').value;
-            const priority = button.dataset.priority;
-            document.querySelectorAll('#task-priority-selector button').forEach(btn => {
-                btn.classList.remove('ring-2', 'ring-offset-2', 'ring-offset-gray-800');
-            });
-            button.classList.add('ring-2', 'ring-offset-2', 'ring-offset-gray-800');
-            const taskRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'plannerTasks', taskId);
-            await updateDoc(taskRef, { priority: priority });
-            showToast('Priority updated!', 'success');
-        });
-
-        // Event listener for adding a new sub-task
-        ael('add-subtask-btn', 'click', async () => {
-            const taskId = document.getElementById('task-detail-id').value;
-            const subtaskNameInput = document.getElementById('new-subtask-name');
-            const subtaskName = subtaskNameInput.value.trim();
-            if (!subtaskName) {
-                showToast('Sub-task name cannot be empty.', 'error');
-                return;
-            }
-            const taskRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'plannerTasks', taskId);
-            const newSubtask = { name: subtaskName, completed: false };
-            await updateDoc(taskRef, { subtasks: arrayUnion(newSubtask) });
-            const updatedTaskDoc = await getDoc(taskRef);
-            renderSubtasks(updatedTaskDoc.data().subtasks || []);
-            subtaskNameInput.value = '';
-        });
-
-        // Function to render subtasks within the task detail modal
-        function renderSubtasks(subtasks) {
-            const subtaskList = document.getElementById('subtask-list');
-            if (!subtaskList) return;
-
-            if (subtasks.length === 0) {
-                subtaskList.innerHTML = '<p class="text-gray-500 text-sm italic">No sub-tasks yet.</p>';
-                return;
-            }
-
-            subtaskList.innerHTML = subtasks.map((subtask, index) => `
-                <div class="flex items-center justify-between bg-gray-800 p-2 rounded-lg">
-                    <label class="flex items-center flex-grow cursor-pointer">
-                        <input type="checkbox" class="subtask-checkbox w-4 h-4 text-blue-500 bg-gray-700 rounded border-gray-600 focus:ring-blue-500" data-subtask-index="${index}" ${subtask.completed ? 'checked' : ''}>
-                        <span class="ml-2 ${subtask.completed ? 'line-through text-gray-500' : 'text-white'}">${subtask.name}</span>
-                    </label>
-                    <button type="button" class="delete-subtask-btn text-red-400 hover:text-red-500 ml-2" data-subtask-index="${index}">
-                        <i class="fas fa-trash-alt pointer-events-none"></i>
-                    </button>
-                </div>
-            `).join('');
-        }
-
-        // Event listener for sub-task list changes (completion/deletion)
-        ael('subtask-list', 'click', async (e) => {
-            const taskId = document.getElementById('task-detail-id').value;
-            const taskRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'plannerTasks', taskId);
-            const taskDoc = await getDoc(taskRef);
-            let subtasks = taskDoc.data().subtasks || [];
-            if (e.target.classList.contains('subtask-checkbox')) {
-                const index = parseInt(e.target.dataset.subtaskIndex, 10);
-                subtasks[index].completed = e.target.checked;
-                await updateDoc(taskRef, { subtasks: subtasks });
-                renderSubtasks(subtasks);
-            }
-            if (e.target.classList.contains('delete-subtask-btn')) {
-                const index = parseInt(e.target.dataset.subtaskIndex, 10);
-                subtasks.splice(index, 1);
-                await updateDoc(taskRef, { subtasks: subtasks });
-                renderSubtasks(subtasks);
-            }
-        })
         
+        document.getElementById('my-groups-list').addEventListener('click', (e) => {
+            const groupCard = e.target.closest('.group-card');
+            if (groupCard) {
+                const groupId = groupCard.dataset.groupId;
+                showPage('page-group-detail');
+                renderGroupDetail(groupId);
+            }
+        });
+        
+        document.getElementById('group-detail-nav').addEventListener('click', (e) => {
+            const navItem = e.target.closest('.group-nav-item');
+            if (navItem) {
+                renderGroupSubPage(navItem.dataset.subpage);
+            }
+        });
+
         // Profile Settings Modals
         const editProfileModal = document.getElementById('edit-profile-modal');
-        
         ael('settings-account', 'click', () => {
             document.getElementById('edit-username-input').value = currentUserData.username || '';
             editProfileModal.classList.add('active');
@@ -5587,8 +5197,12 @@ if (e.target.classList.contains('edit-subject-btn')) {
                 // Service Workers require a secure context (HTTPS or localhost) to register.
                 // This check prevents the registration error in unsupported environments (like 'blob:').
                 if (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
-                    // Register the Service Worker directly from its file path
-                    navigator.serviceWorker.register('./service-worker.js') // <--- This is the crucial change
+                    // Create a blob from our service worker code string
+                    const swBlob = new Blob([swCode], { type: 'application/javascript' });
+                    // Create a temporary URL for the blob
+                    const swUrl = URL.createObjectURL(swBlob);
+
+                    navigator.serviceWorker.register(swUrl)
                         .then(registration => {
                             console.log('Service Worker registered successfully with scope:', registration.scope);
                         })
