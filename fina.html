@@ -5216,7 +5216,8 @@ if (e.target.classList.contains('edit-subject-btn')) {
                     // Create a temporary URL for the blob
                     const swUrl = URL.createObjectURL(swBlob);
 
-                    navigator.serviceWorker.register(swUrl)
+                    navigator.serviceWorker
+                    .register("/Focus-Clock/service-worker.js")
                         .then(registration => {
                             console.log('Service Worker registered successfully with scope:', registration.scope);
                         })
