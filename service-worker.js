@@ -130,7 +130,8 @@ self.addEventListener('message', (event) => {
             resumeTimer();
             break;
         case 'SCHEDULE_NOTIFICATION':
-            scheduleNotification(payload.delay, payload.title, payload.options);
+            // Pass the entire transitionMessage from the payload as the fourth argument
+            scheduleNotification(payload.delay, payload.title, payload.options, payload.transitionMessage); // <-- UPDATED LINE
             break;
         case 'CANCEL_ALARM':
             cancelAlarm(payload.timerId);
@@ -159,6 +160,10 @@ function startTimer(durationSeconds, phase, title) {
             clearInterval(timerInterval);
             timerInterval = null;
             // Notify the main app that the phase has ended
+            // NOTE: This 'phase_ended' message is distinct from the 'TIMER_ENDED'
+            //      sent via the notification schedule. This is for real-time
+            //      UI updates if the tab is active. The notification path
+            //      handles it when the tab might be in the background.
             self.clientPort.postMessage({
                 type: 'phase_ended',
                 phase: currentPhase,
@@ -234,7 +239,7 @@ function sendStatusToClient() {
 }
 
 // --- Notification Scheduling ---
-function scheduleNotification(delay, title, options) {
+function scheduleNotification(delay, title, options, transitionMessage) { // <--- UPDATED FUNCTION SIGNATURE
     // Ensure the tag is consistent for managing notifications
     options.tag = notificationTag;
     options.renotify = true; // Ensures new notification if one with same tag exists
@@ -255,6 +260,17 @@ function scheduleNotification(delay, title, options) {
     // Schedule the notification to appear after 'delay' milliseconds
     setTimeout(() => {
         self.registration.showNotification(title, options);
+
+        // --- NEW: Post message back to client when timer ends ---
+        self.clients.matchAll({ type: 'window' }).then(clients => {
+            clients.forEach(client => {
+                // Find the client that sent the initial message, or all clients if needed.
+                // For simplicity, we'll post to all controlled windows.
+                client.postMessage(transitionMessage); // <--- NEW CODE: Sends the message back
+            });
+        });
+        // --- END NEW ---
+
     }, delay);
 }
 
