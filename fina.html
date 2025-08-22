@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5215,10 +5216,38 @@ if (e.target.classList.contains('edit-subject-btn')) {
     .register("/service-worker.js") // Changed path
     .then(registration => {
         console.log('Service Worker registered successfully with scope:', registration.scope);
+        // --- START NEW CODE FOR SERVICE WORKER UPDATES ---
+                        registration.onupdatefound = () => {
+                            const installingWorker = registration.installing;
+                            if (installingWorker) {
+                                installingWorker.onstatechange = () => {
+                                    if (installingWorker.state === 'installed') {
+                                        if (navigator.serviceWorker.controller) {
+                                            // New content available, but not yet active for this page.
+                                            // You can show a "New content available" toast/prompt here.
+                                            showToast('New version available! Refresh for updates.', 'info', 5000);
+                                            console.log('New content is available; please refresh.');
+                                        } else {
+                                            // Content is cached for offline use. This is the first installation.
+                                            console.log('Content is cached for offline use.');
+                                        }
+                                    }
+                                };
+                            }
+                        };
+                        // --- END NEW CODE FOR SERVICE WORKER UPDATES ---
     })
     .catch(error => {
         console.error('Service Worker registration failed:', error);
     });
+    // --- START NEW CODE TO RELOAD PAGE ON CONTROLLER CHANGE ---
+                navigator.serviceWorker.addEventListener('controllerchange', () => {
+                    // This fires when a new service worker takes over a page.
+                    // This is especially useful if `skipWaiting()` is used in your service worker.
+                    console.log('New service worker activated, reloading page for latest content.');
+                    window.location.reload();
+                });
+                // --- END NEW CODE TO RELOAD PAGE ON CONTROLLER CHANGE ---
                 } else {
                     console.warn('Service Worker not registered. This feature requires a secure context (HTTPS or localhost). The Pomodoro timer will be less reliable in the background.');
                     // Hide the Pomodoro button if SW is not available, as it won't work reliably.
