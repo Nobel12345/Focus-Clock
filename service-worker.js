@@ -4,19 +4,19 @@
 
 const CACHE_NAME = 'focusflow-cache-v1'; // Cache version
 const urlsToCache = [
-    '/', // Caches the root URL (your index.html)
-    'index.html', // Explicitly cache index.html
-    'manifest.json', // Your web app manifest
-    // UPDATED: Online icons from manifest.json for caching
-    'https://placehold.co/192x192/0a0a0a/e0e0e0?text=Flow+192',
-    'https://placehold.co/512x512/0a0a0a/e0e0e0?text=Flow+512',
-    // Notification action icons (ensure these paths are correct on your server)
-    // These are kept as relative paths, assuming you host them locally.
-    '/icons/pause.png',
-    '/icons/play.png',
-    '/icons/stop.png',
-    // Add any other critical assets (CSS, JS files) that make up your app shell
-    // e.g., '/styles/main.css', '/js/app.js'
+  '/Focus-Clock/',              
+  '/Focus-Clock/index.html',
+  '/Focus-Clock/fina.html',
+  '/Focus-Clock/manifest.json',
+  '/Focus-Clock/pomodoro-worker.js',
+  '/Focus-Clock/icons/pause.png',
+  '/Focus-Clock/icons/play.png',
+  '/Focus-Clock/icons/stop.png',
+  '/', 
+  'index.html',
+  'manifest.json',
+  'https://placehold.co/192x192/0a0a0a/e0e0e0?text=Flow+192',
+  'https://placehold.co/512x512/0a0a0a/e0e0e0?text=Flow+512',
 ];
 
 // --- Minimal lifecycle to ensure control ---
