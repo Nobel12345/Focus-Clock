@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5212,11 +5211,6 @@ if (e.target.classList.contains('edit-subject-btn')) {
                 // Service Workers require a secure context (HTTPS or localhost) to register.
                 // This check prevents the registration error in unsupported environments (like 'blob:').
                 if (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
-                    // Create a blob from our service worker code string
-                    const swBlob = new Blob([swCode], { type: 'application/javascript' });
-                    // Create a temporary URL for the blob
-                    const swUrl = URL.createObjectURL(swBlob);
-
                     navigator.serviceWorker
     .register("/service-worker.js") // Changed path
     .then(registration => {
