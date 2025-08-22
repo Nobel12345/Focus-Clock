@@ -130,8 +130,8 @@ self.addEventListener('message', (event) => {
             resumeTimer();
             break;
         case 'SCHEDULE_NOTIFICATION':
-            // Pass the entire transitionMessage from the payload as the fourth argument
-            scheduleNotification(payload.delay, payload.title, payload.options, payload.transitionMessage); // <-- UPDATED LINE
+            // Pass the entire payload, which contains delay, title, options, and transitionMessage
+            scheduleNotification(payload); // <-- UPDATED LINE: pass whole payload
             break;
         case 'CANCEL_ALARM':
             cancelAlarm(payload.timerId);
@@ -239,7 +239,9 @@ function sendStatusToClient() {
 }
 
 // --- Notification Scheduling ---
-function scheduleNotification(delay, title, options, transitionMessage) { // <--- UPDATED FUNCTION SIGNATURE
+function scheduleNotification(payload) { // <--- UPDATED FUNCTION SIGNATURE: accepts payload
+    const { delay, title, options, transitionMessage } = payload; // Destructure payload to get all properties
+
     // Ensure the tag is consistent for managing notifications
     options.tag = notificationTag;
     options.renotify = true; // Ensures new notification if one with same tag exists
@@ -259,17 +261,20 @@ function scheduleNotification(delay, title, options, transitionMessage) { // <--
 
     // Schedule the notification to appear after 'delay' milliseconds
     setTimeout(() => {
-        self.registration.showNotification(title, options);
-
-        // --- NEW: Post message back to client when timer ends ---
-        self.clients.matchAll({ type: 'window' }).then(clients => {
-            clients.forEach(client => {
-                // Find the client that sent the initial message, or all clients if needed.
-                // For simplicity, we'll post to all controlled windows.
-                client.postMessage(transitionMessage); // <--- NEW CODE: Sends the message back
+        self.registration.showNotification(title, options)
+            .then(() => {
+                console.log(`[Service Worker]: Notification "${title}" shown.`);
+                self.clients.matchAll({ type: 'window' }).then(clients => {
+                    clients.forEach(client => {
+                        // Find the client that sent the initial message, or all clients if needed.
+                        // For simplicity, we'll post to all controlled windows.
+                        client.postMessage(transitionMessage); // <--- NEW CODE: Sends the correct transitionMessage back
+                    });
+                });
+            })
+            .catch(error => {
+                console.error('[Service Worker] Error showing notification:', error);
             });
-        });
-        // --- END NEW ---
 
     }, delay);
 }
