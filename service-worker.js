@@ -1,106 +1,109 @@
 // HYBRID Service Worker for FocusFlow
-// Restores original background timer & notification message handling,
-// and adds minimal lifecycle events to ensure control.
+// Version 1.0.0
 
-const CACHE_NAME = 'focusflow-cache-v1'; // Cache version
+const CACHE_NAME = 'focusflow-cache-v2'; // Increment cache version for updates
+const OFFLINE_URL = './offline.html'; // Path to your dedicated offline page
+
+// IMPORTANT: These paths should be relative to the root of the Service Worker's scope.
+// If your service-worker.js is at /Focus-Clock/service-worker.js, then './' refers to /Focus-Clock/
 const urlsToCache = [
-  '/Focus-Clock/',              
-  '/Focus-Clock/index.html',
-  '/Focus-Clock/fina.html',
-  '/Focus-Clock/manifest.json',
-  '/Focus-Clock/pomodoro-worker.js',
-  '/Focus-Clock/icons/pause.png',
-  '/Focus-Clock/icons/play.png',
-  '/Focus-Clock/icons/stop.png',
-  '/', 
-  'index.html',
-  'manifest.json',
+  './', // Represents /Focus-Clock/
+  './index.html',
+  './fina.html',
+  './manifest.json',
+  './pomodoro-worker.js',
+  './icons/pause.png', // Ensure these paths are correct
+  './icons/play.png',
+  './icons/stop.png',
+  OFFLINE_URL, // Add the offline page to cache
   'https://placehold.co/192x192/0a0a0a/e0e0e0?text=Flow+192',
   'https://placehold.co/512x512/0a0a0a/e0e0e0?text=Flow+512',
 ];
 
-// --- Minimal lifecycle to ensure control ---
+// --- Service Worker Lifecycle Events ---
+
+// Install event: Pre-cache essential assets and skip waiting
 self.addEventListener('install', (event) => {
-    self.skipWaiting();
+    console.log('[Service Worker] Installing...');
+    self.skipWaiting(); // Force the waiting service worker to become the active service worker immediately
+
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then(cache => {
-                console.log('Service Worker: Caching essential app shell assets');
+                console.log('[Service Worker] Caching essential app shell assets:', urlsToCache);
+                // Ensure all cache operations are part of the waitUntil promise
                 return cache.addAll(urlsToCache);
             })
             .catch(error => {
-                console.error('Service Worker: Failed to cache during install:', error);
+                console.error('[Service Worker] Failed to cache during install:', error);
             })
     );
 });
 
+// Activate event: Clean up old caches and take control of existing clients
 self.addEventListener('activate', (event) => {
+    console.log('[Service Worker] Activating...');
     event.waitUntil(
         caches.keys().then(cacheNames => {
             return Promise.all(
-                cacheNames.map(cacheName => {
-                    if (cacheName !== CACHE_NAME) {
-                        console.log('Service Worker: Deleting old cache:', cacheName);
-                        return caches.delete(cacheName);
-                    }
-                    return null; // Return null for the current cache
-                }).filter(Boolean) // Filter out null values
+                cacheNames
+                    .filter(cacheName => cacheName !== CACHE_NAME) // Filter out the current cache
+                    .map(cacheName => {
+                        console.log('[Service Worker] Deleting old cache:', cacheName);
+                        return caches.delete(cacheName); // Delete old caches
+                    })
             );
-        }).then(() => self.clients.claim())
+        }).then(() => self.clients.claim()) // Take control of all clients immediately
     );
 });
 
-// --- Fetch event handler for caching and offline support ---
+// Fetch event handler: Cache-first, then Network, with offline fallback
 self.addEventListener('fetch', (event) => {
-    // Only cache GET requests
+    // Only handle GET requests
     if (event.request.method !== 'GET') {
         return;
     }
 
     event.respondWith(
         caches.match(event.request).then(cachedResponse => {
-            // If a response is found in cache, return it
+            // If a response is found in cache, return it immediately
             if (cachedResponse) {
                 return cachedResponse;
             }
 
             // Otherwise, fetch from the network
             return fetch(event.request).then(networkResponse => {
-                // Check if we received a valid response
+                // Check if we received a valid response to cache
                 if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
-                    return networkResponse;
+                    return networkResponse; // Don't cache invalid responses
                 }
 
-                // IMPORTANT: Clone the response. A response is a stream
-                // and can only be consumed once. We're consuming it once
-                // to cache it, and once to return it.
+                // IMPORTANT: Clone the response. A response is a stream and can only be consumed once.
+                // We're consuming it once to cache it, and once to return it.
                 const responseToCache = networkResponse.clone();
 
                 caches.open(CACHE_NAME).then(cache => {
-                    cache.put(event.request, responseToCache);
+                    cache.put(event.request, responseToCache); // Add response to cache
                 });
 
                 return networkResponse;
             }).catch(error => {
-                // This catch is for network errors, e.g., offline
-                console.error('Service Worker: Fetch failed:', event.request.url, error);
-                // You could serve an offline page here if desired
-                // return caches.match('/offline.html');
-                return new Response('<h1>You are offline!</h1>', {
-                    headers: { 'Content-Type': 'text/html' }
-                });
+                // This catch block handles network errors (e.g., when offline)
+                console.error('[Service Worker] Fetch failed:', event.request.url, error);
+                // Serve the pre-cached offline page as a fallback
+                return caches.match(OFFLINE_URL);
             });
         })
     );
 });
 
 
-// --- Original logic below ---
+// --- Original logic below (with refinements for timer and notifications) ---
 // Service Worker for FocusFlow
-// Version 1.0.0
 
 let timerInterval;
 let timerEndTime;
+let timeRemainingOnPause = 0; // NEW: Store remaining time when paused for precise resume
 let currentPhase; // 'Work', 'Short Break', 'Long Break'
 let notificationTag = 'pomodoro-timer'; // A tag for notifications to group them
 
@@ -110,7 +113,7 @@ self.addEventListener('message', (event) => {
 
     switch (type) {
         case 'INIT':
-            // Establish communication port
+            // Establish communication port with the client
             self.clientPort = event.ports[0];
             self.clientPort.postMessage({ type: 'SW_READY' });
             break;
@@ -133,8 +136,7 @@ self.addEventListener('message', (event) => {
             cancelAlarm(payload.timerId);
             break;
         case 'UPDATE_SETTINGS':
-            // This might be used to update pomodoro settings if they change mid-session
-            // For now, we'll assume settings are passed with 'START'
+            // Can be used to update pomodoro settings if they change mid-session
             break;
         case 'GET_STATUS':
             sendStatusToClient();
@@ -143,11 +145,12 @@ self.addEventListener('message', (event) => {
 });
 
 function startTimer(durationSeconds, phase, title) {
-    stopTimer(); // Clear any existing timer
+    stopTimer(); // Clear any existing timer before starting a new one
     currentPhase = phase;
     timerEndTime = Date.now() + durationSeconds * 1000;
+    timeRemainingOnPause = 0; // Reset on new start
 
-    // Send initial tick immediately
+    // Send initial tick immediately to update the UI
     sendTick();
 
     timerInterval = setInterval(() => {
@@ -155,13 +158,12 @@ function startTimer(durationSeconds, phase, title) {
         if (Date.now() >= timerEndTime) {
             clearInterval(timerInterval);
             timerInterval = null;
-            // Changed to also include newState and oldState for consistency with handlePomodoroPhaseEnd
-            // This ensures the main app knows what the next phase should be.
+            // Notify the main app that the phase has ended
             self.clientPort.postMessage({
                 type: 'phase_ended',
-                phase: currentPhase, // Old state
-                newState: getNextPhase(currentPhase), // New state
-                oldState: currentPhase // Explicitly pass oldState
+                phase: currentPhase,
+                newState: getNextPhase(currentPhase),
+                oldState: currentPhase
             });
         }
     }, 1000); // Update every second
@@ -174,7 +176,8 @@ function stopTimer() {
     }
     timerEndTime = 0;
     currentPhase = null;
-    // Clear any pending notifications
+    timeRemainingOnPause = 0; // Reset remaining time on stop
+    // Clear any pending notifications associated with this timer
     self.registration.getNotifications({ tag: notificationTag }).then(notifications => {
         notifications.forEach(notification => notification.close());
     });
@@ -184,17 +187,21 @@ function pauseTimer() {
     if (timerInterval) {
         clearInterval(timerInterval);
         timerInterval = null;
-        // Store remaining time if needed for resume, but for now, just stop the tick
+        // Store the exact remaining time when paused
+        timeRemainingOnPause = timerEndTime - Date.now();
+        console.log(`[Service Worker] Paused. Remaining: ${Math.ceil(timeRemainingOnPause / 1000)}s`);
+        sendStatusToClient(); // Update client with paused status
     }
 }
 
 function resumeTimer() {
-    // This is a simplified resume. A real implementation would need to store
-    // the remaining time when paused and restart from there.
-    // For now, it just restarts the tick from current time, assuming the main app
-    // will re-send the correct duration if needed.
-    if (timerEndTime > Date.now()) {
-        startTimer((timerEndTime - Date.now()) / 1000, currentPhase, 'Resumed');
+    if (timeRemainingOnPause > 0) {
+        // Restart the timer using the precisely stored remaining time
+        console.log(`[Service Worker] Resuming with ${Math.ceil(timeRemainingOnPause / 1000)}s remaining.`);
+        startTimer(Math.ceil(timeRemainingOnPause / 1000), currentPhase, 'Resumed');
+        timeRemainingOnPause = 0; // Reset after resuming
+    } else {
+        console.warn('[Service Worker] Attempted to resume but no time was paused.');
     }
 }
 
@@ -209,10 +216,17 @@ function sendTick() {
 
 function sendStatusToClient() {
     if (self.clientPort) {
-        const remainingTime = timerEndTime > 0 ? Math.max(0, Math.floor((timerEndTime - Date.now()) / 1000)) : 0;
+        let remainingTime = 0;
+        if (timerInterval) { // If running
+            remainingTime = timerEndTime > 0 ? Math.max(0, Math.floor((timerEndTime - Date.now()) / 1000)) : 0;
+        } else if (timeRemainingOnPause > 0) { // If paused
+            remainingTime = Math.max(0, Math.floor(timeRemainingOnPause / 1000));
+        }
+
         self.clientPort.postMessage({
             type: 'STATUS',
             isRunning: !!timerInterval,
+            isPaused: !!(!timerInterval && timeRemainingOnPause > 0), // NEW: Add isPaused status
             remainingTime: remainingTime,
             currentPhase: currentPhase
         });
@@ -225,11 +239,12 @@ function scheduleNotification(delay, title, options) {
     options.tag = notificationTag;
     options.renotify = true; // Ensures new notification if one with same tag exists
 
-    // Actions for notification buttons
+    // Actions for notification buttons - ensure icons are accessible
+    // These paths are relative to the Service Worker's scope
     options.actions = [
-        { action: 'pause', title: 'Pause', icon: '/icons/pause.png' }, // Replace with actual icon paths
-        { action: 'resume', title: 'Resume', icon: '/icons/play.png' },
-        { action: 'stop', title: 'Stop', icon: '/icons/stop.png' }
+        { action: 'pause', title: 'Pause', icon: './icons/pause.png' },
+        { action: 'resume', title: 'Resume', icon: './icons/play.png' },
+        { action: 'stop', title: 'Stop', icon: './icons/stop.png' }
     ];
 
     // Clear any existing notifications with the same tag before scheduling a new one
@@ -237,6 +252,7 @@ function scheduleNotification(delay, title, options) {
         notifications.forEach(notification => notification.close());
     });
 
+    // Schedule the notification to appear after 'delay' milliseconds
     setTimeout(() => {
         self.registration.showNotification(title, options);
     }, delay);
@@ -248,18 +264,19 @@ function cancelAlarm(timerId) {
             notifications.forEach(notification => notification.close());
         });
     }
-    // Add logic for other timerIds if needed
+    // Add logic for other timerIds if needed in the future
 }
 
 // Notification click handler
 self.addEventListener('notificationclick', (event) => {
-    event.notification.close(); // Close the notification
+    event.notification.close(); // Close the notification after click
 
     const action = event.action; // Get the action clicked (e.g., 'pause', 'resume', 'stop')
 
-    // Send a message back to the client (main page)
+    // Find all window clients (tabs/windows) that this Service Worker controls
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
         clients.forEach(client => {
+            // If the client is visible, send the message directly
             if (client.visibilityState === 'visible') {
                 client.postMessage({ type: 'notification_action', action: action });
             } else {
@@ -272,13 +289,11 @@ self.addEventListener('notificationclick', (event) => {
     });
 });
 
-// Helper function to determine the next phase for consistency with the main app
+// Helper function to determine the next phase (for consistency with the main app)
 function getNextPhase(currentPhase) {
-    // This simplified logic assumes a basic work -> short_break -> work -> long_break cycle.
-    // In a full application, this would need to consider the current pomodoro cycle count.
+    // This simplified logic assumes a basic cycle.
+    // You might expand this with a `pomodoroCycleCount` for alternating short/long breaks.
     if (currentPhase === 'Work') {
-        // For simplicity, always go to short break after work.
-        // A more complex logic would alternate short and long breaks.
         return 'short_break';
     } else if (currentPhase === 'short_break') {
         return 'Work';
