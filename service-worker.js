@@ -7,17 +7,17 @@ const OFFLINE_URL = './offline.html'; // Path to your dedicated offline page
 // IMPORTANT: These paths should be relative to the root of the Service Worker's scope.
 // If your service-worker.js is at /Focus-Clock/service-worker.js, then './' refers to /Focus-Clock/
 const urlsToCache = [
-  './', // Represents /Focus-Clock/
-  './index.html',
-  './fina.html',
-  './manifest.json',
-  './pomodoro-worker.js',
-  './icons/pause.png', // Ensure these paths are correct
-  './icons/play.png',
-  './icons/stop.png',
-  OFFLINE_URL, // Add the offline page to cache
-  'https://placehold.co/192x192/0a0a0a/e0e0e0?text=Flow+192',
-  'https://placehold.co/512x512/0a0a0a/e0e0e0?text=Flow+512',
+    './', // Represents /Focus-Clock/
+    './index.html',
+    './fina.html',
+    './manifest.json',
+    './pomodoro-worker.js',
+    './icons/pause.png', // Ensure these paths are correct
+    './icons/play.png',
+    './icons/stop.png',
+    OFFLINE_URL, // Add the offline page to cache
+    'https://placehold.co/192x192/0a0a0a/e0e0e0?text=Flow+192',
+    'https://placehold.co/512x512/0a0a0a/e0e0e0?text=Flow+512',
 ];
 
 // --- Service Worker Lifecycle Events ---
@@ -25,7 +25,8 @@ const urlsToCache = [
 // Install event: Pre-cache essential assets and skip waiting
 self.addEventListener('install', (event) => {
     console.log('[Service Worker] Installing...');
-    self.skipWaiting(); // Force the waiting service worker to become the active service worker immediately
+    // Force the waiting service worker to become the active service worker immediately
+    self.skipWaiting(); 
 
     event.waitUntil(
         caches.open(CACHE_NAME)
@@ -103,7 +104,7 @@ self.addEventListener('fetch', (event) => {
 
 let timerInterval;
 let timerEndTime;
-let timeRemainingOnPause = 0; // NEW: Store remaining time when paused for precise resume
+let timeRemainingOnPause = 0; // Stores remaining time when paused for precise resume
 let currentPhase; // 'Work', 'Short Break', 'Long Break'
 let notificationTag = 'pomodoro-timer'; // A tag for notifications to group them
 
@@ -131,7 +132,7 @@ self.addEventListener('message', (event) => {
             break;
         case 'SCHEDULE_NOTIFICATION':
             // Pass the entire payload, which contains delay, title, options, and transitionMessage
-            scheduleNotification(payload); // <-- UPDATED LINE: pass whole payload
+            scheduleNotification(payload);
             break;
         case 'CANCEL_ALARM':
             cancelAlarm(payload.timerId);
@@ -161,15 +162,17 @@ function startTimer(durationSeconds, phase, title) {
             timerInterval = null;
             // Notify the main app that the phase has ended
             // NOTE: This 'phase_ended' message is distinct from the 'TIMER_ENDED'
-            //      sent via the notification schedule. This is for real-time
-            //      UI updates if the tab is active. The notification path
-            //      handles it when the tab might be in the background.
-            self.clientPort.postMessage({
-                type: 'phase_ended',
-                phase: currentPhase,
-                newState: getNextPhase(currentPhase),
-                oldState: currentPhase
-            });
+            //       sent via the notification schedule. This is for real-time
+            //       UI updates if the tab is active. The notification path
+            //       handles it when the tab might be in the background.
+            if (self.clientPort) { // Ensure clientPort exists before posting
+                self.clientPort.postMessage({
+                    type: 'phase_ended',
+                    phase: currentPhase,
+                    newState: getNextPhase(currentPhase),
+                    oldState: currentPhase
+                });
+            }
         }
     }, 1000); // Update every second
 }
@@ -231,7 +234,7 @@ function sendStatusToClient() {
         self.clientPort.postMessage({
             type: 'STATUS',
             isRunning: !!timerInterval,
-            isPaused: !!(!timerInterval && timeRemainingOnPause > 0), // NEW: Add isPaused status
+            isPaused: !!(!timerInterval && timeRemainingOnPause > 0),
             remainingTime: remainingTime,
             currentPhase: currentPhase
         });
@@ -239,8 +242,8 @@ function sendStatusToClient() {
 }
 
 // --- Notification Scheduling ---
-function scheduleNotification(payload) { // <--- UPDATED FUNCTION SIGNATURE: accepts payload
-    const { delay, title, options, transitionMessage } = payload; // Destructure payload to get all properties
+function scheduleNotification(payload) {
+    const { delay, title, options, transitionMessage } = payload;
 
     // Ensure the tag is consistent for managing notifications
     options.tag = notificationTag;
@@ -268,7 +271,9 @@ function scheduleNotification(payload) { // <--- UPDATED FUNCTION SIGNATURE: acc
                     clients.forEach(client => {
                         // Find the client that sent the initial message, or all clients if needed.
                         // For simplicity, we'll post to all controlled windows.
-                        client.postMessage(transitionMessage); // <--- NEW CODE: Sends the correct transitionMessage back
+                        if (client.visibilityState === 'visible') { // Only send if the client is visible
+                            client.postMessage(transitionMessage);
+                        }
                     });
                 });
             })
