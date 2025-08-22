@@ -5217,13 +5217,13 @@ if (e.target.classList.contains('edit-subject-btn')) {
                     const swUrl = URL.createObjectURL(swBlob);
 
                     navigator.serviceWorker
-                    .register("/Focus-Clock/service-worker.js")
-                        .then(registration => {
-                            console.log('Service Worker registered successfully with scope:', registration.scope);
-                        })
-                        .catch(error => {
-                            console.error('Service Worker registration failed:', error);
-                        });
+    .register("/service-worker.js") // Changed path
+    .then(registration => {
+        console.log('Service Worker registered successfully with scope:', registration.scope);
+    })
+    .catch(error => {
+        console.error('Service Worker registration failed:', error);
+    });
                 } else {
                     console.warn('Service Worker not registered. This feature requires a secure context (HTTPS or localhost). The Pomodoro timer will be less reliable in the background.');
                     // Hide the Pomodoro button if SW is not available, as it won't work reliably.
