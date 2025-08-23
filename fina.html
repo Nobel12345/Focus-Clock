@@ -4631,24 +4631,28 @@ ael('edit-subject-form', 'submit', async (e) => {
             if (type === 'tick') {
                 sessionTimerDisplay.textContent = formatPomodoroTime(timeLeft);
             } else if (type === 'phase_ended') {
-                // This is our fallback for when the Service Worker isn't active.
-                // It manually triggers the phase end logic.
-                
-                // We only run this fallback if the SW is NOT available to prevent running the logic twice.
-                if (!navigator.serviceWorker.controller) {
-                    const oldState = pomodoroState;
-                    const currentCycle = Math.floor((currentUserData.pomodoroCycle || 0) / 2);
-                    let newState;
+                // Always handle phase end from the in-page worker when it fires
+                // This ensures transitions happen when the tab is active/visible
+                const oldState = pomodoroState;
+                // Calculate the next state based on the current Pomodoro cycle
+                const currentCycle = Math.floor((currentUserData.pomodoroCycle || 0) / 2); // Divide by 2 as each cycle has 2 phases (work + break)
+                let newState;
 
-                    if (oldState === 'work') {
-                        newState = ((currentCycle + 1) % pomodoroSettings.long_break_interval === 0) ? 'long_break' : 'short_break';
-                    } else { // It was a break
-                        newState = 'work';
-                    }
-                    
-                    // Call the same handler that the SW would call.
-                    handlePomodoroPhaseEnd({ newState, oldState });
+                if (oldState === 'work') {
+                    // Check if it's time for a long break based on the interval
+                    newState = ((currentCycle + 1) % pomodoroSettings.long_break_interval === 0) ? 'long_break' : 'short_break';
+                } else { // It was a break (short_break or long_break)
+                    newState = 'work';
                 }
+                
+                // Trigger the main application's phase end logic
+                handlePomodoroPhaseEnd({ newState, oldState });
+                
+                // Important Note: The Service Worker will still schedule a notification.
+                // This is desired for background scenarios where the in-page worker might suspend.
+                // The main thread should also be responsible for cancelling any *old* SW alarms
+                // and scheduling *new* ones for the *next* phase, which your `startNextPomodoroPhase`
+                // function already handles.
             }
         };
        
