@@ -1,3 +1,4 @@
+
 // HYBRID Service Worker for FocusFlow
 // Version 1.0.0
 
@@ -157,23 +158,7 @@ function startTimer(durationSeconds, phase, title) {
 
     timerInterval = setInterval(() => {
         sendTick();
-        if (Date.now() >= timerEndTime) {
-            clearInterval(timerInterval);
-            timerInterval = null;
-            // Notify the main app that the phase has ended
-            // NOTE: This 'phase_ended' message is distinct from the 'TIMER_ENDED'
-            //       sent via the notification schedule. This is for real-time
-            //       UI updates if the tab is active. The notification path
-            //       handles it when the tab might be in the background.
-            if (self.clientPort) { // Ensure clientPort exists before posting
-                self.clientPort.postMessage({
-                    type: 'phase_ended',
-                    phase: currentPhase,
-                    newState: getNextPhase(currentPhase),
-                    oldState: currentPhase
-                });
-            }
-        }
+        
     }, 1000); // Update every second
 }
 
