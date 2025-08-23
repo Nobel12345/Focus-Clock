@@ -1,5 +1,5 @@
 // HYBRID Service Worker for FocusFlow
-// Version 1.0.1 (updated for timer reliability)
+// Version 1.0.2 (updated for timer reliability and notification options fix)
 
 const CACHE_NAME = 'focusflow-cache-v2'; // Increment cache version for updates
 const OFFLINE_URL = './offline.html'; // Path to your dedicated offline page
@@ -107,28 +107,31 @@ self.addEventListener('message', (event) => {
     const { type, payload } = event.data;
 
     switch (type) {
-        case 'SCHEDULE_ALARM': // Changed from SCHEDULE_NOTIFICATION for clarity
+        case 'SCHEDULE_ALARM':
             scheduleNotification(payload);
             break;
         case 'CANCEL_ALARM':
             cancelAlarm(payload.timerId);
             break;
-        // All other timer-related messages (START, STOP, PAUSE, RESUME, GET_STATUS)
-        // are now handled by the in-page pomodoroWorker, not the Service Worker.
     }
 });
 
 // --- Notification Scheduling ---
 function scheduleNotification(payload) {
-    const { delay, title, options, transitionMessage } = payload;
+    // payload here is { delay: ..., timerId: ..., transitionMessage: { type, newState, oldState, title, options } }
 
-    // Ensure the tag is consistent for managing notifications
-    options.tag = notificationTag;
-    options.renotify = true; // Ensures new notification if one with same tag exists
+    const { delay, transitionMessage } = payload; // Extract delay and the transitionMessage object
+    const { title, options } = transitionMessage; // Now extract title and options from transitionMessage
+
+    // Ensure options is an object, even if empty, before trying to set properties
+    const notificationOptions = options || {};
+
+    notificationOptions.tag = notificationTag; // This should now work
+    notificationOptions.renotify = true; // Ensures new notification if one with same tag exists
 
     // Actions for notification buttons - ensure icons are accessible
     // These paths are relative to the Service Worker's scope
-    options.actions = [
+    notificationOptions.actions = [
         { action: 'pause', title: 'Pause', icon: './icons/pause.png' },
         { action: 'resume', title: 'Resume', icon: './icons/play.png' },
         { action: 'stop', title: 'Stop', icon: './icons/stop.png' }
@@ -143,7 +146,7 @@ function scheduleNotification(payload) {
     // Note: setTimeout in Service Workers is not fully reliable for long background periods.
     // However, it is the intended mechanism in your current design for local alarms.
     setTimeout(() => {
-        self.registration.showNotification(title, options)
+        self.registration.showNotification(title, notificationOptions) // Use notificationOptions here
             .then(() => {
                 console.log(`[Service Worker]: Notification "${title}" shown.`);
                 // Send message to all visible clients, or attempt to focus if none are visible
