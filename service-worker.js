@@ -1,5 +1,5 @@
 // HYBRID Service Worker for FocusFlow
-// Version 1.0.4 (updated for web push notifications with auto-start logic)
+// Version 1.0.5 (updated for reliable notification-driven auto-start)
 
 const CACHE_NAME = 'focusflow-cache-v3';
 const OFFLINE_URL = './offline.html';
@@ -90,73 +90,67 @@ self.addEventListener('push', (event) => {
 
     const pushData = event.data ? event.data.json() : {};
     const title = pushData.title || 'FocusFlow Notification';
-    const body = pushData.body || 'Your session has ended.';
+    const body = pushData.body || 'Your session has ended. Tap to start the next one!';
     const icon = pushData.icon || './icons/play.png';
     const tag = 'pomodoro-timer';
 
-    // Check if the push payload contains an instruction to auto-start a new session
-    const shouldAutoStart = pushData.newState === 'focus' || pushData.newState === 'break';
-    const url = pushData.url || '/';
+    const options = {
+        body: body,
+        icon: icon,
+        badge: pushData.badge || './icons/play.png',
+        tag: tag,
+        renotify: true,
+        actions: [
+            { action: 'start-next', title: 'Start Next Session', icon: './icons/play.png' },
+            { action: 'stop', title: 'Stop Timer', icon: './icons/stop.png' }
+        ],
+        // Crucial: Store the newState in the data field for the click handler
+        data: {
+            url: pushData.url || '/',
+            newState: pushData.newState,
+        }
+    };
 
+    // The push event handler now only focuses on showing the notification
     event.waitUntil(
-        self.clients.matchAll({ type: 'window', includeUncontrolled: true })
-            .then(clients => {
-                let clientToFocus = clients.find(client => client.url.endsWith('index.html')) || clients[0];
-
-                // Auto-start logic: If a client is found and we should auto-start, send a message.
-                if (clientToFocus && shouldAutoStart) {
-                    console.log('[Service Worker] Found client, sending auto-start message.');
-                    clientToFocus.postMessage({ type: 'timer_auto_start', newState: pushData.newState });
-                    return self.registration.showNotification(title, { body, icon, tag });
-                } else if (shouldAutoStart) {
-                    // If no client is open, open a new window to trigger the app and message it
-                    console.log('[Service Worker] No client found, opening a new window to auto-start.');
-                    return self.clients.openWindow(url)
-                        .then(newClient => {
-                            if (newClient) {
-                                // Wait a moment for the page to load, then send the message
-                                setTimeout(() => {
-                                    newClient.postMessage({ type: 'timer_auto_start', newState: pushData.newState });
-                                }, 1000);
-                            }
-                            // Also show a notification to inform the user
-                            return self.registration.showNotification(title, { body, icon, tag });
-                        });
-                } else {
-                    // Default behavior: just show the notification
-                    const options = {
-                        body: body,
-                        icon: icon,
-                        badge: pushData.badge || './icons/play.png',
-                        tag: tag,
-                        renotify: true,
-                        actions: [
-                            { action: 'pause', title: 'Pause', icon: './icons/pause.png' },
-                            { action: 'resume', title: 'Resume', icon: './icons/play.png' },
-                            { action: 'stop', title: 'Stop', icon: './icons/stop.png' }
-                        ],
-                        data: { url, newState: pushData.newState }
-                    };
-                    return self.registration.showNotification(title, options);
-                }
+        self.registration.showNotification(title, options)
+            .then(() => {
+                console.log(`[Service Worker] Push notification "${title}" shown.`);
+            })
+            .catch((error) => {
+                console.error('[Service Worker] Error showing push notification:', error);
             })
     );
 });
 
+// Notification click handler (now handles auto-start)
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
 
     const action = event.action;
+    const notificationData = event.notification.data;
+    const newState = notificationData.newState;
 
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
-        let clientToFocus = clients.find(client => client.visibilityState === 'visible') || clients[0];
+    event.waitUntil(
+        self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
+            let clientToFocus = clients.find(client => client.url.endsWith('index.html')) || clients[0];
 
-        if (clientToFocus) {
-            clientToFocus.focus().then(() => {
-                clientToFocus.postMessage({ type: 'notification_action', action: action });
-            });
-        } else {
-            console.warn('[Service Worker] No client found to handle notification action.');
-        }
-    });
+            if (clientToFocus) {
+                clientToFocus.focus().then(() => {
+                    // Send the specific action and the newState from the notification
+                    clientToFocus.postMessage({ type: 'notification_action', action: action, newState: newState });
+                });
+            } else {
+                // Open the app and pass the new state to be handled once loaded
+                self.clients.openWindow(notificationData.url)
+                    .then(newClient => {
+                        if (newClient) {
+                            setTimeout(() => {
+                                newClient.postMessage({ type: 'notification_action', action: action, newState: newState });
+                            }, 1000);
+                        }
+                    });
+            }
+        })
+    );
 });
