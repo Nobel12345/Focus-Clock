@@ -1,23 +1,23 @@
 // HYBRID Service Worker for FocusFlow
-// Version 1.0.2 (updated for timer reliability and notification options fix)
+// Version 1.0.3 (updated for web push notifications)
 
-const CACHE_NAME = 'focusflow-cache-v2'; // Increment cache version for updates
+const CACHE_NAME = 'focusflow-cache-v3'; // Increment cache version for updates
 const OFFLINE_URL = './offline.html'; // Path to your dedicated offline page
 
 // IMPORTANT: These paths should be relative to the root of the Service Worker's scope.
-// If your service-worker.js is at /Focus-Clock/service-worker.js, then './' refers to /Focus-Clock/
 const urlsToCache = [
     './', // Represents /Focus-Clock/
     './index.html',
     './fina.html',
     './manifest.json',
-    './pomodoro-worker.js', // This worker is for the main app, not the SW
+    './pomodoro-worker.js',
     './icons/pause.png', // Ensure these paths are correct
     './icons/play.png',
     './icons/stop.png',
     OFFLINE_URL, // Add the offline page to cache
     'https://placehold.co/192x192/0a0a0a/e0e0e0?text=Flow+192',
     'https://placehold.co/512x512/0a0a0a/e0e0e0?text=Flow+512',
+    // Add other essential assets here
 ];
 
 // --- Service Worker Lifecycle Events ---
@@ -25,14 +25,12 @@ const urlsToCache = [
 // Install event: Pre-cache essential assets and skip waiting
 self.addEventListener('install', (event) => {
     console.log('[Service Worker] Installing...');
-    // Force the waiting service worker to become the active service worker immediately
     self.skipWaiting(); 
 
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then(cache => {
                 console.log('[Service Worker] Caching essential app shell assets:', urlsToCache);
-                // Ensure all cache operations are part of the waitUntil promise
                 return cache.addAll(urlsToCache);
             })
             .catch(error => {
@@ -48,142 +46,95 @@ self.addEventListener('activate', (event) => {
         caches.keys().then(cacheNames => {
             return Promise.all(
                 cacheNames
-                    .filter(cacheName => cacheName !== CACHE_NAME) // Filter out the current cache
+                    .filter(cacheName => cacheName !== CACHE_NAME)
                     .map(cacheName => {
                         console.log('[Service Worker] Deleting old cache:', cacheName);
-                        return caches.delete(cacheName); // Delete old caches
+                        return caches.delete(cacheName);
                     })
             );
-        }).then(() => self.clients.claim()) // Take control of all clients immediately
+        }).then(() => self.clients.claim())
     );
 });
 
 // Fetch event handler: Cache-first, then Network, with offline fallback
 self.addEventListener('fetch', (event) => {
-    // Only handle GET requests
     if (event.request.method !== 'GET') {
         return;
     }
 
     event.respondWith(
         caches.match(event.request).then(cachedResponse => {
-            // If a response is found in cache, return it immediately
             if (cachedResponse) {
                 return cachedResponse;
             }
 
-            // Otherwise, fetch from the network
             return fetch(event.request).then(networkResponse => {
-                // Check if we received a valid response to cache
                 if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
-                    return networkResponse; // Don't cache invalid responses
+                    return networkResponse;
                 }
 
-                // IMPORTANT: Clone the response. A response is a stream and can only be consumed once.
-                // We're consuming it once to cache it, and once to return it.
                 const responseToCache = networkResponse.clone();
 
                 caches.open(CACHE_NAME).then(cache => {
-                    cache.put(event.request, responseToCache); // Add response to cache
+                    cache.put(event.request, responseToCache);
                 });
 
                 return networkResponse;
             }).catch(error => {
-                // This catch block handles network errors (e.g., when offline)
                 console.error('[Service Worker] Fetch failed:', event.request.url, error);
-                // Serve the pre-cached offline page as a fallback
                 return caches.match(OFFLINE_URL);
             });
         })
     );
 });
 
-// --- Service Worker Timer/Notification Logic ---
+// --- Web Push Notification Logic ---
 
-let notificationTag = 'pomodoro-timer'; // A tag for notifications to group them
+// Listen for a 'push' event from the push service
+self.addEventListener('push', (event) => {
+    console.log('[Service Worker] Push received.');
 
-// Listen for messages from the main page
-self.addEventListener('message', (event) => {
-    const { type, payload } = event.data;
+    // The data payload from your backend server
+    const pushData = event.data ? event.data.json() : {};
 
-    switch (type) {
-        case 'SCHEDULE_ALARM':
-            scheduleNotification(payload);
-            break;
-        case 'CANCEL_ALARM':
-            cancelAlarm(payload.timerId);
-            break;
-    }
+    const title = pushData.title || 'FocusFlow Notification';
+    const options = {
+        body: pushData.body || 'Your session has ended.',
+        icon: pushData.icon || './icons/play.png',
+        badge: pushData.badge || './icons/play.png',
+        tag: 'pomodoro-timer', // Consistent tag to group notifications
+        renotify: true, // Show a new notification even if one with this tag exists
+        actions: [
+            { action: 'pause', title: 'Pause', icon: './icons/pause.png' },
+            { action: 'resume', title: 'Resume', icon: './icons/play.png' },
+            { action: 'stop', title: 'Stop', icon: './icons/stop.png' }
+        ],
+        // The data field can be used to pass information back to the client
+        data: {
+            url: pushData.url || '/',
+            newState: pushData.newState,
+            oldState: pushData.oldState,
+        }
+    };
+
+    // This ensures the Service Worker stays active until the notification is shown
+    event.waitUntil(
+        self.registration.showNotification(title, options)
+            .then(() => {
+                console.log(`[Service Worker] Push notification "${title}" shown.`);
+            })
+            .catch((error) => {
+                console.error('[Service Worker] Error showing push notification:', error);
+            })
+    );
 });
 
-// --- Notification Scheduling ---
-function scheduleNotification(payload) {
-    // payload here is { delay: ..., timerId: ..., transitionMessage: { type, newState, oldState, title, options } }
-
-    const { delay, transitionMessage } = payload; // Extract delay and the transitionMessage object
-    const { title, options } = transitionMessage; // Now extract title and options from transitionMessage
-
-    // Ensure options is an object, even if empty, before trying to set properties
-    const notificationOptions = options || {};
-
-    notificationOptions.tag = notificationTag; // This should now work
-    notificationOptions.renotify = true; // Ensures new notification if one with same tag exists
-
-    // Actions for notification buttons - ensure icons are accessible
-    // These paths are relative to the Service Worker's scope
-    notificationOptions.actions = [
-        { action: 'pause', title: 'Pause', icon: './icons/pause.png' },
-        { action: 'resume', title: 'Resume', icon: './icons/play.png' },
-        { action: 'stop', title: 'Stop', icon: './icons/stop.png' }
-    ];
-
-    // Clear any existing notifications with the same tag before scheduling a new one
-    self.registration.getNotifications({ tag: notificationTag }).then(notifications => {
-        notifications.forEach(notification => notification.close());
-    });
-
-    // Schedule the notification to appear after 'delay' milliseconds
-    // Note: setTimeout in Service Workers is not fully reliable for long background periods.
-    // However, it is the intended mechanism in your current design for local alarms.
-    setTimeout(() => {
-        self.registration.showNotification(title, notificationOptions) // Use notificationOptions here
-            .then(() => {
-                console.log(`[Service Worker]: Notification "${title}" shown.`);
-                // Send message to all visible clients, or attempt to focus if none are visible
-                self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
-                    const visibleClients = clients.filter(client => client.visibilityState === 'visible');
-                    if (visibleClients.length > 0) {
-                        visibleClients.forEach(client => client.postMessage(transitionMessage));
-                    } else if (clients.length > 0) { // If no clients are visible, but some exist, try to focus one
-                        clients[0].focus().then(client => client.postMessage(transitionMessage));
-                    } else { // No clients at all, just log
-                        console.log('[Service Worker] No clients to send TIMER_ENDED message to.');
-                    }
-                });
-            })
-            .catch(error => {
-                console.error('[Service Worker] Error showing notification:', error);
-            });
-
-    }, delay);
-}
-
-function cancelAlarm(timerId) {
-    if (timerId === 'pomodoro-transition') {
-        self.registration.getNotifications({ tag: notificationTag }).then(notifications => {
-            notifications.forEach(notification => notification.close());
-        });
-    }
-    // Add logic for other timerIds if needed in the future
-}
-
-// Notification click handler
+// Notification click handler (this logic remains correct)
 self.addEventListener('notificationclick', (event) => {
-    event.notification.close(); // Close the notification after click
+    event.notification.close();
 
-    const action = event.action; // Get the action clicked (e.g., 'pause', 'resume', 'stop')
+    const action = event.action;
 
-    // Find all window clients (tabs/windows) that this Service Worker controls
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
         let clientToFocus = clients.find(client => client.visibilityState === 'visible') || clients[0];
 
