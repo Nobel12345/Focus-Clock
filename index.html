@@ -4710,12 +4710,24 @@ ael('edit-subject-form', 'submit', async (e) => {
         // --- END OF NEW FUNCTION ---
 
         // --- NEW: Service Worker Message Listener (The Reliable Alarm) ---
-        navigator.serviceWorker.addEventListener('message', async (event) => {
-            if (event.data && event.data.type === 'TIMER_ENDED') {
-                // This now calls our new reusable function
-                handlePomodoroPhaseEnd(event.data);
-            }
-        });
+        navigator.serviceWorker.addEventListener('message', (event) => {
+    // Check if the message is from a notification action
+    if (event.data && event.data.type === 'notification_action') {
+        const action = event.data.action;
+        const newState = event.data.newState;
+
+        if (action === 'start-next') {
+            console.log(`Notification action: Start new session! New state: ${newState}`);
+            // Call your function to start the next session
+            // For example: startTimer(newState);
+            // You can also add logic to play a sound or update the UI
+        } else if (action === 'stop') {
+            console.log("Notification action: Stop timer.");
+            // Call your function to stop the timer
+            // For example: stopTimer();
+        }
+    }
+});
 
         // --- Drag and Drop Functionality for Subjects ---
         const subjectListContainer = document.getElementById('subject-selection-list');
@@ -5261,4 +5273,3 @@ if (e.target.classList.contains('edit-subject-btn')) {
     </script>
 </body>
 </html>
-
