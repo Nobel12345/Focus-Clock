@@ -4710,21 +4710,24 @@ ael('edit-subject-form', 'submit', async (e) => {
         // --- END OF NEW FUNCTION ---
 
         // --- NEW: Service Worker Message Listener (The Reliable Alarm) ---
-        navigator.serviceWorker.addEventListener('message', (event) => {
-    // Check if the message is from a notification action
-    if (event.data && event.data.type === 'notification_action') {
-        const action = event.data.action;
-        const newState = event.data.newState;
-
-        if (action === 'start-next') {
-            console.log(`Notification action: Start new session! New state: ${newState}`);
-            // Call your function to start the next session
-            // For example: startTimer(newState);
-            // You can also add logic to play a sound or update the UI
-        } else if (action === 'stop') {
-            console.log("Notification action: Stop timer.");
-            // Call your function to stop the timer
-            // For example: stopTimer();
+        navigator.serviceWorker.addEventListener('message', async (event) => {
+    if (event.data) {
+        if (event.data.type === 'TIMER_ENDED') {
+            handlePomodoroPhaseEnd(event.data);
+        } else if (event.data.type === 'NOTIFICATION_ACTION_TRIGGERED') {
+            // Handle the action (e.g., 'start-next' or 'stop')
+            // and then potentially trigger handlePomodoroPhaseEnd if it's an auto-start
+            console.log('Notification action received:', event.data.action, event.data.newState, event.data.oldState);
+            if (event.data.action === 'start-next') {
+                // This is a user-initiated "autostart" from clicking the notification
+                playSound(pomodoroSounds.start, pomodoroSounds.volume); // Play start sound
+                startNextPomodoroPhase(event.data.newState);
+            } else if (event.data.action === 'stop') {
+                stopTimer(); // Or a specific stop logic for notification
+            } else {
+                // For a generic notification click (not an action button)
+                handlePomodoroPhaseEnd({ newState: event.data.newState, oldState: event.data.oldState });
+            }
         }
     }
 });
