@@ -1268,6 +1268,16 @@
 
 
     <script type="module">
+    // Firebase SDKS 
+    import { 
+    getMessaging, 
+    getToken, 
+    onMessage 
+} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-messaging.js";
+import { 
+    getFunctions, 
+    httpsCallable 
+} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-functions.js";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { 
             getAuth, 
@@ -1405,6 +1415,106 @@ const ACHIEVEMENTS = {
         let userSessions = []; 
         let isAudioUnlocked = false;
         let isAddingSubjectFromStartSession = false; // Flag to track modal origin
+        // --- ADD THESE NEW VARIABLES AND FUNCTIONS ---
+let fcmToken = null; // To store the FCM registration token
+
+// This creates a callable function reference to your Cloud Function
+const sendPomodoroNotification = httpsCallable(functions, 'sendPomodoroNotification');
+// ---------------------------------------------
+/**
+ * Initializes push notifications: requests permission, gets FCM token, and saves it to Firestore.
+ */
+async function initializePushNotifications() {
+    if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+        console.warn('This browser does not support notifications or service workers. Push notifications will not work.');
+        return;
+    }
+
+    try {
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+            console.log('Notification permission granted.');
+            // !!! IMPORTANT: Replace 'YOUR_VAPID_KEY_FROM_FIREBASE_CONSOLE' with your actual VAPID key !!!
+            // You can find this in Firebase Console -> Project settings -> Cloud Messaging -> Web configuration
+            const currentToken = await getToken(messaging, { vapidKey: 'BAoCHOb3rcxEak-258f017-UZ07Xb-ra_MFDedrhwvAOtZv1RuYiyasV3u5tbF0CBMVoBMmFCP03Btvp0nrsJXQ' });
+            if (currentToken) {
+                fcmToken = currentToken;
+                console.log('FCM Registration Token:', fcmToken);
+                // Save this token to Firestore under the current user's data
+                await saveFcmTokenToFirestore(fcmToken, currentUser.uid);
+            } else {
+                console.warn('No FCM registration token available. Request permission to generate one.');
+            }
+        } else {
+            console.warn('Notification permission denied. Push notifications will not be sent.');
+        }
+    } catch (error) {
+        console.error('Error getting FCM token or permission:', error);
+        showToast('Failed to enable push notifications.', 'error');
+    }
+}
+
+/**
+ * Saves the FCM registration token to Firestore for the current user.
+ * @param {string} token - The FCM registration token.
+ * @param {string} userId - The ID of the current user.
+ */
+async function saveFcmTokenToFirestore(token, userId) {
+    if (!userId) {
+        console.error('Cannot save FCM token: User ID is null.');
+        return;
+    }
+    try {
+        // Store token in a user-specific collection
+        const tokenRef = doc(db, `artifacts/${appId}/users/${userId}/fcmTokens`, token);
+        await setDoc(tokenRef, { token: token, userId: userId, timestamp: new Date() }, { merge: true });
+        console.log('FCM token saved to Firestore.');
+    } catch (error) {
+        console.error('Error saving FCM token to Firestore:', error);
+        showToast('Failed to save notification preferences.', 'error');
+    }
+}
+
+// Listen for incoming messages while the app is in the foreground
+onMessage(messaging, (payload) => {
+    console.log('Foreground Push Message received:', payload);
+    // If a foreground message signals a timer end, handle it.
+    // This is useful if the server sends a message that also impacts the UI immediately.
+    if (payload.data && payload.data.type === 'TIMER_ENDED') {
+        handlePomodoroPhaseEnd(payload.data);
+        showToast(payload.notification?.body || 'Timer ended!', 'info');
+    }
+    // You can handle other types of foreground messages here
+});
+
+/**
+ * Helper function to trigger the Cloud Function for sending Pomodoro notifications.
+ * This replaces your local `scheduleSWAlarm` for Pomodoro transitions.
+ * @param {object} messageData - Data to send to the Cloud Function, includes title, body, newState, oldState.
+ */
+async function triggerServerNotification(messageData) {
+    if (!currentUser || !currentUser.uid) {
+        console.error('User not authenticated, cannot send server notification.');
+        showToast('Please sign in to enable server notifications.', 'error');
+        return;
+    }
+    try {
+        // Call the Cloud Function
+        const result = await sendPomodoroNotification({
+            userId: currentUser.uid, // Required by your Cloud Function
+            appId: appId,            // Required by your Cloud Function to build Firestore path
+            title: messageData.title,
+            body: messageData.options.body, // Use 'options.body' as FCM notification body
+            newState: messageData.newState,
+            oldState: messageData.oldState,
+            // Any other data you want to send and retrieve in the notification click handler
+        });
+        console.log('Server notification triggered:', result.data);
+    } catch (error) {
+        console.error('Error triggering server notification:', error);
+        showToast('Failed to schedule notification.', 'error');
+    }
+}
 
         // Timer State
         // Add these lines
@@ -2233,6 +2343,9 @@ let pauseStartTime = 0;
                 auth = getAuth(app);
                 db = getFirestore(app);
 
+                messaging = getMessaging(app); // Initialize Firebase Messaging service
+        functions = getFunctions(app); // Initialize Firebase Functions service
+
                 onAuthStateChanged(auth, async (user) => {
                     if (user) {
                         currentUser = user;
@@ -2255,6 +2368,7 @@ let pauseStartTime = 0;
                             showPage('page-timer');
                             setupRealtimeListeners();
                             await loadDailyTotal();
+                            initializePushNotifications();
                         }
                     } else {
                         currentUser = null;
@@ -2397,17 +2511,12 @@ let pauseStartTime = 0;
                 pomodoroWorker.postMessage({ command: 'start', duration: workDurationSeconds });
                 
                 // Use the new reliable SW alarm
-                scheduleSWAlarm({
-                    delay: workDurationSeconds * 1000,
-                    timerId: 'pomodoro-transition',
-                    transitionMessage: { 
-                        type: 'TIMER_ENDED', 
-                        newState: 'short_break', 
-                        oldState: 'work',
-                        title: 'Focus complete!',
-                        options: { body: `Time for a short break.`, tag: 'pomodoro-transition' }
-                    }
-                });
+                await triggerServerNotification({
+        title: 'Focus complete!',
+        options: { body: `Time for a short break.`, tag: 'pomodoro-transition' }, // Options for the FCM notification
+        newState: 'short_break',
+        oldState: 'work',
+    });
 
                 pomodoroStatusDisplay.textContent = `Work (1/${pomodoroSettings.long_break_interval})`;
                 pomodoroStatusDisplay.style.color = '#3b82f6';
@@ -2442,9 +2551,6 @@ let pauseStartTime = 0;
                 if (pomodoroState === 'work' && elapsedSeconds > 0) {
                     await saveSession(activeSubject, elapsedSeconds, 'study');
                 }
-                
-                // Crucially, cancel the reliable alarm in the Service Worker
-                cancelSWAlarm('pomodoro-transition');
             }
             // If a normal timer was running, stop it and save the session
             else if (timerMode === 'normal' && timerInterval) {
@@ -2487,7 +2593,6 @@ let pauseStartTime = 0;
                 document.getElementById('resume-btn').classList.remove('hidden');
             } else if (timerMode === 'pomodoro' && pomodoroState !== 'idle') {
                 pomodoroWorker.postMessage({ command: 'pause' });
-                cancelSWAlarm('pomodoro-transition');
                 isPaused = true;
                 document.getElementById('pause-btn').classList.add('hidden');
                 document.getElementById('resume-btn').classList.remove('hidden');
@@ -2563,12 +2668,7 @@ if (remainingTimeSeconds > 0) {
             pomodoroStatusDisplay.textContent = statusText;
             pomodoroStatusDisplay.style.color = state.includes('break') ? '#f59e0b' : '#3b82f6';
 
-            // Set the next reliable alarm in the Service Worker
-            scheduleSWAlarm({
-                delay: durationSeconds * 1000,
-                timerId: 'pomodoro-transition',
-                transitionMessage: transitionMessage
-            });
+            await triggerServerNotification(transitionMessage);
 
             // Update cycle in Firestore only after a break is completed (meaning a work session is starting)
             if (state === 'work') {
@@ -4712,20 +4812,22 @@ ael('edit-subject-form', 'submit', async (e) => {
         // --- NEW: Service Worker Message Listener (The Reliable Alarm) ---
         navigator.serviceWorker.addEventListener('message', async (event) => {
     if (event.data) {
-        if (event.data.type === 'TIMER_ENDED') {
+        if (event.data.type === 'TIMER_ENDED') { // This now comes from local worker OR server push
             handlePomodoroPhaseEnd(event.data);
         } else if (event.data.type === 'NOTIFICATION_ACTION_TRIGGERED') {
-            // Handle the action (e.g., 'start-next' or 'stop')
-            // and then potentially trigger handlePomodoroPhaseEnd if it's an auto-start
+            // This message comes from service-worker.js when a user clicks an FCM notification
             console.log('Notification action received:', event.data.action, event.data.newState, event.data.oldState);
             if (event.data.action === 'start-next') {
-                // This is a user-initiated "autostart" from clicking the notification
-                playSound(pomodoroSounds.start, pomodoroSounds.volume); // Play start sound
+                // User explicitly clicked "Start Next Session" on the notification
+                playSound(pomodoroSounds.start, pomodoroSounds.volume);
                 startNextPomodoroPhase(event.data.newState);
             } else if (event.data.action === 'stop') {
-                stopTimer(); // Or a specific stop logic for notification
+                // User explicitly clicked "Stop Timer" on the notification
+                stopTimer();
+                showToast('Timer stopped via notification.', 'info');
             } else {
-                // For a generic notification click (not an action button)
+                // This handles a generic click on the notification body (not an action button)
+                // It will trigger the auto-start logic if enabled, or set up the manual start button.
                 handlePomodoroPhaseEnd({ newState: event.data.newState, oldState: event.data.oldState });
             }
         }
