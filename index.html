@@ -2874,25 +2874,21 @@ async function checkAndAwardAchievements(completedSessionDuration) {
                     totalTimeTodayInSeconds = data.totalTimeToday.seconds || 0;
                 } else {
                     totalTimeTodayInSeconds = 0;
-                    await updateDoc(userRef, {
-                        totalTimeToday: { date: todayStr, seconds: 0 }
-                    });
+                    // The update to Firestore for a new day's totalTimeToday will be handled by saveSession's transaction.
                 }
 
                 if (data.totalBreakTimeToday && data.totalBreakTimeToday.date === todayStr) {
                     totalBreakTimeTodayInSeconds = data.totalBreakTimeToday.seconds || 0;
                 } else {
                     totalBreakTimeTodayInSeconds = 0;
-                    await updateDoc(userRef, {
-                        totalBreakTimeToday: { date: todayStr, seconds: 0 }
-                    });
+                    // The update to Firestore for a new day's totalBreakTimeToday will be handled by saveSession's transaction.
                 }
 
             } else {
                 totalTimeTodayInSeconds = 0;
                 totalBreakTimeTodayInSeconds = 0;
             }
-            if(totalTimeDisplay && totalBreakTimeDisplay) {
+            if(totalTimeDisplay && totalBreakTimeDisplay) { // Should refer to the HTML element
                 updateTotalTimeDisplay();
             }
         }
