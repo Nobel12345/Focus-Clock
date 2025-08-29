@@ -1415,6 +1415,8 @@ const ACHIEVEMENTS = {
         let userSessions = []; 
         let isAudioUnlocked = false;
         let isAddingSubjectFromStartSession = false; // Flag to track modal origin
+        let fcmToken;
+        let sendPomodoroNotification;
 
 /**
  * Initializes push notifications: requests permission, gets FCM token, and saves it to Firestore.
@@ -2348,7 +2350,7 @@ let pauseStartTime = 0;
         });
 
         // --- MOVE THESE TWO LINES HERE ---
-        fcmToken = null; // Declare and initialize FCM token
+        
         sendPomodoroNotification = httpsCallable(functions, 'sendPomodoroNotification'); // Assign callable function
         // ---------------------------------
 
@@ -5382,6 +5384,7 @@ if (e.target.classList.contains('edit-subject-btn')) {
     </script>
 </body>
 </html>
+
 
 
 
