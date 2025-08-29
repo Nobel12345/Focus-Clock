@@ -1422,34 +1422,42 @@ const ACHIEVEMENTS = {
  * Initializes push notifications: requests permission, gets FCM token, and saves it to Firestore.
  */
 async function initializePushNotifications() {
-    if (!('Notification' in window) || !('serviceWorker' in navigator)) {
-        console.warn('This browser does not support notifications or service workers. Push notifications will not work.');
-        return;
-    }
-
     try {
         const permission = await Notification.requestPermission();
         if (permission === 'granted') {
             console.log('Notification permission granted.');
-            // !!! IMPORTANT: Replace 'YOUR_VAPID_KEY_FROM_FIREBASE_CONSOLE' with your actual VAPID key !!!
-            // You can find this in Firebase Console -> Project settings -> Cloud Messaging -> Web configuration
-            const currentToken = await getToken(messaging, { vapidKey: 'BAoCHOb3rcxEak-258f017-UZ07Xb-ra_MFDedrhwvAOtZv1RuYiyasV3u5tbF0CBMVoBMmFCP03Btvp0nrsJXQ' });
+
+            // --- THIS IS THE FIX ---
+            // Manually register the service worker from the correct path.
+            const swRegistration = await navigator.serviceWorker.register('/Focus-Clock/firebase-messaging-sw.js');
+            console.log('Service Worker registered successfully with scope:', swRegistration.scope);
+
+            // Get the FCM token, passing in the service worker registration.
+            const currentToken = await getToken(messaging, {
+                vapidKey: "BGE03sLgS-Skl84A0kUaVoAk9Al_8YJ0dUTAdzQL7xekhoKOD0L2Jpl20sES2vHWyVhdBfB0i-n-aL5MStN-h-Q",
+                serviceWorkerRegistration: swRegistration
+            });
+
             if (currentToken) {
                 fcmToken = currentToken;
-                console.log('FCM Registration Token:', fcmToken);
-                // Save this token to Firestore under the current user's data
-                await saveFcmTokenToFirestore(fcmToken, currentUser.uid);
+                console.log('FCM Token:', fcmToken);
+                if (currentUser) {
+                    await saveFcmTokenToFirestore(fcmToken, currentUser.uid);
+                }
             } else {
-                console.warn('No FCM registration token available. Request permission to generate one.');
+                console.log('No registration token available. Request permission to generate one.');
+                showToast('Could not get notification token.', 'warning');
             }
         } else {
-            console.warn('Notification permission denied. Push notifications will not be sent.');
+            console.log('Unable to get permission to notify.');
+            showToast('Notification permission denied.', 'warning');
         }
     } catch (error) {
         console.error('Error getting FCM token or permission:', error);
         showToast('Failed to enable push notifications.', 'error');
     }
 }
+
 
 /**
  * Saves the FCM registration token to Firestore for the current user.
@@ -5384,6 +5392,7 @@ if (e.target.classList.contains('edit-subject-btn')) {
     </script>
 </body>
 </html>
+
 
 
 
