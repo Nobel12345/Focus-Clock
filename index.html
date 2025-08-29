@@ -5344,10 +5344,11 @@ if (e.target.classList.contains('edit-subject-btn')) {
             // Service Workers require a secure context (HTTPS or localhost) to register.
             // This check prevents the registration error in unsupported environments (like 'blob:').
             if (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
-                // --- FIX: Standardize the registration path and scope ---
-                // This now matches the path your app expects, resolving conflicts.
+                // --- FIX: Simplify the registration path ---
+                // Using a simple relative path is more robust and lets the browser
+                // infer the correct scope ('/Focus-Clock/'), resolving the registration failure.
                 navigator.serviceWorker
-                    .register('/Focus-Clock/service-worker.js', { scope: '/Focus-Clock/' }) 
+                    .register('service-worker.js') 
                     .then(registration => {
                         console.log('Service Worker registered successfully with scope:', registration.scope);
                         // --- START NEW CODE FOR SERVICE WORKER UPDATES ---
