@@ -2526,22 +2526,13 @@ let pauseStartTime = 0;
                 const workDurationSeconds = pomodoroSettings.work * 60;
                 pomodoroWorker.postMessage({ command: 'start', duration: workDurationSeconds });
                 
-                // --- FIX: Revert to using the reliable Service Worker alarm ---
-                // The server-side function will time out for long Pomodoro sessions.
-                const transitionMessage = {
-                    type: 'TIMER_ENDED',
-                    newState: 'short_break',
-                    oldState: 'work',
-                    title: 'Focus complete!',
-                    options: { body: `Time for a short break.`, tag: 'pomodoro-transition' }
-                };
-                scheduleSWAlarm({
-                    delay: workDurationSeconds * 1000,
-                    title: transitionMessage.title,
-                    options: transitionMessage.options,
-                    timerId: 'pomodoro_phase', // Use a consistent ID
-                    transitionMessage: transitionMessage
-                });
+                // Use the new reliable SW alarm
+                await triggerServerNotification({
+        title: 'Focus complete!',
+        options: { body: `Time for a short break.`, tag: 'pomodoro-transition' }, // Options for the FCM notification
+        newState: 'short_break',
+        oldState: 'work',
+    });
 
                 pomodoroStatusDisplay.textContent = `Work (1/${pomodoroSettings.long_break_interval})`;
                 pomodoroStatusDisplay.style.color = '#3b82f6';
@@ -2586,9 +2577,6 @@ let pauseStartTime = 0;
                     await saveSession(activeSubject, sessionDurationSeconds, 'study');
                 }
             }
-            
-            // --- FIX: Cancel any pending background alarm when the timer is stopped manually ---
-            cancelSWAlarm('pomodoro_phase');
             
             // Reset all timer-related state variables and UI elements
             timerInterval = null;
@@ -2696,14 +2684,7 @@ if (remainingTimeSeconds > 0) {
             pomodoroStatusDisplay.textContent = statusText;
             pomodoroStatusDisplay.style.color = state.includes('break') ? '#f59e0b' : '#3b82f6';
 
-            // --- FIX: Use the reliable Service Worker alarm instead of the server ---
-            scheduleSWAlarm({
-                delay: durationSeconds * 1000,
-                title: transitionMessage.title,
-                options: transitionMessage.options,
-                timerId: 'pomodoro_phase',
-                transitionMessage: transitionMessage
-            });
+            await triggerServerNotification(transitionMessage);
 
             // Update cycle in Firestore only after a break is completed (meaning a work session is starting)
             if (state === 'work') {
@@ -5411,7 +5392,6 @@ if (e.target.classList.contains('edit-subject-btn')) {
     </script>
 </body>
 </html>
-
 
 
 
