@@ -1,82 +1,46 @@
-// service-worker.js
+// --- Service Worker for FocusFlow ---
 
-// Import Firebase scripts for background functionality
+// Import the Firebase SDKs (using the compat versions for service workers)
 importScripts("https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js");
 importScripts("https://www.gstatic.com/firebasejs/11.6.1/firebase-messaging-compat.js");
 
-// --- IMPORTANT: Firebase Initialization ---
-// This configuration must match the one in your index.html file.
+// --- IMPORTANT ---
+// Initialize Firebase with the same config from your main app
 const firebaseConfig = {
     apiKey: "AIzaSyBSCrL6ravOzFnwOa7A0Jl_W68vEfZVcNw",
     authDomain: "focus-flow-34c07.firebaseapp.com",
     projectId: "focus-flow-34c07",
     storageBucket: "focus-flow-34c07.appspot.com",
     messagingSenderId: "473980178825",
-    appId: "1:473980178825:web:164566ec8b068da3281158",
+    appId: "1:473980178825:web:164566ec8b068da3281158"
 };
 
-// Initialize Firebase in the service worker
 firebase.initializeApp(firebaseConfig);
 const messaging = firebase.messaging();
 
-// --- PWA Caching Logic ---
-const CACHE_NAME = 'focusflow-cache-v5'; // Increment version to trigger update
-const OFFLINE_URL = './offline.html';
+// This object will store the setTimeout IDs for our local Pomodoro alarms
+const scheduledAlarms = {};
 
-// Critical assets for the app shell
-const urlsToCache = [
-    './',
-    './index.html',
-    './offline.html',
-    './manifest.json',
-    './pomodoro-worker.js',
-    './favicon.ico'
-];
+/**
+ * Handles background push notifications sent from a server via FCM.
+ */
+messaging.onBackgroundMessage((payload) => {
+    console.log("[service-worker.js] Received background FCM message: ", payload);
 
-self.addEventListener('install', (event) => {
-    console.log('[Service Worker] Install event');
-    event.waitUntil(
-        caches.open(CACHE_NAME)
-        .then(cache => {
-            console.log('[Service Worker] Caching app shell assets.');
-            return cache.addAll(urlsToCache);
-        })
-        .then(() => self.skipWaiting()) // Force the new worker to activate immediately
-    );
+    const notificationTitle = payload.notification.title;
+    const notificationOptions = {
+        body: payload.notification.body,
+        icon: '/favicon.ico',
+        tag: 'fcm-notification'
+    };
+
+    return self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
-self.addEventListener('activate', (event) => {
-    console.log('[Service Worker] Activate event');
-    event.waitUntil(
-        caches.keys().then(cacheNames => {
-            return Promise.all(
-                // Delete all old caches that don't match the current version
-                cacheNames.filter(cacheName => cacheName !== CACHE_NAME)
-                .map(cacheName => caches.delete(cacheName))
-            );
-        }).then(() => self.clients.claim()) // Take control of the page immediately
-    );
-});
-
-self.addEventListener('fetch', (event) => {
-    // Standard cache-first strategy
-    event.respondWith(
-        caches.match(event.request).then(response => {
-            return response || fetch(event.request);
-        }).catch(() => {
-            // If both fail (e.g., offline), return the offline page for navigation requests
-            if (event.request.mode === 'navigate') {
-                return caches.match(OFFLINE_URL);
-            }
-        })
-    );
-});
-
-
-// --- Local Alarm and Notification Logic (The Core Fix) ---
-
-let scheduledAlarms = {}; // Holds the setTimeout IDs for our alarms
-
+/**
+ * Listens for messages from the main application to schedule or cancel local alarms.
+ * This is how the Pomodoro timer works in the background.
+ */
 self.addEventListener('message', (event) => {
     if (!event.data || !event.data.type) return;
 
@@ -84,75 +48,79 @@ self.addEventListener('message', (event) => {
 
     if (type === 'SCHEDULE_ALARM') {
         const { delay, title, options, timerId, transitionMessage } = payload;
-
-        // Cancel any existing alarm with the same ID to prevent duplicates
+        
+        // If an alarm with the same ID already exists, cancel it first to prevent duplicates
         if (scheduledAlarms[timerId]) {
             clearTimeout(scheduledAlarms[timerId]);
         }
-        
-        console.log(`[Service Worker] Scheduling local notification '${timerId}' in ${delay / 1000}s`);
 
-        // Schedule the new alarm using setTimeout
-        scheduledAlarms[timerId] = setTimeout(() => {
-            console.log(`[Service Worker] Firing notification for '${timerId}'.`);
-            
-            // Show the notification to the user
-            self.registration.showNotification(title, options)
-                .catch(err => console.error('[Service Worker] Error showing notification:', err));
-
-            // Send a message back to the main app to trigger the next Pomodoro phase
-            self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
-                clients.forEach(client => {
-                    client.postMessage(transitionMessage);
-                });
+        // Schedule the new notification to appear after the specified delay
+        const alarmId = setTimeout(() => {
+            console.log(`[service-worker.js] Firing alarm: ${title}`);
+            self.registration.showNotification(title, {
+                ...options,
+                icon: 'favicon.ico',
+                actions: [ // Add buttons to the notification
+                    { action: 'start-next', title: 'Start Next Session' },
+                    { action: 'stop', title: 'Stop Timer' }
+                ],
+                data: { // Pass data to the notificationclick event
+                    transitionMessage: transitionMessage
+                }
+            }).then(() => {
+                delete scheduledAlarms[timerId];
             });
-
-            // Clean up the completed alarm from our tracking object
-            delete scheduledAlarms[timerId];
         }, delay);
+        
+        // Store the timeout ID so we can cancel it if the user stops the timer manually
+        scheduledAlarms[timerId] = alarmId;
+        console.log(`[service-worker.js] Scheduled alarm '${timerId}' in ${delay}ms`);
 
     } else if (type === 'CANCEL_ALARM') {
         const { timerId } = payload;
         if (scheduledAlarms[timerId]) {
             clearTimeout(scheduledAlarms[timerId]);
             delete scheduledAlarms[timerId];
-            console.log(`[Service Worker] Canceled local alarm '${timerId}'.`);
+            console.log(`[service-worker.js] Canceled alarm: ${timerId}`);
         }
+    } else if (type === 'SKIP_WAITING') {
+        // This allows a new version of the service worker to take over immediately
+        self.skipWaiting();
     }
 });
 
-// --- Firebase Push Notification Handlers ---
-
-// This handles background push notifications sent from a server
-messaging.onBackgroundMessage((payload) => {
-    console.log('[Service Worker] Received background push message from server.', payload);
-    const notificationTitle = payload.notification.title;
-    const notificationOptions = {
-        body: payload.notification.body,
-        icon: '/Focus-Clock/favicon.ico', // Ensure this path is correct for your GitHub Pages setup
-    };
-    return self.registration.showNotification(notificationTitle, notificationOptions);
-});
-
-// This handles what happens when a user clicks ANY notification (local or push)
+/**
+ * Handles clicks on notifications.
+ */
 self.addEventListener('notificationclick', (event) => {
+    // Close the notification once it's clicked
     event.notification.close();
-    console.log('[Service Worker] Notification click received.');
 
-    // This logic finds an open app window and focuses it, or opens a new one.
+    const transitionMessage = event.notification.data.transitionMessage;
+    const action = event.action; // e.g., 'start-next', 'stop'
+
+    // This ensures that when a user clicks the notification, it focuses on the app's existing tab
+    // or opens a new one if it's not already open.
     event.waitUntil(
-        clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
-            // Try to find an already-open window to focus
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
             for (const client of clientList) {
-                if (client.url.includes('/Focus-Clock/') && 'focus' in client) {
-                    return client.focus();
+                // Check for an open client and focus it
+                if (new URL(client.url).pathname === '/' && 'focus' in client) {
+                    client.focus();
+                    // Send a message to the client to update its state based on the action
+                    client.postMessage({
+                        type: 'NOTIFICATION_ACTION_TRIGGERED',
+                        action: action || 'start-next', // Default to start-next if body is clicked
+                        newState: transitionMessage.newState,
+                        oldState: transitionMessage.oldState
+                    });
+                    return;
                 }
             }
-            // If no window is open, open a new one
+            // If no client is open, open a new one
             if (clients.openWindow) {
-                return clients.openWindow('/Focus-Clock/');
+                return clients.openWindow('/');
             }
         })
     );
 });
-
