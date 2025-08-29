@@ -11,7 +11,7 @@
     <link rel="manifest" href="manifest.json">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel='icon' href="favicon.ico">
+    <link rel='icon' href="favicon.ico"
     <script src="https://unpkg.com/lucide@latest"></script>
     <!-- Tone.js for generating alarm sounds -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
@@ -1427,13 +1427,12 @@ async function initializePushNotifications() {
         if (permission === 'granted') {
             console.log('Notification permission granted.');
 
-            // --- FIX: Use the existing, ready service worker registration ---
-            // This is the most robust way to get the active service worker
-            // and avoids the conflicts that were causing issues.
-            const swRegistration = await navigator.serviceWorker.ready;
-            console.log('Service Worker is ready with scope:', swRegistration.scope);
+            // --- THIS IS THE FIX ---
+            // Manually register the single, unified service worker from the correct path.
+            const swRegistration = await navigator.serviceWorker.register('/Focus-Clock/service-worker.js');
+            console.log('Unified Service Worker registered successfully with scope:', swRegistration.scope);
 
-            // Get the FCM token, passing in the ready service worker registration.
+            // Get the FCM token, passing in the service worker registration.
             const currentToken = await getToken(messaging, {
                 vapidKey: "BAcCHOb3rceEak-258f017-UZ07XB-ra_MFDEdfhHwyA0tZy1RuYlyasY3u5ibF0CBMVoBMmFCPO3Btvp0nrsJXQ",
                 serviceWorkerRegistration: swRegistration
@@ -1484,8 +1483,34 @@ async function saveFcmTokenToFirestore(token, userId) {
 // Listen for incoming messages while the app is in the foreground
 // MOVED this block inside initializeFirebase()
 
-// --- FIX: This function is no longer needed and has been removed ---
-// async function triggerServerNotification(messageData) { ... }
+/**
+ * Helper function to trigger the Cloud Function for sending Pomodoro notifications.
+ * This replaces your local `scheduleSWAlarm` for Pomodoro transitions.
+ * @param {object} messageData - Data to send to the Cloud Function, includes title, body, newState, oldState.
+ */
+async function triggerServerNotification(messageData) {
+    if (!currentUser || !currentUser.uid) {
+        console.error('User not authenticated, cannot send server notification.');
+        showToast('Please sign in to enable server notifications.', 'error');
+        return;
+    }
+    try {
+        // Call the Cloud Function
+        const result = await sendPomodoroNotification({
+            userId: currentUser.uid, // Required by your Cloud Function
+            appId: appId,            // Required by your Cloud Function to build Firestore path
+            title: messageData.title,
+            body: messageData.options.body, // Use 'options.body' as FCM notification body
+            newState: messageData.newState,
+            oldState: messageData.oldState,
+            // Any other data you want to send and retrieve in the notification click handler
+        });
+        console.log('Server notification triggered:', result.data);
+    } catch (error) {
+        console.error('Error triggering server notification:', error);
+        showToast('Failed to schedule notification.', 'error');
+    }
+}
 
         // Timer State
         // Add these lines
@@ -2340,37 +2365,26 @@ let pauseStartTime = 0;
                 onAuthStateChanged(auth, async (user) => {
                     if (user) {
                         currentUser = user;
-                        // --- FIX: Ensure user document is created and loaded on every login ---
-                        // This prevents race conditions where the app tries to act before the user's data exists.
-                        try {
-                            const userDoc = await getOrCreateUserDocument(user);
-                            if (userDoc.exists()) {
-                                currentUserData = userDoc.data();
-                                
-                                if (currentUserData.pomodoroSettings) {
-                                    pomodoroSettings = {...pomodoroSettings, ...currentUserData.pomodoroSettings};
-                                }
-                                if (currentUserData.pomodoroSounds) {
-                                    pomodoroSounds = {...pomodoroSounds, ...currentUserData.pomodoroSounds};
-                                }
-                                pomodoroWorker.postMessage({ command: 'updateSettings', newSettings: pomodoroSettings });
+                        const userDoc = await getOrCreateUserDocument(user);
+                        currentUserData = userDoc.data();
+                        
+                        if (currentUserData.pomodoroSettings) {
+                            pomodoroSettings = {...pomodoroSettings, ...currentUserData.pomodoroSettings};
+                        }
+                        if (currentUserData.pomodoroSounds) {
+                            pomodoroSounds = {...pomodoroSounds, ...currentUserData.pomodoroSounds};
+                        }
+                        pomodoroWorker.postMessage({ command: 'updateSettings', newSettings: pomodoroSettings });
 
-                                if (!currentUserData.username) {
-                                    showPage('page-username-setup');
-                                } else {
-                                    updateProfileUI(currentUserData);
-                                    showPage('page-timer');
-                                    setupRealtimeListeners();
-                                    await loadDailyTotal();
-                                    initializePushNotifications();
-                                }
-                            } else {
-                                throw new Error("User document could not be created or fetched.");
-                            }
-                        } catch (error) {
-                            console.error("Critical error setting up user data:", error);
-                            showToast("Could not load your profile. Please try again.", "error");
-                            signOut(auth); // Log out the user if their data can't be set up
+
+                        if (!currentUserData || !currentUserData.username) {
+                            showPage('page-username-setup');
+                        } else {
+                            updateProfileUI(currentUserData);
+                            showPage('page-timer');
+                            setupRealtimeListeners();
+                            await loadDailyTotal();
+                            initializePushNotifications();
                         }
                     } else {
                         currentUser = null;
@@ -2512,22 +2526,13 @@ let pauseStartTime = 0;
                 const workDurationSeconds = pomodoroSettings.work * 60;
                 pomodoroWorker.postMessage({ command: 'start', duration: workDurationSeconds });
                 
-                // --- FIX: Revert to using the reliable Service Worker alarm ---
-                // This is the correct method for background notifications on mobile.
-                const transitionMessage = {
-                    type: 'TIMER_ENDED',
-                    newState: 'short_break',
-                    oldState: 'work',
-                    title: 'Focus complete!',
-                    options: { body: `Time for a short break.`, tag: 'pomodoro-transition' }
-                };
-                scheduleSWAlarm({
-                    delay: workDurationSeconds * 1000,
-                    title: transitionMessage.title,
-                    options: transitionMessage.options,
-                    timerId: 'pomodoro_phase', // Use a consistent ID for cancellation
-                    transitionMessage: transitionMessage
-                });
+                // Use the new reliable SW alarm
+                await triggerServerNotification({
+        title: 'Focus complete!',
+        options: { body: `Time for a short break.`, tag: 'pomodoro-transition' }, // Options for the FCM notification
+        newState: 'short_break',
+        oldState: 'work',
+    });
 
                 pomodoroStatusDisplay.textContent = `Work (1/${pomodoroSettings.long_break_interval})`;
                 pomodoroStatusDisplay.style.color = '#3b82f6';
@@ -2572,9 +2577,6 @@ let pauseStartTime = 0;
                     await saveSession(activeSubject, sessionDurationSeconds, 'study');
                 }
             }
-            
-            // --- FIX: Cancel any pending background alarm when the timer is stopped manually ---
-            cancelSWAlarm('pomodoro_phase');
             
             // Reset all timer-related state variables and UI elements
             timerInterval = null;
@@ -2626,10 +2628,18 @@ let pauseStartTime = 0;
                 document.getElementById('resume-btn').classList.add('hidden');
             } else if (timerMode === 'pomodoro' && isPaused) {
                 pomodoroWorker.postMessage({ command: 'resume' });
-                // --- FIX: Remove broken and unnecessary notification logic ---
-                // The alarm is already set by the service worker when the timer starts.
-                // Resuming does not require rescheduling. The 'timerEndTime' variable
-                // was also not defined, causing an error here.
+                // You'll need to know the remaining time when resuming
+// For pomodoro, the pomodoroWorker would send 'tick' with timeLeft on resume.
+// Or you could track `timerEndTime` in the main thread for simpler calculation.
+// Example (assuming you track timerEndTime consistently across pause/resume):
+const remainingTimeSeconds = Math.max(0, Math.floor((timerEndTime - Date.now()) / 1000));
+if (remainingTimeSeconds > 0) {
+    scheduleTransitionNotification(
+        remainingTimeSeconds * 1000,
+        `${pomodoroState === 'work' ? 'Focus' : 'Break'} in progress!`,
+        { body: `You have ${formatPomodoroTime(remainingTimeSeconds)} left.`, tag: 'pomodoro-transition' }
+    );
+}
                 isPaused = false;
                 document.getElementById('pause-btn').classList.remove('hidden');
                 document.getElementById('resume-btn').classList.add('hidden');
@@ -2674,14 +2684,7 @@ let pauseStartTime = 0;
             pomodoroStatusDisplay.textContent = statusText;
             pomodoroStatusDisplay.style.color = state.includes('break') ? '#f59e0b' : '#3b82f6';
 
-            // --- FIX: Use the reliable Service Worker alarm for subsequent phases ---
-            scheduleSWAlarm({
-                delay: durationSeconds * 1000,
-                title: transitionMessage.title,
-                options: transitionMessage.options,
-                timerId: 'pomodoro_phase',
-                transitionMessage: transitionMessage
-            });
+            await triggerServerNotification(transitionMessage);
 
             // Update cycle in Firestore only after a break is completed (meaning a work session is starting)
             if (state === 'work') {
@@ -5344,11 +5347,11 @@ if (e.target.classList.contains('edit-subject-btn')) {
             // Service Workers require a secure context (HTTPS or localhost) to register.
             // This check prevents the registration error in unsupported environments (like 'blob:').
             if (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
-                // --- FIX: Simplify the registration path ---
-                // Using a simple relative path is more robust and lets the browser
-                // infer the correct scope ('/Focus-Clock/'), resolving the registration failure.
+                // IMPORTANT CHANGE HERE: Use './service-worker.js' or '/Focus-Clock/service-worker.js'
+                // if your app is hosted in a subfolder like /Focus-Clock/
+                // './service-worker.js' is generally preferred for relative paths.
                 navigator.serviceWorker
-                    .register('service-worker.js') 
+                    .register('./service-worker.js', { scope: './' }) // Updated path and added scope
                     .then(registration => {
                         console.log('Service Worker registered successfully with scope:', registration.scope);
                         // --- START NEW CODE FOR SERVICE WORKER UPDATES ---
@@ -5389,6 +5392,8 @@ if (e.target.classList.contains('edit-subject-btn')) {
     </script>
 </body>
 </html>
+
+
 
 
 
