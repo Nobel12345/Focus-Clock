@@ -1428,9 +1428,9 @@ async function initializePushNotifications() {
             console.log('Notification permission granted.');
 
             // --- THIS IS THE FIX ---
-            // Manually register the service worker from the correct path.
-            const swRegistration = await navigator.serviceWorker.register('/Focus-Clock/firebase-messaging-sw.js');
-            console.log('Service Worker registered successfully with scope:', swRegistration.scope);
+            // Manually register the single, unified service worker from the correct path.
+            const swRegistration = await navigator.serviceWorker.register('/Focus-Clock/service-worker.js');
+            console.log('Unified Service Worker registered successfully with scope:', swRegistration.scope);
 
             // Get the FCM token, passing in the service worker registration.
             const currentToken = await getToken(messaging, {
@@ -5392,6 +5392,7 @@ if (e.target.classList.contains('edit-subject-btn')) {
     </script>
 </body>
 </html>
+
 
 
 
