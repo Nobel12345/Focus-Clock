@@ -8,7 +8,7 @@ importScripts('https://www.gstatic.com/firebasejs/11.6.1/firebase-messaging-comp
 const firebaseConfig = {
     apiKey: "AIzaSyBSCrL6ravOzFnwOa7A0Jl_W68vEfZVcNw",
     authDomain: "focus-flow-34c07.firebaseapp.com",
-    projectId: "focus-flow-3C07",
+    projectId: "focus-flow-34c07",
     storageBucket: "focus-flow-34c07.appspot.com",
     messagingSenderId: "473980178825",
     appId: "1:473980178825:web:164566ec8b068da3281158",
