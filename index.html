@@ -1307,7 +1307,7 @@ import {
             increment,
             where,
             runTransaction,
-            writeBatch
+            writeBatch as firestoreWriteBatch // <-- Alias it here
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         // --- ADD THIS ENTIRE OBJECT HERE ---
 const ACHIEVEMENTS = {
@@ -1471,16 +1471,7 @@ async function saveFcmTokenToFirestore(token, userId) {
 }
 
 // Listen for incoming messages while the app is in the foreground
-onMessage(messaging, (payload) => {
-    console.log('Foreground Push Message received:', payload);
-    // If a foreground message signals a timer end, handle it.
-    // This is useful if the server sends a message that also impacts the UI immediately.
-    if (payload.data && payload.data.type === 'TIMER_ENDED') {
-        handlePomodoroPhaseEnd(payload.data);
-        showToast(payload.notification?.body || 'Timer ended!', 'info');
-    }
-    // You can handle other types of foreground messages here
-});
+// MOVED this block inside initializeFirebase()
 
 /**
  * Helper function to trigger the Cloud Function for sending Pomodoro notifications.
@@ -2341,6 +2332,18 @@ let pauseStartTime = 0;
                 messaging = getMessaging(app); // Initialize Firebase Messaging service
         functions = getFunctions(app); // Initialize Firebase Functions service
 
+        // --- PASTE THE onMessage LISTENER HERE ---
+        onMessage(messaging, (payload) => {
+            console.log('Foreground Push Message received:', payload);
+            // If a foreground message signals a timer end, handle it.
+            // This is useful if the server sends a message that also impacts the UI immediately.
+            if (payload.data && payload.data.type === 'TIMER_ENDED') {
+                handlePomodoroPhaseEnd(payload.data);
+                showToast(payload.notification?.body || 'Timer ended!', 'info');
+            }
+            // You can handle other types of foreground messages here
+        });
+
         // --- MOVE THESE TWO LINES HERE ---
         fcmToken = null; // Declare and initialize FCM token
         sendPomodoroNotification = httpsCallable(functions, 'sendPomodoroNotification'); // Assign callable function
@@ -2631,7 +2634,7 @@ if (remainingTimeSeconds > 0) {
         }
 
         // --- NEW: Helper to start the next Pomodoro phase ---
-        function startNextPomodoroPhase(state) {
+        async function startNextPomodoroPhase(state) {
             pomodoroState = state;
             
             let durationSeconds = 0;
@@ -4934,17 +4937,19 @@ ael('edit-subject-form', 'submit', async (e) => {
         async function updateSubjectOrderInFirestore() {
             if (!currentUser) return;
             const subjectsRef = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'subjects');
-            const batch = db.batch; // Get a new batch instance
+            const batch = firestoreWriteBatch(db); // <-- Use the alias
 
             const subjectElements = Array.from(subjectListContainer.children);
             
             for (let i = 0; i < subjectElements.length; i++) {
                 const subjectId = subjectElements[i].dataset.subjectId;
                 const subjectDocRef = doc(subjectsRef, subjectId);
-                await updateDoc(subjectDocRef, { order: i }); // Update each subject's order
+                batch.update(subjectDocRef, { order: i });
             }
-            showToast("Subject order updated!", "success");
-        }
+            await batch.commit(); // This executes all pending writes in the batch
+
+    showToast("Subject order updated!", "success");
+}
 
 
         document.getElementById('subject-selection-list').addEventListener('click', async (e) => {
@@ -5374,3 +5379,6 @@ if (e.target.classList.contains('edit-subject-btn')) {
     </script>
 </body>
 </html>
+
+
+
