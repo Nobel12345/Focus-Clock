@@ -2326,6 +2326,8 @@ let pauseStartTime = 0;
                     measurementId: "G-RRFK3LY0E4"
                 };
 
+                console.log("Initializing Firebase with config:", firebaseConfig); // Add this line for debugging
+
                 const app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
@@ -5380,6 +5382,7 @@ if (e.target.classList.contains('edit-subject-btn')) {
     </script>
 </body>
 </html>
+
 
 
 
