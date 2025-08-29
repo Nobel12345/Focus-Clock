@@ -11,7 +11,7 @@
     <link rel="manifest" href="manifest.json">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel='icon' href="favicon.ico">
+    <link rel='icon' href="favicon.ico"
     <script src="https://unpkg.com/lucide@latest"></script>
     <!-- Tone.js for generating alarm sounds -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
@@ -1427,15 +1427,13 @@ async function initializePushNotifications() {
         if (permission === 'granted') {
             console.log('Notification permission granted.');
 
-            // --- FIX: Use the existing, ready service worker registration ---
-            // This waits for the active worker to be ready, avoiding lifecycle conflicts
-            // that require a hard refresh.
-            const swRegistration = await navigator.serviceWorker.ready;
-            console.log('Service Worker is ready with scope:', swRegistration.scope);
+            // --- THIS IS THE FIX ---
+            // Manually register the single, unified service worker from the correct path.
+            const swRegistration = await navigator.serviceWorker.register('/Focus-Clock/service-worker.js');
+            console.log('Unified Service Worker registered successfully with scope:', swRegistration.scope);
 
-            // Get the FCM token, passing in the ready service worker registration.
+            // Get the FCM token, passing in the service worker registration.
             const currentToken = await getToken(messaging, {
-                // --- FIX: Use the correct VAPID key from your project settings ---
                 vapidKey: "BAoCHOb3rcxEak-258f017-UZ07Xb-ra_MFDedrhwvAOtZv1RuYiyasV3u5tbF0CBMVoBMmFCP03Btvp0nrsJXQ",
                 serviceWorkerRegistration: swRegistration
             });
@@ -2528,22 +2526,13 @@ let pauseStartTime = 0;
                 const workDurationSeconds = pomodoroSettings.work * 60;
                 pomodoroWorker.postMessage({ command: 'start', duration: workDurationSeconds });
                 
-                // --- FIX: Revert to using the reliable Service Worker alarm ---
-                // The server-side function is unreliable for long timers on mobile.
-                const transitionMessage = {
-                    type: 'TIMER_ENDED',
-                    newState: 'short_break',
-                    oldState: 'work',
-                    title: 'Focus complete!',
-                    options: { body: `Time for a short break.`, tag: 'pomodoro-transition' }
-                };
-                scheduleSWAlarm({
-                    delay: workDurationSeconds * 1000,
-                    title: transitionMessage.title,
-                    options: transitionMessage.options,
-                    timerId: 'pomodoro_phase', // Use a consistent ID
-                    transitionMessage: transitionMessage
-                });
+                // Use the new reliable SW alarm
+                await triggerServerNotification({
+        title: 'Focus complete!',
+        options: { body: `Time for a short break.`, tag: 'pomodoro-transition' }, // Options for the FCM notification
+        newState: 'short_break',
+        oldState: 'work',
+    });
 
                 pomodoroStatusDisplay.textContent = `Work (1/${pomodoroSettings.long_break_interval})`;
                 pomodoroStatusDisplay.style.color = '#3b82f6';
@@ -2588,9 +2577,6 @@ let pauseStartTime = 0;
                     await saveSession(activeSubject, sessionDurationSeconds, 'study');
                 }
             }
-            
-            // --- FIX: Cancel any pending background alarm when the timer is stopped manually ---
-            cancelSWAlarm('pomodoro_phase');
             
             // Reset all timer-related state variables and UI elements
             timerInterval = null;
@@ -2698,14 +2684,7 @@ if (remainingTimeSeconds > 0) {
             pomodoroStatusDisplay.textContent = statusText;
             pomodoroStatusDisplay.style.color = state.includes('break') ? '#f59e0b' : '#3b82f6';
 
-            // --- FIX: Use the reliable Service Worker alarm instead of the server ---
-            scheduleSWAlarm({
-                delay: durationSeconds * 1000,
-                title: transitionMessage.title,
-                options: transitionMessage.options,
-                timerId: 'pomodoro_phase',
-                transitionMessage: transitionMessage
-            });
+            await triggerServerNotification(transitionMessage);
 
             // Update cycle in Firestore only after a break is completed (meaning a work session is starting)
             if (state === 'work') {
@@ -5367,12 +5346,12 @@ if (e.target.classList.contains('edit-subject-btn')) {
         if ('serviceWorker' in navigator) {
             // Service Workers require a secure context (HTTPS or localhost) to register.
             // This check prevents the registration error in unsupported environments (like 'blob:').
-                // This check prevents the registration error in unsupported environments (like 'blob:').
             if (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
-                // --- FIX: Ensure the registration path is explicitly relative ---
-                // This improves consistency and avoids potential pathing issues.
+                // IMPORTANT CHANGE HERE: Use './service-worker.js' or '/Focus-Clock/service-worker.js'
+                // if your app is hosted in a subfolder like /Focus-Clock/
+                // './service-worker.js' is generally preferred for relative paths.
                 navigator.serviceWorker
-                    .register('./service-worker.js') 
+                    .register('./service-worker.js', { scope: './' }) // Updated path and added scope
                     .then(registration => {
                         console.log('Service Worker registered successfully with scope:', registration.scope);
                         // --- START NEW CODE FOR SERVICE WORKER UPDATES ---
@@ -5413,8 +5392,6 @@ if (e.target.classList.contains('edit-subject-btn')) {
     </script>
 </body>
 </html>
-
-
 
 
 
