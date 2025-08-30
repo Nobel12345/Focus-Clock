@@ -379,6 +379,108 @@
         .task-name { flex-grow: 1; }
         .task-name.completed { text-decoration: line-through; color: #6B7280; }
         
+        /* New Planner Styles */
+        #page-planner {
+            /* The .active class handles display. This rule ensures the page is opaque and controls overflow. */
+            background-color: #111827;
+            overflow: hidden;
+        }
+        .planner-main-layout {
+            display: flex;
+            flex-grow: 1;
+            overflow: hidden;
+        }
+        #planner-sidebar {
+            width: 250px;
+            flex-shrink: 0;
+            background-color: #111827;
+            border-right: 1px solid #374151;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+        }
+         #planner-sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        .planner-sidebar-item {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .planner-sidebar-item:hover {
+            background-color: #374151;
+        }
+        .planner-sidebar-item.active {
+            background-color: #3B82F6;
+            color: white;
+        }
+         #planner-main-content {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+        }
+         #planner-task-details {
+            width: 350px;
+            flex-shrink: 0;
+            background-color: #111827;
+            border-left: 1px solid #374151;
+            overflow-y: auto;
+            transition: width 0.3s ease;
+        }
+        #planner-task-details.hidden {
+            width: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        /* Task Item */
+        .task-item {
+            border-left-width: 4px;
+        }
+
+        /* Kanban Board */
+        .kanban-board {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+        }
+        .kanban-column {
+            background-color: #1f2937;
+            border-radius: 0.75rem;
+            padding: 0.75rem;
+        }
+        .kanban-card {
+             background-color: #374151;
+        }
+
+        /* Calendar View */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+        }
+        .calendar-cell {
+            background-color: #1f2937;
+            border-radius: 0.5rem;
+            min-height: 120px;
+        }
+        .calendar-task {
+            font-size: 0.75rem;
+            padding: 2px 4px;
+            border-radius: 4px;
+            margin-top: 4px;
+            cursor: pointer;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
         /* Modal Styles */
         .modal {
             position: fixed;
@@ -761,6 +863,48 @@
             border-radius: 3px;
         }
         
+        /* Group Settings Modal */
+        .group-settings-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .group-settings-item:hover {
+            background-color: #374151;
+        }
+        .group-settings-item i {
+            width: 20px;
+            margin-right: 12px;
+            color: #9CA3AF;
+        }
+        
+        /* Edit Group Info Modal Styles */
+        #edit-group-info-modal .modal-content {
+            max-width: 500px;
+        }
+        .edit-group-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            background-color: #374151;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .edit-group-item:hover {
+            background-color: #4B5563;
+        }
+        .edit-group-item .value {
+            color: #9CA3AF;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
         /* Toast Notification */
         #toast-container {
             position: fixed;
@@ -1054,11 +1198,7 @@
             </div>
             
             <div id="page-stats" class="page flex-col h-full overflow-y-auto no-scrollbar">
-                   <div id="pull-to-refresh">
-                    <i class="fas fa-arrow-down"></i>
-                    <span id="pull-to-refresh-text">Pull to refresh</span>
-                </div>
-                   <header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-gray-800 sticky top-0 bg-gray-900">
+                <header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-gray-800 sticky top-0 bg-gray-900">
                     <button class="back-button text-gray-400 hover:text-white" data-target="timer">
                         <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
@@ -1099,10 +1239,21 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                         </svg>
                     </button>
-                    <h1 class="text-xl font-bold text-gray-100">Study Planner</h1>
-                    <button id="add-task-btn" class="text-blue-500 font-semibold">Add Task</button>
+                    <h1 id="planner-header-title" class="text-xl font-bold text-gray-100">Planner</h1>
+                    <div id="planner-view-controls" class="flex items-center bg-gray-700 rounded-md p-1">
+                         <button data-view="list" class="planner-view-btn p-1 px-2 rounded text-sm"><i class="fas fa-list mr-1"></i>List</button>
+                         <button data-view="board" class="planner-view-btn p-1 px-2 rounded text-sm"><i class="fas fa-grip-horizontal mr-1"></i>Board</button>
+                         <button data-view="calendar" class="planner-view-btn p-1 px-2 rounded text-sm"><i class="fas fa-calendar-alt mr-1"></i>Calendar</button>
+                    </div>
                 </header>
-                <div id="planner-list" class="planner-container">
+                <div class="planner-main-layout">
+                    <aside id="planner-sidebar"></aside>
+                    <main id="planner-main-content">
+                        <!-- Content for the selected view will be rendered here -->
+                    </main>
+                    <aside id="planner-task-details" class="hidden">
+                        <!-- Selected task details will be rendered here -->
+                    </aside>
                 </div>
             </div>
 
@@ -1113,12 +1264,12 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                         </svg>
                     </button>
-                    <h1 class="text-xl font-bold text-gray-100">Profile Settings</h1>
-                    <div class="w-6"></div> </header>
+                    <h1 class="text-xl font-bold text-gray-100">Profile & Settings</h1>
+                    <div class="w-6"></div> 
+                </header>
                 <div class="profile-container">
                     <div class="profile-header"><div id="profile-page-avatar" class="profile-avatar">U</div><div><div id="profile-page-name" class="profile-name">User Name</div><div id="profile-page-email" class="profile-email">user@example.com</div></div></div>
-                    <!-- --- ADD THIS NEW HTML BLOCK HERE --- -->
-<div class="card text-center p-4 bg-yellow-500/10 border-yellow-500/30 mb-6 rounded-lg">
+                    <div class="card text-center p-4 bg-yellow-500/10 border-yellow-500/30 mb-6 rounded-lg">
     <h3 class="font-bold text-lg text-yellow-400">Current Streak</h3>
     <p class="text-4xl font-black text-white" id="profile-streak-display">0 days</p>
 </div>
@@ -1129,85 +1280,83 @@
         <!-- Achievements will be rendered here by JavaScript -->
     </div>
 </div>
-<!-- --- END OF NEW HTML BLOCK --- -->
                     <div id="settings-account" class="settings-item"><div class="settings-label">Account</div><div class="settings-value">Edit profile information</div></div>
                     <div id="settings-pomodoro" class="settings-item"><div class="settings-label">Pomodoro Timer</div><div class="settings-value">Customize durations & sounds</div></div>
                     <div id="settings-study-goal" class="settings-item"><div class="settings-label">Study Goals</div><div id="study-goal-value" class="settings-value">Not set</div></div>
-                    <div class="settings-item"><div class="settings-label">Notifications</div><div class="settings-value">Enabled</div></div>
-                    <div class="settings-item"><div class="settings-label">Appearance</div><div class="settings-value">Dark Mode</div></div>
-                    <div class="settings-item"><div class="settings-label">About FocusFlow</div><div class="settings-value">Version 1.0.0</div></div>
-                    <button id="sign-out-btn" class="w-full mt-8 py-3 bg-red-600 hover:bg-red-700 rounded-lg font-medium transition">Sign Out</button>
+                    <div id="sign-out-btn" class="mt-6 text-center text-red-400 font-semibold cursor-pointer py-3 bg-red-500/10 rounded-lg hover:bg-red-500/20">Sign Out</div>
                 </div>
             </div>
-            
+
             <div id="page-my-groups" class="page flex-col h-full overflow-y-auto no-scrollbar">
                 <header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-gray-800 sticky top-0 bg-gray-900">
                     <button class="back-button text-gray-400 hover:text-white" data-target="timer">
-                        <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+                        <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                        </svg>
                     </button>
                     <h1 class="text-xl font-bold text-gray-100">My Groups</h1>
-                    <button id="notification-btn" class="text-gray-400 hover:text-white">
-                        <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+                    <button id="go-to-find-groups-btn" class="w-10 h-10 rounded-full flex items-center justify-center bg-gray-700 hover:bg-gray-600">
+                        <i class="fas fa-search"></i>
                     </button>
                 </header>
-                <div id="my-groups-list" class="p-4 md:p-6 space-y-3 flex-grow"></div>
-                <button id="go-to-find-groups-btn" class="create-group-btn"><i class="fas fa-plus text-xl"></i></button>
+                <div id="my-groups-list" class="p-4"></div>
             </div>
             
             <div id="page-find-groups" class="page flex-col h-full overflow-y-auto no-scrollbar">
-                <header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-gray-800 sticky top-0 bg-gray-900">
-                    <button class="back-button text-gray-400 hover:text-white" data-target="my-groups">
-                        <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
-                    </button>
-                    <h1 class="text-xl font-bold text-gray-100">Study Groups</h1>
-                    <button id="search-groups-btn" class="text-gray-400 hover:text-white">
-                        <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                    </button>
-                </header>
-                <div id="all-groups-list" class="p-4 md:p-6 space-y-3 flex-grow"></div>
-                <button id="go-to-create-group-btn" class="create-group-btn"><i class="fas fa-plus text-xl"></i></button>
-            </div>
-            
-            <div id="page-create-group" class="page flex-col h-full overflow-y-auto no-scrollbar">
-                <header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-gray-800 sticky top-0 bg-gray-900">
-                    <button class="back-button text-gray-400 hover:text-white" data-target="find-groups">
-                        <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
-                    </button>
-                    <h1 class="text-xl font-bold text-gray-100">Create Group</h1>
-                    <button id="create-group-done-btn" class="font-semibold text-blue-500 hover:text-blue-400">Done</button>
-                </header>
-                <div class="p-4 md:p-6">
-                    <form id="create-group-form" class="space-y-4">
-                        <div class="form-group"><label for="group-name-input" class="block mb-2 font-medium">Group Name</label><input type="text" id="group-name-input" placeholder="Enter group name" class="w-full bg-gray-800 border-2 border-gray-700 rounded-lg p-3 text-white focus:outline-none focus:border-blue-500" required></div>
-                        <div class="form-group"><label for="group-password-input" class="block mb-2 font-medium">Password (Optional)</label><input type="password" id="group-password-input" placeholder="Set a password for private groups" class="w-full bg-gray-800 border-2 border-gray-700 rounded-lg p-3 text-white focus:outline-none focus:border-blue-500"></div>
-                        <div class="form-group"><label class="block mb-2 font-medium">Category</label><div class="grid grid-cols-2 gap-3"><div class="category-option">Primary school</div><div class="category-option selected">Secondary School</div><div class="category-option">Sixth Form</div><div class="category-option">University</div><div class="category-option">Language study</div><div class="category-option">Others</div></div></div>
-                        <div class="form-group"><label class="block mb-2 font-medium">Daily Time Goal</label><div class="grid grid-cols-3 gap-2"><div class="time-option">1 hour</div><div class="time-option">2 hours</div><div class="time-option selected">3 hours</div><div class="time-option">4 hours</div><div class="time-option">5 hours</div><div class="time-option">6 hours</div><div class="time-option">7 hours</div><div class="time-option">8 hours</div><div class="time-option">9 hours</div><div class="time-option">10 hours</div><div class="time-option">11 hours</div><div class="time-option">12 hours</div></div></div>
-                        <div class="form-group"><label class="block mb-2 font-medium">Capacity</label><div class="flex items-center space-x-3"><button id="decrease-capacity" type="button" class="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center text-xl">-</button><div id="capacity-value" class="text-xl font-bold w-12 text-center">15</div><button id="increase-capacity" type="button" class="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center text-xl">+</button><span class="text-gray-400">people</span></div></div>
-                        <div class="form-group"><label for="group-description-input" class="block mb-2 font-medium">Group Description</label><textarea id="group-description-input" placeholder="Describe your group, include any joining criteria or motivational messages to welcome new members" class="w-full bg-gray-800 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" rows="4" required></textarea></div>
-                    </form>
-                </div>
-            </div>
-             <div id="page-group-detail" class="page flex-col h-full">
                 <header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-gray-800 sticky top-0 bg-gray-900">
                     <button class="back-button text-gray-400 hover:text-white" data-target="my-groups">
                         <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                         </svg>
                     </button>
-                    <!-- Centered content -->
-                    <div class="flex-grow flex items-center justify-center gap-4">
-                        <div class="group-detail-header-dropdown">
-                            <select id="group-selector" class="w-full">
-                                <!-- Options will be dynamically loaded here -->
-                            </select>
-                        </div>
-                        <!-- New Ranking Switch -->
-                        <div id="ranking-scope-switch" class="hidden timer-switch-container bg-gray-800 p-1">
-                            <button id="group-ranking-scope-btn" class="timer-switch-btn text-xs px-3 py-1 active">Group</button>
-                            <button id="global-ranking-scope-btn" class="timer-switch-btn text-xs px-3 py-1">Global</button>
-                        </div>
+                    <h1 class="text-xl font-bold text-gray-100">Find Groups</h1>
+                    <div class="w-10"></div>
+                </header>
+                <div id="all-groups-list" class="p-4"></div>
+                <button id="go-to-create-group-btn" class="create-group-btn">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+            
+            <div id="page-create-group" class="page flex-col h-full overflow-y-auto no-scrollbar">
+                <header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-gray-800 sticky top-0 bg-gray-900">
+                    <button class="back-button text-gray-400 hover:text-white" data-target="find-groups">
+                        <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                        </svg>
+                    </button>
+                    <h1 class="text-xl font-bold text-gray-100">Create New Group</h1>
+                    <button id="create-group-done-btn" class="px-4 py-2 bg-blue-600 rounded-lg font-semibold">Done</button>
+                </header>
+                <div class="p-4 md:p-6">
+                    <form id="create-group-form" class="space-y-6">
+                        <div><label class="block mb-2 font-semibold">Group Name</label><input id="group-name-input" type="text" class="w-full bg-gray-700 rounded-lg p-3" placeholder="e.g., University Calculus" required></div>
+                        <div><label class="block mb-2 font-semibold">Password (optional)</label><input id="group-password-input" type="text" class="w-full bg-gray-700 rounded-lg p-3" placeholder="Leave blank for public group"></div>
+                        <div><label class="block mb-2 font-semibold">Category</label><div class="grid grid-cols-2 gap-2"><div class="category-option selected">General study</div><div class="category-option">Language study</div><div class="category-option">Secondary School</div><div class="category-option">University</div></div></div>
+                        <div><label class="block mb-2 font-semibold">Time Goal</label><div class="grid grid-cols-3 gap-2"><div class="time-option selected">1</div><div class="time-option">2</div><div class="time-option">3</div><div class="time-option">4</div><div class="time-option">5</div><div class="time-option">6</div></div></div>
+                        <div><label class="block mb-2 font-semibold">Capacity</label><div class="flex items-center justify-center bg-gray-700 rounded-lg p-3"><button type="button" id="decrease-capacity" class="px-4 text-xl">-</button><div id="capacity-value" class="flex-grow text-center font-bold text-lg">15</div><button type="button" id="increase-capacity" class="px-4 text-xl">+</button></div></div>
+                        <div><label class="block mb-2 font-semibold">Description</label><textarea id="group-description-input" class="w-full bg-gray-700 rounded-lg p-3 h-24" placeholder="Describe your group's purpose" required></textarea></div>
+                    </form>
+                </div>
+            </div>
+            
+            <div id="page-group-detail" class="page flex-col h-full overflow-y-auto no-scrollbar">
+                <header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-gray-800 sticky top-0 bg-gray-900">
+                    <button class="back-button text-gray-400 hover:text-white" data-target="my-groups">
+                        <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                        </svg>
+                    </button>
+                    <div id="group-selector-container" class="group-detail-header-dropdown">
+                         <select id="group-selector"></select>
                     </div>
-                    <div class="w-6"></div> <!-- Spacer -->
+                    <!-- New Ranking Switch -->
+                    <div id="ranking-scope-switch" class="hidden timer-switch-container bg-gray-800 p-1">
+                        <button id="group-ranking-scope-btn" class="timer-switch-btn text-xs px-3 py-1 active">Group</button>
+                        <button id="global-ranking-scope-btn" class="timer-switch-btn text-xs px-3 py-1">Global</button>
+                    </div>
+                    <!-- New Settings Button (placeholder) -->
+                    <div id="group-settings-btn-container" class="w-10 h-10 ml-4"></div>
                 </header>
                 <div id="group-detail-content" class="flex-grow overflow-y-auto no-scrollbar">
                 </div>
@@ -1266,6 +1415,74 @@
     <!-- Edit Subject Modal -->
     <div id="edit-subject-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Edit Subject</div><button class="close-modal">&times;</button></div><form id="edit-subject-form"><input type="hidden" id="edit-subject-id"><div class="mb-4"><label for="edit-subject-name" class="block text-gray-300 mb-2">Subject Name</label><input type="text" id="edit-subject-name" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required></div><div class="mb-4"><label class="block text-gray-300 mb-2">Color</label><div class="subject-color-picker" id="edit-subject-color-picker"></div></div><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Save Changes</button></form></div></div>
 
+    <!-- Group Settings Modal -->
+    <div id="group-settings-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Group Settings</div>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="space-y-2">
+                <div class="group-settings-item" data-action="edit-info"><i class="fas fa-edit"></i><span>Change Group Info</span></div>
+                <div class="group-settings-item" data-action="kick-member"><i class="fas fa-user-slash"></i><span>Kick Member</span></div>
+                <div class="group-settings-item" data-action="promote-member"><i class="fas fa-user-shield"></i><span>Promote Member</span></div>
+                <div class="group-settings-item" data-action="member-logs"><i class="fas fa-history"></i><span>Member Logs</span></div>
+                <div class="group-settings-item" data-action="group-ranking"><i class="fas fa-trophy"></i><span>External Rankings</span></div>
+                <div class="group-settings-item" data-action="group-settings"><i class="fas fa-cog"></i><span>General Settings</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Group Info Modal -->
+    <div id="edit-group-info-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Edit Group Info</div>
+                <button class="close-modal">&times;</button>
+            </div>
+            <form id="edit-group-info-form" class="space-y-4">
+                <input type="hidden" id="edit-group-id-input">
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1">Group Name</label>
+                    <input type="text" id="edit-group-name" class="w-full bg-gray-700 rounded-lg p-3" required>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1">Group introduction/rules</label>
+                    <textarea id="edit-group-description" class="w-full bg-gray-700 rounded-lg p-3 h-24" required></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1">Category</label>
+                    <select id="edit-group-category" class="w-full bg-gray-700 rounded-lg p-3">
+                        <option>General study</option>
+                        <option>Language study</option>
+                        <option>Secondary School</option>
+                        <option>University</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1">Change Daily Goal</label>
+                    <input type="number" id="edit-group-goal" class="w-full bg-gray-700 rounded-lg p-3" min="1" max="24" required>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1">Change Capacity</label>
+                    <input type="number" id="edit-group-capacity" class="w-full bg-gray-700 rounded-lg p-3" min="2" max="100" required>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1">Change Password</label>
+                    <input type="text" id="edit-group-password" class="w-full bg-gray-700 rounded-lg p-3" placeholder="Leave blank for public">
+                </div>
+
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition mt-4">Save Changes</button>
+            </form>
+        </div>
+    </div>
+
 
     <script type="module">
     // Firebase SDKS 
@@ -1309,15 +1526,12 @@ import {
             runTransaction,
             writeBatch as firestoreWriteBatch // <-- Alias it here
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        // --- ADD THIS ENTIRE OBJECT HERE ---
-const ACHIEVEMENTS = {
+        const ACHIEVEMENTS = {
     'novice_scholar': { name: 'Novice Scholar', description: 'Study for a total of 1 hour.' },
     'dedicated_learner': { name: 'Dedicated Learner', description: 'Study for a total of 10 hours.' },
     'marathoner': { name: 'Marathoner', description: 'Complete a single study session over 2 hours.' },
     'consistent_coder': { name: 'Consistent Coder', description: 'Maintain a 7-day study streak.' }
 };
-// --- END OF ADDITION ---
-
         // --- Web Worker Implementation ---
         const workerCode = `
             let timerInterval = null;
@@ -1427,10 +1641,9 @@ async function initializePushNotifications() {
         if (permission === 'granted') {
             console.log('Notification permission granted.');
 
-            // --- THIS IS THE FIX ---
-            // Manually register the single, unified service worker from the correct path.
-            const swRegistration = await navigator.serviceWorker.register('/Focus-Clock/service-worker.js');
-            console.log('Unified Service Worker registered successfully with scope:', swRegistration.scope);
+            // Use the service worker registration that is already active.
+            const swRegistration = await navigator.serviceWorker.ready;
+            console.log('Using active Service Worker registration:', swRegistration);
 
             // Get the FCM token, passing in the service worker registration.
             const currentToken = await getToken(messaging, {
@@ -1668,7 +1881,12 @@ let pauseStartTime = 0;
         let attendanceYear = getCurrentDate().getFullYear();
 
         // --- UI Elements ---
-        let authError, sessionTimerDisplay, totalTimeDisplay, totalBreakTimeDisplay, activeSubjectDisplay, pomodoroStatusDisplay;
+        const authError = document.getElementById('auth-error');
+        const sessionTimerDisplay = document.getElementById('session-timer');
+        const totalTimeDisplay = document.getElementById('total-time-display');
+        const totalBreakTimeDisplay = document.getElementById('total-break-time-display');
+        const activeSubjectDisplay = document.getElementById('active-subject-display');
+        const pomodoroStatusDisplay = document.getElementById('pomodoro-status');
 
         // --- UI Helper Functions ---
         
@@ -2599,7 +2817,7 @@ let pauseStartTime = 0;
             const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
             await updateDoc(userRef, { studying: null });
         }
-
+        
         function pauseTimer() {
             if (timerMode === 'normal' && timerInterval) {
                 clearInterval(timerInterval);
@@ -2607,39 +2825,28 @@ let pauseStartTime = 0;
                 pauseStartTime = Date.now();
                 document.getElementById('pause-btn').classList.add('hidden');
                 document.getElementById('resume-btn').classList.remove('hidden');
-            } else if (timerMode === 'pomodoro' && pomodoroState !== 'idle') {
+            } else if (timerMode === 'pomodoro' && !isPaused) {
                 pomodoroWorker.postMessage({ command: 'pause' });
                 isPaused = true;
                 document.getElementById('pause-btn').classList.add('hidden');
                 document.getElementById('resume-btn').classList.remove('hidden');
             }
         }
-
+        
         function resumeTimer() {
             if (timerMode === 'normal' && isPaused) {
                 const pauseDuration = Date.now() - pauseStartTime;
                 sessionStartTime += pauseDuration;
-                isPaused = false;
                 timerInterval = setInterval(() => {
                     const elapsedSeconds = Math.floor((Date.now() - sessionStartTime) / 1000);
                     sessionTimerDisplay.textContent = formatTime(elapsedSeconds);
                 }, 1000);
+                isPaused = false;
+                pauseStartTime = 0;
                 document.getElementById('pause-btn').classList.remove('hidden');
                 document.getElementById('resume-btn').classList.add('hidden');
             } else if (timerMode === 'pomodoro' && isPaused) {
                 pomodoroWorker.postMessage({ command: 'resume' });
-                // You'll need to know the remaining time when resuming
-// For pomodoro, the pomodoroWorker would send 'tick' with timeLeft on resume.
-// Or you could track `timerEndTime` in the main thread for simpler calculation.
-// Example (assuming you track timerEndTime consistently across pause/resume):
-const remainingTimeSeconds = Math.max(0, Math.floor((timerEndTime - Date.now()) / 1000));
-if (remainingTimeSeconds > 0) {
-    scheduleTransitionNotification(
-        remainingTimeSeconds * 1000,
-        `${pomodoroState === 'work' ? 'Focus' : 'Break'} in progress!`,
-        { body: `You have ${formatPomodoroTime(remainingTimeSeconds)} left.`, tag: 'pomodoro-transition' }
-    );
-}
                 isPaused = false;
                 document.getElementById('pause-btn').classList.remove('hidden');
                 document.getElementById('resume-btn').classList.add('hidden');
@@ -2722,8 +2929,7 @@ if (remainingTimeSeconds > 0) {
                     
                     const userDoc = await transaction.get(userDocRef);
                     const publicUserDoc = await transaction.get(publicUserDocRef);
-                    // --- ADD THE STREAK LOGIC HERE ---
-const userDataForStreak = userDoc.data();
+                    const userDataForStreak = userDoc.data();
 if (sessionType === 'study') {
     const todayStr = new Date().toISOString().split('T')[0];
     const yesterdayStr = new Date(Date.now() - 86400000).toISOString().split('T')[0];
@@ -2743,7 +2949,6 @@ if (sessionType === 'study') {
         });
     }
 }
-// --- END OF STREAK LOGIC ---
 
                     if (!userDoc.exists()) {
                         throw new Error("Transaction failed: User document not found.");
@@ -2821,20 +3026,17 @@ if (sessionType === 'study') {
                 
                 updateTotalTimeDisplay(); // This now updates both
                 showToast(`Session of ${formatTime(cappedDuration, false)} saved!`, "success");
-                // --- ADD THIS LOGIC HERE ---
-// After saving, check if any achievements were unlocked for this study session
+                // After saving, check if any achievements were unlocked for this study session
 if (sessionType === 'study') {
     await checkAndAwardAchievements(cappedDuration);
 }
-// --- END OF ADDITION ---    
 
             } catch (error) {
                 console.error("Error saving session in transaction: ", error);
                 showToast("Error saving session.", "error");
             }
         }
-        // --- ADD THIS ENTIRE FUNCTION ---
-async function checkAndAwardAchievements(completedSessionDuration) {
+        async function checkAndAwardAchievements(completedSessionDuration) {
     if (!currentUser) return;
 
     try {
@@ -2875,7 +3077,6 @@ async function checkAndAwardAchievements(completedSessionDuration) {
         console.error("Error checking achievements:", error);
     }
 }
-// --- END OF FUNCTION ---
 
         async function loadDailyTotal() {
             if (!currentUser) return;
@@ -2980,8 +3181,7 @@ async function checkAndAwardAchievements(completedSessionDuration) {
             } else {
                 studyGoalValueEl.textContent = 'Not set';
             }
-            // --- ADD THIS NEW LOGIC HERE ---
-const streakDisplay = document.getElementById('profile-streak-display');
+            const streakDisplay = document.getElementById('profile-streak-display');
 if (streakDisplay) {
     const streak = userData.currentStreak || 0;
     streakDisplay.textContent = `${streak} day${streak === 1 ? '' : 's'}`;
@@ -3001,7 +3201,6 @@ if (achievementsGrid) {
         `;
     }).join('');
 }
-// --- END OF NEW LOGIC ---
         }
 
         function setupRealtimeListeners() {
@@ -3078,16 +3277,301 @@ if (achievementsGrid) {
                     renderLeaderboard(activeTab ? activeTab.dataset.period : 'weekly');
                 }
             });
-
+            // --- DEPRECATED ---
             onSnapshot(query(plannerTasksRef, orderBy("date")), (snapshot) => {
-                if (document.getElementById('page-planner').classList.contains('active')) {
-                    const tasks = [];
-                    snapshot.forEach(doc => tasks.push({ id: doc.id, ...doc.data() }));
-                    renderPlanner(tasks);
-                }
+                // This is now handled by the new planner logic
             });
+            
+            // --- NEW PLANNER LISTENERS ---
+            setupPlannerListeners();
         }
         
+        // =================================================================================
+        // ============================ NEW PLANNER LOGIC START ============================
+        // =================================================================================
+
+        let plannerState = {
+            lists: [],
+            tasks: [],
+            activeListId: 'inbox',
+            selectedTaskId: null,
+            currentView: 'list', // 'list', 'board', 'calendar'
+            plannerUnsubscribers: []
+        };
+        function setupPlannerListeners() {
+            if (!currentUser) return;
+
+            // Clean up old listeners before setting new ones
+            plannerState.plannerUnsubscribers.forEach(unsub => unsub());
+            plannerState.plannerUnsubscribers = [];
+
+            // 1. Listener for Lists
+            const listsQuery = query(
+                collection(db, `/artifacts/${appId}/public/data/lists`),
+                where('members', 'array-contains', currentUser.uid)
+            );
+            const listsUnsub = onSnapshot(listsQuery, (snapshot) => {
+                plannerState.lists = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderPlannerPage(); // Re-render the whole page on list changes
+            });
+            plannerState.plannerUnsubscribers.push(listsUnsub);
+
+            // 2. Listener for Tasks
+            const tasksQuery = query(
+                collection(db, `/artifacts/${appId}/public/data/tasks`),
+                where('members', 'array-contains', currentUser.uid)
+            );
+            const tasksUnsub = onSnapshot(tasksQuery, (snapshot) => {
+                plannerState.tasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderPlannerPage(); // Re-render the whole page on task changes
+            });
+            plannerState.plannerUnsubscribers.push(tasksUnsub);
+        }
+
+        function renderPlannerPage() {
+            if (!document.getElementById('page-planner').classList.contains('active')) return;
+
+            renderPlannerSidebar();
+            renderPlannerMainContent();
+            renderPlannerTaskDetails();
+        }
+
+        function renderPlannerSidebar() {
+            const sidebar = document.getElementById('planner-sidebar');
+            if (!sidebar) return;
+
+            const inboxTasks = plannerState.tasks.filter(t => t.listId === 'inbox' && !t.completed).length;
+
+            sidebar.innerHTML = `
+                <div id="planner-sidebar-header">
+                    <h2 class="text-lg font-bold">Projects</h2>
+                    <button id="add-list-btn" class="p-1 rounded-full hover:bg-gray-700"><i class="fas fa-plus"></i></button>
+                </div>
+                <nav class="flex-grow space-y-1">
+                    <div class="planner-sidebar-item ${plannerState.activeListId === 'inbox' ? 'active' : ''}" data-list-id="inbox">
+                        <i class="fas fa-inbox w-5 mr-3"></i>
+                        <span class="flex-grow">Inbox</span>
+                        <span class="text-xs bg-gray-600 px-2 py-0.5 rounded-full">${inboxTasks}</span>
+                    </div>
+                    ${plannerState.lists.map(list => {
+                        const taskCount = plannerState.tasks.filter(t => t.listId === list.id && !t.completed).length;
+                        return `
+                        <div class="planner-sidebar-item ${plannerState.activeListId === list.id ? 'active' : ''}" data-list-id="${list.id}">
+                            <i class="fas fa-folder w-5 mr-3"></i>
+                            <span class="flex-grow">${list.name}</span>
+                            <span class="text-xs bg-gray-600 px-2 py-0.5 rounded-full">${taskCount}</span>
+                        </div>
+                        `
+                    }).join('')}
+                </nav>
+            `;
+        }
+
+        function renderPlannerMainContent() {
+            const mainContent = document.getElementById('planner-main-content');
+            if (!mainContent) return;
+
+            const activeList = plannerState.activeListId === 'inbox'
+                ? { id: 'inbox', name: 'Inbox' }
+                : plannerState.lists.find(l => l.id === plannerState.activeListId);
+            
+            document.getElementById('planner-header-title').textContent = activeList?.name || 'Planner';
+            
+            document.querySelectorAll('.planner-view-btn').forEach(btn => {
+                btn.classList.toggle('bg-blue-600', btn.dataset.view === plannerState.currentView);
+                btn.classList.toggle('text-white', btn.dataset.view === plannerState.currentView);
+            });
+            
+            const tasksForCurrentList = plannerState.tasks.filter(t => t.listId === plannerState.activeListId);
+
+            switch (plannerState.currentView) {
+                case 'list':
+                    renderPlannerListView(tasksForCurrentList);
+                    break;
+                case 'board':
+                    renderPlannerBoardView(tasksForCurrentList);
+                    break;
+                case 'calendar':
+                    renderPlannerCalendarView(tasksForCurrentList);
+                    break;
+            }
+        }
+        
+        function renderPlannerListView(tasks) {
+            const mainContent = document.getElementById('planner-main-content');
+            const sortedTasks = tasks.sort((a,b) => (a.completed - b.completed) || ((b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)));
+            mainContent.innerHTML = `
+                <form id="add-planner-task-form" class="mb-4">
+                    <input type="text" id="add-planner-task-input" class="w-full bg-gray-800 border-2 border-gray-700 rounded-lg p-3 text-white focus:outline-none focus:border-blue-500" placeholder="+ Add a new task to ${plannerState.activeListId === 'inbox' ? 'Inbox' : plannerState.lists.find(l=>l.id===plannerState.activeListId)?.name || ''}..."/>
+                </form>
+                <div id="planner-task-list" class="space-y-2">
+                    ${sortedTasks.map(task => renderPlannerTaskItem(task)).join('')}
+                </div>
+            `;
+        }
+        
+        function renderPlannerTaskItem(task) {
+             const priorityColors = { high: 'border-red-500', medium: 'border-yellow-500', low: 'border-blue-500', none: 'border-transparent' };
+             const isSelected = plannerState.selectedTaskId === task.id;
+             return `
+                <div class="task-item flex items-center p-3 rounded-lg cursor-pointer transition-all duration-200 ${priorityColors[task.priority] || 'border-l-transparent'} ${isSelected ? 'bg-blue-900/50' : 'bg-gray-800 hover:bg-gray-700'}" data-task-id="${task.id}">
+                    <input type="checkbox" class="task-checkbox-planner w-5 h-5 bg-gray-700 rounded-full text-blue-500 focus:ring-blue-500 mr-4 flex-shrink-0" ${task.completed ? 'checked' : ''} />
+                    <span class="flex-grow ${task.completed ? 'line-through text-gray-500' : ''}">${task.title}</span>
+                    ${task.dueDate?.seconds ? `<span class="text-xs text-gray-400 ml-4">${new Date(task.dueDate.seconds * 1000).toLocaleDateString()}</span>` : ''}
+                </div>
+             `;
+        }
+
+        function renderPlannerBoardView(tasks) {
+             const mainContent = document.getElementById('planner-main-content');
+             const columns = {
+                high: { name: 'High Priority', tasks: [], color: 'bg-red-500' },
+                medium: { name: 'Medium Priority', tasks: [], color: 'bg-yellow-500' },
+                low: { name: 'Low Priority', tasks: [], color: 'bg-blue-500' },
+                none: { name: 'No Priority', tasks: [], color: 'bg-gray-400' },
+            };
+            tasks.filter(t => !t.completed).forEach(task => (columns[task.priority] || columns.none).tasks.push(task));
+
+            mainContent.innerHTML = `
+                <div class="kanban-board">
+                    ${Object.entries(columns).map(([key, col]) => `
+                        <div class="kanban-column">
+                            <h3 class="font-semibold p-2 mb-2 ${col.color} text-white rounded-md">${col.name}</h3>
+                            <div class="space-y-2">
+                                ${col.tasks.map(task => `
+                                    <div class="kanban-card p-3 rounded-md shadow-sm cursor-pointer" data-task-id="${task.id}">
+                                        <p>${task.title}</p>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+        
+        function renderPlannerCalendarView(tasks) {
+            const mainContent = document.getElementById('planner-main-content');
+            // Basic calendar rendering logic - can be expanded
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = today.getMonth();
+
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+            let calendarHtml = '<div class="calendar-grid">';
+            // Add empty cells for the start of the month
+            for (let i = 0; i < firstDay; i++) {
+                calendarHtml += '<div class="calendar-cell p-2 border border-gray-700"></div>';
+            }
+            
+            // Add cells for each day of the month
+            for (let day = 1; day <= daysInMonth; day++) {
+                const date = new Date(year, month, day);
+                const tasksForDay = tasks.filter(t => t.dueDate && new Date(t.dueDate.seconds * 1000).toDateString() === date.toDateString());
+                
+                calendarHtml += `
+                    <div class="calendar-cell p-2 border border-gray-700">
+                        <div class="font-bold">${day}</div>
+                        ${tasksForDay.map(task => `<div class="calendar-task bg-blue-600 text-white" data-task-id="${task.id}">${task.title}</div>`).join('')}
+                    </div>
+                `;
+            }
+            calendarHtml += '</div>';
+            mainContent.innerHTML = calendarHtml;
+        }
+
+        function renderPlannerTaskDetails() {
+            const detailsPanel = document.getElementById('planner-task-details');
+            if (!detailsPanel) return;
+
+            const selectedTask = plannerState.tasks.find(t => t.id === plannerState.selectedTaskId);
+            
+            if (!selectedTask) {
+                detailsPanel.classList.add('hidden');
+                detailsPanel.innerHTML = '';
+                return;
+            }
+
+            detailsPanel.classList.remove('hidden');
+            detailsPanel.innerHTML = `
+                <div class="p-4">
+                    <button id="close-task-details" class="float-right p-1 rounded-full hover:bg-gray-700">&times;</button>
+                    <input id="task-detail-title" class="text-xl font-semibold bg-transparent w-full border-none focus:ring-0 p-0 mb-4" value="${selectedTask.title}">
+                    
+                    <div class="text-sm text-gray-400 mb-2">Due Date</div>
+                    <input type="date" id="task-detail-due-date" class="w-full bg-gray-800 p-2 rounded-md mb-4" value="${selectedTask.dueDate ? new Date(selectedTask.dueDate.seconds * 1000).toISOString().split('T')[0] : ''}">
+
+                    <div class="text-sm text-gray-400 mb-2">Priority</div>
+                    <select id="task-detail-priority" class="w-full bg-gray-800 p-2 rounded-md mb-4">
+                        <option value="none" ${selectedTask.priority === 'none' ? 'selected' : ''}>No Priority</option>
+                        <option value="low" ${selectedTask.priority === 'low' ? 'selected' : ''}>Low</option>
+                        <option value="medium" ${selectedTask.priority === 'medium' ? 'selected' : ''}>Medium</option>
+                        <option value="high" ${selectedTask.priority === 'high' ? 'selected' : ''}>High</option>
+                    </select>
+                    
+                    <div class="text-sm text-gray-400 mb-2">Notes</div>
+                    <textarea id="task-detail-notes" class="w-full bg-gray-800 p-2 rounded-md h-32 mb-4">${selectedTask.notes || ''}</textarea>
+                    
+                    <button id="delete-task-btn" class="w-full text-red-500 hover:bg-red-500/10 py-2 rounded-md">Delete Task</button>
+                </div>
+            `;
+        }
+
+        async function addPlannerTask(title) {
+            if (!currentUser || !title.trim()) return;
+            const currentList = plannerState.lists.find(l => l.id === plannerState.activeListId) || { members: [currentUser.uid] };
+            
+            try {
+                await addDoc(collection(db, `/artifacts/${appId}/public/data/tasks`), {
+                    title: title.trim(),
+                    completed: false,
+                    priority: 'none',
+                    listId: plannerState.activeListId,
+                    createdAt: serverTimestamp(),
+                    createdBy: currentUser.uid,
+                    members: currentList.members || [currentUser.uid],
+                    notes: '',
+                    subtasks: [],
+                    tags: [],
+                    dueDate: null,
+                });
+            } catch (error) {
+                console.error("Error adding task:", error);
+                showToast("Failed to add task.", "error");
+            }
+        }
+        
+        async function updatePlannerTask(taskId, data) {
+            if (!currentUser || !taskId) return;
+            const taskRef = doc(db, `/artifacts/${appId}/public/data/tasks`, taskId);
+            try {
+                await updateDoc(taskRef, data);
+            } catch (error) {
+                console.error("Error updating task:", error);
+                showToast("Failed to update task.", "error");
+            }
+        }
+
+        async function deletePlannerTask(taskId) {
+            if (!currentUser || !taskId) return;
+            const taskRef = doc(db, `/artifacts/${appId}/public/data/tasks`, taskId);
+            try {
+                await deleteDoc(taskRef);
+                plannerState.selectedTaskId = null;
+                renderPlannerTaskDetails(); // Hide the panel
+            } catch (error) {
+                console.error("Error deleting task:", error);
+                showToast("Failed to delete task.", "error");
+            }
+        }
+        
+        // =================================================================================
+        // ============================= NEW PLANNER LOGIC END =============================
+        // =================================================================================
+
+
         async function renderLeaderboard(period = 'weekly', containerId = 'ranking-list') {
             const container = document.getElementById(containerId);
             if (!container) return;
@@ -3211,7 +3695,9 @@ if (achievementsGrid) {
             `;
             
             initializeDashboard(focusSessions, insightsContainer);
-            lucide.createIcons();
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
         }
 
         function initializeDashboard(focusSessions, insightsContainer) {
@@ -3341,9 +3827,18 @@ if (achievementsGrid) {
                 }
 
                 if (insight === null) {
-                    insight = "Keep up the consistent effort. Every session is a step towards your goal!";
+                    // Fallback insight if no specific pattern is found
+                    const subjectTotals = sessions.filter(s => s.type === 'study').reduce((acc, s) => {
+                        acc[s.subject] = (acc[s.subject] || 0) + s.duration;
+                        return acc;
+                    }, {});
+                    const topSubject = Object.entries(subjectTotals).sort((a, b) => b[1] - a[1])[0];
+                    if (topSubject) {
+                        insight = `You've been focusing well on '${topSubject[0]}'. Consistency is building!`;
+                    } else {
+                        insight = "Keep up the great work! More sessions will unlock deeper insights.";
+                    }
                 }
-
                 insightTextEl.textContent = insight;
             }
 
@@ -3360,7 +3855,9 @@ if (achievementsGrid) {
                     <div class="card lg:col-span-2"><h3 class="font-semibold text-xl mb-4">Time Per Day (Last 28 Days)</h3><div class="chart-container"><canvas id="time-per-day-chart"></canvas></div></div>
                     <div class="card lg:col-span-3"><h3 class="font-semibold text-xl mb-4">Cumulative Study Time</h3><div class="chart-container"><canvas id="cumulative-time-chart"></canvas></div></div>
                 `;
-                lucide.createIcons();
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
 
                 const last28DaysData = appData.filter(d => {
                     const diffDays = (today - d.startTime) / (1000 * 60 * 60 * 24);
@@ -3559,7 +4056,9 @@ if (achievementsGrid) {
                     `;
                     logContainer.appendChild(item);
                 });
-                lucide.createIcons();
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
             }
 
             const navBar = insightsContainer.querySelector('#dashboard-nav-bar');
@@ -3694,7 +4193,6 @@ if (achievementsGrid) {
             
             if (joinedGroupIds.length === 0) {
                 container.innerHTML = `<div class="empty-group"><i class="fas fa-users-slash"></i><h3>No Groups Joined Yet</h3><p>You haven't joined any study groups. Join a group or create your own to get started!</p><button class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition mt-4" id="explore-groups-btn">Explore Groups</button></div>`;
-                document.getElementById('explore-groups-btn').addEventListener('click', () => { renderAvailableGroups(); showPage('page-find-groups'); });
                 return;
             }
 
@@ -3902,6 +4400,21 @@ if (achievementsGrid) {
                     return;
                 }
                 const groupData = groupDoc.data();
+
+                // --- NEW: Render Settings Button for Leader ---
+                const settingsBtnContainer = document.getElementById('group-settings-btn-container');
+                if (settingsBtnContainer) {
+                    if (currentUser.uid === groupData.leaderId) {
+                        settingsBtnContainer.innerHTML = `
+                            <button id="group-settings-btn" class="text-gray-400 hover:text-white w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-700">
+                                <i class="fas fa-cog"></i>
+                            </button>
+                        `;
+                    } else {
+                        settingsBtnContainer.innerHTML = ''; // Clear if not leader
+                    }
+                }
+                // --- END NEW ---
                 
                 setupGroupMemberListeners(groupData.members || []);
 
@@ -3954,16 +4467,21 @@ if (achievementsGrid) {
             
             // Show/hide the ranking scope switch
             const rankingScopeSwitch = document.getElementById('ranking-scope-switch');
-            if (subpage === 'rankings') {
-                rankingScopeSwitch.classList.remove('hidden');
-                rankingScopeSwitch.classList.add('flex');
-            } else {
-                rankingScopeSwitch.classList.add('hidden');
-                rankingScopeSwitch.classList.remove('flex');
+            if (rankingScopeSwitch) {
+                if (subpage === 'rankings') {
+                    rankingScopeSwitch.classList.remove('hidden');
+                    rankingScopeSwitch.classList.add('flex');
+                } else {
+                    rankingScopeSwitch.classList.add('hidden');
+                    rankingScopeSwitch.classList.remove('flex');
+                }
             }
 
             document.querySelectorAll('.group-nav-item').forEach(i => i.classList.remove('active'));
-            document.querySelector(`.group-nav-item[data-subpage="${subpage}"]`).classList.add('active');
+            const activeNavItem = document.querySelector(`.group-nav-item[data-subpage="${subpage}"]`);
+            if (activeNavItem) {
+                activeNavItem.classList.add('active');
+            }
             
             if (subpage === 'home') {
                  container.innerHTML = '<div id="group-member-list" class="p-4 flex flex-col gap-3"></div>';
@@ -4012,7 +4530,7 @@ if (achievementsGrid) {
                         <h2 id="current-month-display" class="attendance-title">Loading...</h2>
                         <button id="next-month-btn" class="attendance-nav-btn"><i class="fas fa-chevron-right"></i></button>
                     </div>
-                    <div class="attendance-calendar">
+                    <div class="attendance-calendar grid grid-cols-7 gap-1">
                         <div class="calendar-header">Mon</div>
                         <div class="calendar-header">Tue</div>
                         <div class="calendar-header">Wed</div>
@@ -4343,6 +4861,9 @@ if (achievementsGrid) {
                         <div class="chat-bubble ${isSent ? 'sent' : 'received'}">
                             ${!isSent ? `<div class="chat-sender">${msg.senderName}</div>` : ''}
                             <div>${msg.text}</div>
+                            <div class="text-xs ${isSent ? 'text-blue-200' : 'text-gray-400'} text-right mt-1">
+                                ${msg.timestamp ? msg.timestamp.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}
+                            </div>
                         </div>
                     `;
                     chatMessagesContainer.appendChild(messageEl);
@@ -4469,6 +4990,53 @@ if (achievementsGrid) {
         ael('go-to-create-group-btn', 'click', () => { showPage('page-create-group'); });
         ael('profile-btn', 'click', () => { showPage('page-profile'); });
         
+        ael('page-my-groups', 'click', (e) => {
+            // Handle clicking on a group card to enter the detail view
+            const groupCard = e.target.closest('.group-card');
+            if (groupCard) {
+                const groupId = groupCard.dataset.groupId;
+                if (groupId) {
+                    renderGroupDetail(groupId); // Render first to have content when page shows
+                    showPage('page-group-detail');
+                }
+            }
+
+            // Handle the "Explore Groups" button on the empty state
+            if (e.target.id === 'explore-groups-btn') {
+                renderAvailableGroups(); 
+                showPage('page-find-groups');
+            }
+        });
+        
+        ael('group-detail-nav', 'click', (e) => {
+            const navItem = e.target.closest('.group-nav-item');
+            if (navItem) {
+                renderGroupSubPage(navItem.dataset.subpage);
+            }
+        });
+        
+        // Group Settings Modal Listener
+        ael('page-group-detail', 'click', (e) => {
+            if (e.target.closest('#group-settings-btn')) {
+                const modal = document.getElementById('group-settings-modal');
+                if(modal) modal.classList.add('active');
+            }
+        });
+
+        document.getElementById('group-settings-modal')?.addEventListener('click', (e) => {
+            const item = e.target.closest('.group-settings-item');
+            if (item) {
+                const action = item.dataset.action;
+                if (action === 'edit-info') {
+                    openEditGroupInfoModal();
+                } else {
+                    // You can implement the logic for each action here
+                    showToast(`Action: ${action} (Coming Soon!)`, 'info');
+                }
+                document.getElementById('group-settings-modal').classList.remove('active');
+            }
+        });
+
         // Group Creation
         ael('create-group-done-btn', 'click', async () => {
             const form = document.getElementById('create-group-form');
@@ -4687,30 +5255,6 @@ ael('edit-subject-form', 'submit', async (e) => {
             sessionTimerDisplay.textContent = formatPomodoroTime(pomodoroSettings.work * 60);
 
             // --- Add this block for Notification Permissions ---
-    if ("Notification" in window) {
-        // Check if permission needs to be asked
-        if (Notification.permission === 'default') {
-            showConfirmationModal(
-                'Enable Notifications?',
-                'To get alerts when your Pomodoro sessions end, please click "Confirm" to allow notifications.',
-                () => { // This function runs if the user clicks "Confirm"
-                    Notification.requestPermission().then(permission => {
-                        if (permission === 'granted') {
-                            showToast('Notifications have been enabled!', 'success');
-                        } else {
-                            showToast('Notifications were not enabled. You can change this in your browser settings.', 'info');
-                        }
-                    });
-                }
-            );
-        } else if (Notification.permission === 'denied') {
-            // If permission is already blocked, inform the user how to fix it.
-            // This directly addresses the situation from your screenshot.
-            showToast('Notifications are blocked. Please allow them in your browser settings.', 'info', 5000);
-        }
-    }
-    // --- End of Notification Permissions block ---
-    // --- Add this block for Notification Permissions ---
             if ("Notification" in window) {
                 // Check if permission needs to be asked
                 if (Notification.permission === 'default') {
@@ -5055,37 +5599,120 @@ if (e.target.classList.contains('edit-subject-btn')) {
             document.getElementById('add-task-form').reset();
             showToast("Task added!", "success");
         });
+        
+        // --- NEW PLANNER EVENT LISTENERS ---
+        ael('page-planner', 'click', async (e) => {
+            const sidebarItem = e.target.closest('.planner-sidebar-item');
+            if (sidebarItem) {
+                plannerState.activeListId = sidebarItem.dataset.listId;
+                plannerState.selectedTaskId = null; // Deselect task when changing lists
+                renderPlannerPage();
+                return;
+            }
 
-        document.getElementById('planner-list').addEventListener('change', async (e) => {
-            if (e.target.classList.contains('task-checkbox')) {
-                const taskId = e.target.dataset.taskId;
-                const isCompleted = e.target.checked;
-                const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
-                const taskRef = doc(userRef, 'plannerTasks', taskId);
-                await updateDoc(taskRef, { completed: isCompleted });
+            const viewBtn = e.target.closest('.planner-view-btn');
+            if (viewBtn) {
+                plannerState.currentView = viewBtn.dataset.view;
+                renderPlannerMainContent();
+                return;
+            }
+            
+            const taskItem = e.target.closest('.task-item, .kanban-card, .calendar-task');
+            if (taskItem) {
+                 if (e.target.classList.contains('task-checkbox-planner')) {
+                    // This is handled by the 'change' event listener
+                    return;
+                }
+                plannerState.selectedTaskId = taskItem.dataset.taskId;
+                renderPlannerPage(); // Re-render to show selection and details
+                return;
+            }
+            
+            if (e.target.id === 'close-task-details') {
+                plannerState.selectedTaskId = null;
+                renderPlannerTaskDetails();
+            }
+            
+            if(e.target.id === 'delete-task-btn') {
+                showConfirmationModal('Delete Task?', 'Are you sure you want to delete this task?', () => {
+                   deletePlannerTask(plannerState.selectedTaskId);
+                });
+            }
+            if (e.target.id === 'add-list-btn') {
+                const listName = prompt("Enter new project name:");
+                if (listName && listName.trim()) {
+                    await addDoc(collection(db, `/artifacts/${appId}/public/data/lists`), {
+                        name: listName.trim(),
+                        createdAt: serverTimestamp(),
+                        ownerId: currentUser.uid,
+                        members: [currentUser.uid]
+                    });
+                }
             }
         });
         
-        document.getElementById('ranking-period-tabs').addEventListener('click', (e) => {
+        ael('page-planner', 'change', async (e) => {
+            // Handle task completion checkbox
+            if (e.target.classList.contains('task-checkbox-planner')) {
+                const taskId = e.target.closest('.task-item').dataset.taskId;
+                const completed = e.target.checked;
+                await updatePlannerTask(taskId, { completed });
+            }
+
+            // Handle task detail updates (due date, priority)
+            if (plannerState.selectedTaskId) {
+                 const updateData = {};
+                 let needsUpdate = false;
+
+                 if (e.target.id === 'task-detail-due-date') {
+                     updateData.dueDate = e.target.value ? new Date(e.target.value) : null;
+                     needsUpdate = true;
+                 } else if (e.target.id === 'task-detail-priority') {
+                     updateData.priority = e.target.value;
+                     needsUpdate = true;
+                 }
+
+                 if (needsUpdate) {
+                     updatePlannerTask(plannerState.selectedTaskId, updateData);
+                 }
+            }
+        });
+        
+        ael('page-planner', 'submit', async (e) => {
+            e.preventDefault();
+            if (e.target.id === 'add-planner-task-form') {
+                const input = document.getElementById('add-planner-task-input');
+                const title = input.value;
+                if (title) {
+                    await addPlannerTask(title);
+                    input.value = '';
+                }
+            }
+        });
+
+        ael('page-planner', 'focusout', (e) => {
+            if (!plannerState.selectedTaskId) return;
+
+            const updateData = {};
+            let needsUpdate = false;
+
+            if (e.target.id === 'task-detail-title') {
+                updateData.title = e.target.value;
+                needsUpdate = true;
+            } else if (e.target.id === 'task-detail-notes') {
+                updateData.notes = e.target.value;
+                needsUpdate = true;
+            }
+            
+            if (needsUpdate) {
+                updatePlannerTask(plannerState.selectedTaskId, updateData);
+            }
+        });
+        
+        ael('ranking-period-tabs', 'click', (e) => {
             if (e.target.classList.contains('ranking-tab-btn')) {
                 const period = e.target.dataset.period;
                 renderLeaderboard(period);
-            }
-        });
-        
-        document.getElementById('my-groups-list').addEventListener('click', (e) => {
-            const groupCard = e.target.closest('.group-card');
-            if (groupCard) {
-                const groupId = groupCard.dataset.groupId;
-                showPage('page-group-detail');
-                renderGroupDetail(groupId);
-            }
-        });
-        
-        document.getElementById('group-detail-nav').addEventListener('click', (e) => {
-            const navItem = e.target.closest('.group-nav-item');
-            if (navItem) {
-                renderGroupSubPage(navItem.dataset.subpage);
             }
         });
 
@@ -5130,31 +5757,36 @@ if (e.target.classList.contains('edit-subject-btn')) {
                     selectEl.appendChild(option);
                 }
             });
-
             pomodoroSettingsModal.classList.add('active');
         });
+        
+        async function openEditGroupInfoModal() {
+            if (!currentGroupId) return;
+            const modal = document.getElementById('edit-group-info-modal');
+            const groupRef = doc(db, 'artifacts', appId, 'public', 'data', 'groups', currentGroupId);
+            const groupSnap = await getDoc(groupRef);
 
-        ael('edit-profile-form', 'submit', async (e) => {
-            e.preventDefault();
-            const newUsername = document.getElementById('edit-username-input').value.trim();
-            if (newUsername.length < 3) {
-                showToast("Username must be at least 3 characters.", "error");
-                return;
+            if (groupSnap.exists()) {
+                const groupData = groupSnap.data();
+                document.getElementById('edit-group-id-input').value = currentGroupId;
+                document.getElementById('edit-group-name').value = groupData.name;
+                document.getElementById('edit-group-description').value = groupData.description;
+                document.getElementById('edit-group-category').value = groupData.category;
+                document.getElementById('edit-group-goal').value = groupData.timeGoal;
+                document.getElementById('edit-group-capacity').value = groupData.capacity;
+                document.getElementById('edit-group-password').value = groupData.password || '';
+                modal.classList.add('active');
+            } else {
+                showToast('Could not load group data.', 'error');
             }
-            const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
-            const publicUserRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
-            await updateDoc(userRef, { username: newUsername });
-            await updateDoc(publicUserRef, { username: newUsername });
-            
-            editProfileModal.classList.remove('active');
-            showToast("Profile updated!", "success");
-        });
+        }
 
         ael('study-goal-form', 'submit', async (e) => {
             e.preventDefault();
+            if (!currentUser) return;
             const goal = parseInt(document.getElementById('study-goal-input').value, 10);
             if (isNaN(goal) || goal < 1 || goal > 24) {
-                showToast("Please enter a valid number of hours (1-24).", "error");
+                showToast('Please enter a valid goal between 1 and 24.', 'error');
                 return;
             }
             const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
@@ -5196,9 +5828,39 @@ if (e.target.classList.contains('edit-subject-btn')) {
             pomodoroSounds = newSounds;
             pomodoroWorker.postMessage({ command: 'updateSettings', newSettings: pomodoroSettings });
             pomodoroSettingsModal.classList.remove('active');
-            showToast("Pomodoro settings saved!", "success");
+                showToast("Pomodoro settings saved!", "success");
         });
         
+        ael('edit-group-info-form', 'submit', async (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button[type="submit"]');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+            const groupId = document.getElementById('edit-group-id-input').value;
+            const updatedData = {
+                name: document.getElementById('edit-group-name').value.trim(),
+                description: document.getElementById('edit-group-description').value.trim(),
+                category: document.getElementById('edit-group-category').value,
+                timeGoal: parseInt(document.getElementById('edit-group-goal').value, 10),
+                capacity: parseInt(document.getElementById('edit-group-capacity').value, 10),
+                password: document.getElementById('edit-group-password').value.trim()
+            };
+
+            try {
+                const groupRef = doc(db, 'artifacts', appId, 'public', 'data', 'groups', groupId);
+                await updateDoc(groupRef, updatedData);
+                showToast('Group info updated successfully!', 'success');
+                document.getElementById('edit-group-info-modal').classList.remove('active');
+            } catch (error) {
+                console.error('Error updating group info:', error);
+                showToast('Failed to update group info.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Save Changes';
+            }
+        });
+
         ael('edit-session-form', 'submit', async (e) => {
             e.preventDefault();
             const modal = document.getElementById('edit-session-modal');
@@ -5266,6 +5928,21 @@ if (e.target.classList.contains('edit-subject-btn')) {
             }
         });
 
+        ael('study-goal-form', 'submit', async (e) => {
+            e.preventDefault();
+            if (!currentUser) return;
+            const goal = parseInt(document.getElementById('study-goal-input').value, 10);
+            if (isNaN(goal) || goal < 1 || goal > 24) {
+                showToast('Please enter a valid goal between 1 and 24.', 'error');
+                return;
+            }
+            const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
+            await updateDoc(userRef, { studyGoalHours: goal });
+
+            studyGoalModal.classList.remove('active');
+            showToast("Study goal updated!", "success");
+        });
+
         // Ranking Scope Switch Listeners
         ael('group-ranking-scope-btn', 'click', () => {
             if (!document.getElementById('group-ranking-scope-btn').classList.contains('active')) {
@@ -5307,13 +5984,10 @@ if (e.target.classList.contains('edit-subject-btn')) {
         });
 
         window.onload = () => {
-            authError = document.getElementById('auth-error');
-            sessionTimerDisplay = document.getElementById('session-timer');
-            totalTimeDisplay = document.getElementById('total-time-display');
-            totalBreakTimeDisplay = document.getElementById('total-break-time-display');
-            activeSubjectDisplay = document.getElementById('active-subject-display');
-            pomodoroStatusDisplay = document.getElementById('pomodoro-status');
             initializeFirebase();
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
 
             const pomodoroSettingsForm = document.getElementById('pomodoro-settings-form');
             if (pomodoroSettingsForm) {
@@ -5392,6 +6066,12 @@ if (e.target.classList.contains('edit-subject-btn')) {
     </script>
 </body>
 </html>
+
+
+
+
+
+
 
 
 
