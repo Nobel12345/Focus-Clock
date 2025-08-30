@@ -295,6 +295,28 @@
             z-index: 30;
         }
         .create-group-btn:hover { background: #2563EB; transform: scale(1.05); }
+
+        /* Group Ranking Styles */
+        .group-filter-btn {
+            padding: 6px 12px;
+            background-color: transparent;
+            border-radius: 6px;
+            font-weight: 500;
+            color: #9CA3AF;
+            transition: all 0.2s;
+        }
+        .group-filter-btn.active {
+            background-color: #3B82F6;
+            color: white;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+        }
+        .group-card.ranking {
+            cursor: default;
+        }
+        .group-card.ranking:hover {
+            transform: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
         
         /* Stats page styles */
         .stats-container { padding: 20px; }
@@ -398,6 +420,7 @@
             padding: 1rem;
             display: flex;
             flex-direction: column;
+            transition: transform 0.3s ease-in-out;
         }
          #planner-sidebar-header {
             display: flex;
@@ -459,28 +482,165 @@
              background-color: #374151;
         }
 
-        /* Calendar View */
+        /* NEW Calendar View Styles */
+        .calendar-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        .calendar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 1rem;
+        }
+        .calendar-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        .calendar-nav {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .calendar-nav-btn {
+            background-color: #374151;
+            border: 1px solid #4b5563;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .calendar-nav-btn:hover {
+            background-color: #4b5563;
+        }
         .calendar-grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
-            gap: 4px;
+            flex-grow: 1;
+            border-top: 1px solid #374151;
+            border-left: 1px solid #374151;
         }
-        .calendar-cell {
-            background-color: #1f2937;
-            border-radius: 0.5rem;
+        .calendar-day-header, .calendar-day-cell {
+            padding: 0.5rem;
+            border-right: 1px solid #374151;
+            border-bottom: 1px solid #374151;
+        }
+        .calendar-day-header {
+            text-align: center;
+            font-weight: 500;
+            color: #9ca3af;
+            font-size: 0.875rem;
+        }
+        .calendar-day-cell {
             min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            transition: background-color 0.2s;
+        }
+        .calendar-day-cell:not(.other-month):hover {
+            background-color: #1f2937;
+        }
+        .day-number {
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+        .day-number.today {
+            background-color: #3b82f6;
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .calendar-day-cell.other-month .day-number {
+            color: #6b7280;
+        }
+        .calendar-tasks-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
         }
         .calendar-task {
             font-size: 0.75rem;
-            padding: 2px 4px;
+            padding: 2px 6px;
             border-radius: 4px;
-            margin-top: 4px;
             cursor: pointer;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            transition: background-color 0.2s;
         }
+        .calendar-task:hover {
+            opacity: 0.8;
+        }
+        .calendar-task.completed {
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+        .calendar-task.priority-high { background-color: #ef4444; }
+        .calendar-task.priority-medium { background-color: #f59e0b; }
+        .calendar-task.priority-low { background-color: #3b82f6; }
+        .calendar-task.priority-none { background-color: #6b7280; }
         
+        /* Planner Responsive Adjustments */
+        @media (max-width: 768px) {
+            .planner-main-layout {
+                flex-direction: column;
+            }
+            #planner-sidebar {
+                position: fixed;
+                top: 73px; /* Height of header */
+                left: 0;
+                bottom: 57px; /* Height of nav */
+                height: auto;
+                z-index: 40;
+                transform: translateX(-100%);
+            }
+            #planner-sidebar.open {
+                transform: translateX(0);
+            }
+            #planner-task-details {
+                position: fixed;
+                top: 73px;
+                right: 0;
+                bottom: 57px;
+                height: auto;
+                width: 85%;
+                max-width: 350px;
+                z-index: 40;
+                transform: translateX(100%);
+                border-left: 1px solid #374151;
+            }
+            #planner-task-details.open {
+                transform: translateX(0);
+            }
+            #planner-task-details.hidden {
+                transform: translateX(100%);
+            }
+            .kanban-board {
+                display: flex;
+                overflow-x: auto;
+                padding-bottom: 1rem;
+            }
+            .kanban-column {
+                min-width: 280px;
+                flex-shrink: 0;
+            }
+            .calendar-grid {
+                gap: 2px;
+            }
+            .calendar-cell {
+                min-height: 80px;
+                padding: 4px;
+            }
+        }
+
         /* Modal Styles */
         .modal {
             position: fixed;
@@ -1100,6 +1260,8 @@
 </head>
 <body class="bg-gray-900 text-white flex flex-col h-screen antialiased">
 
+    <input type="file" id="image-upload-input" class="hidden" accept="image/*">
+
     <div id="auth-screen" class="active flex-col items-center justify-center h-full p-4 fade-in">
         <div class="w-full max-w-sm text-center">
             <h1 class="text-4xl font-bold text-white mb-2">FocusFlow</h1>
@@ -1239,7 +1401,10 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                         </svg>
                     </button>
-                    <h1 id="planner-header-title" class="text-xl font-bold text-gray-100">Planner</h1>
+                     <div class="flex items-center gap-2">
+                        <button id="planner-menu-toggle" class="p-2 rounded-full hover:bg-gray-700 md:hidden"><i class="fas fa-bars"></i></button>
+                        <h1 id="planner-header-title" class="text-xl font-bold text-gray-100">Planner</h1>
+                     </div>
                     <div id="planner-view-controls" class="flex items-center bg-gray-700 rounded-md p-1">
                          <button data-view="list" class="planner-view-btn p-1 px-2 rounded text-sm"><i class="fas fa-list mr-1"></i>List</button>
                          <button data-view="board" class="planner-view-btn p-1 px-2 rounded text-sm"><i class="fas fa-grip-horizontal mr-1"></i>Board</button>
@@ -1309,9 +1474,32 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                         </svg>
                     </button>
-                    <h1 class="text-xl font-bold text-gray-100">Find Groups</h1>
+                    <h1 class="text-xl font-bold text-gray-100">Group Rankings</h1>
                     <div class="w-10"></div>
                 </header>
+                <!-- NEW Sorting and Filtering UI -->
+                <div class="p-4 border-b border-gray-800 sticky top-[73px] bg-gray-900 z-10">
+                    <div class="flex space-x-1 bg-gray-800 p-1 rounded-lg mb-4" id="group-ranking-sort-tabs">
+                        <button class="group-filter-btn flex-1" data-sort="new">New</button>
+                        <button class="group-filter-btn flex-1" data-sort="attendance">Attendance</button>
+                        <button class="group-filter-btn flex-1 active" data-sort="studytime">Studytime</button>
+                    </div>
+                    <div class="flex items-center justify-center space-x-6 text-sm" id="group-ranking-filters">
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                            <input type="checkbox" data-filter="univ" class="w-4 h-4 bg-gray-700 rounded text-blue-500 focus:ring-blue-500 border-gray-600">
+                            <span>Univ</span>
+                        </label>
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                            <input type="checkbox" data-filter="available" class="w-4 h-4 bg-gray-700 rounded text-blue-500 focus:ring-blue-500 border-gray-600">
+                            <span>Available</span>
+                        </label>
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                            <input type="checkbox" data-filter="public" class="w-4 h-4 bg-gray-700 rounded text-blue-500 focus:ring-blue-500 border-gray-600">
+                            <span>Public</span>
+                        </label>
+                    </div>
+                </div>
+                <!-- END NEW UI -->
                 <div id="all-groups-list" class="p-4"></div>
                 <button id="go-to-create-group-btn" class="create-group-btn">
                     <i class="fas fa-plus"></i>
@@ -1482,6 +1670,8 @@
             </form>
         </div>
     </div>
+
+    <div id="image-view-modal" class="modal bg-black/80"><div class="modal-content bg-transparent shadow-none p-0 w-full h-full flex items-center justify-center"><button class="close-modal absolute top-4 right-4 text-white text-4xl z-10">&times;</button><img id="fullscreen-image" src="" class="max-w-[95vw] max-h-[95vh] object-contain"></div></div>
 
 
     <script type="module">
@@ -1887,6 +2077,70 @@ let pauseStartTime = 0;
         const totalBreakTimeDisplay = document.getElementById('total-break-time-display');
         const activeSubjectDisplay = document.getElementById('active-subject-display');
         const pomodoroStatusDisplay = document.getElementById('pomodoro-status');
+
+        window.viewImage = function(src) {
+            const modal = document.getElementById('image-view-modal');
+            const img = document.getElementById('fullscreen-image');
+            if (modal && img) {
+                img.src = src;
+                modal.classList.add('active');
+            }
+        }
+
+        async function handleImageUpload(file, groupId) {
+            if (!file.type.startsWith('image/')) {
+                showToast('Please select an image file.', 'error');
+                return;
+            }
+            if (file.size > 5 * 1024 * 1024) { // 5MB limit
+                showToast('Image is too large (max 5MB).', 'error');
+                return;
+            }
+            showToast('Uploading image...', 'info');
+
+            const toBase64 = file => new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => {
+                    const img = new Image();
+                    img.src = reader.result;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const MAX_WIDTH = 800;
+                        let width = img.width;
+                        let height = img.height;
+
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        resolve(canvas.toDataURL('image/jpeg', 0.8));
+                    };
+                };
+                reader.onerror = error => reject(error);
+            });
+
+            try {
+                const base64Image = await toBase64(file);
+                const messagesRef = collection(db, 'artifacts', appId, 'public', 'data', 'groups', groupId, 'messages');
+                const userDoc = await getDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid));
+                
+                await addDoc(messagesRef, {
+                    imageUrl: base64Image,
+                    text: '',
+                    senderId: currentUser.uid,
+                    senderName: userDoc.data().username,
+                    timestamp: serverTimestamp()
+                });
+            } catch (error) {
+                console.error("Error uploading image:", error);
+                showToast('Image upload failed.', 'error');
+            }
+        }
 
         // --- UI Helper Functions ---
         
@@ -2621,6 +2875,11 @@ let pauseStartTime = 0;
         function showPage(pageId) {
             if (!pageId) return;
             
+            if (pageId === 'page-planner') {
+                plannerState.calendarYear = new Date().getFullYear();
+                plannerState.calendarMonth = new Date().getMonth();
+            }
+
             if (pageId !== 'page-group-detail') {
                 groupDetailUnsubscribers.forEach(unsub => unsub());
                 groupDetailUnsubscribers = [];
@@ -3239,12 +3498,14 @@ if (achievementsGrid) {
             });
             
             onSnapshot(groupsCollectionRef, () => {
-                if (document.getElementById('page-my-groups').classList.contains('active') || document.getElementById('page-find-groups').classList.contains('active')) {
-                    renderAvailableGroups();
+                if (document.getElementById('page-find-groups').classList.contains('active')) {
+                   renderGroupRankings();
+                }
+                if (document.getElementById('page-my-groups').classList.contains('active')) {
                     renderJoinedGroups();
                 }
             });
-
+            
             onSnapshot(subjectsCollectionRef, (snapshot) => {
                 const subjects = [];
                 snapshot.forEach(doc => subjects.push({ id: doc.id, ...doc.data() }));
@@ -3296,7 +3557,9 @@ if (achievementsGrid) {
             activeListId: 'inbox',
             selectedTaskId: null,
             currentView: 'list', // 'list', 'board', 'calendar'
-            plannerUnsubscribers: []
+            plannerUnsubscribers: [],
+            calendarYear: new Date().getFullYear(),
+            calendarMonth: new Date().getMonth(),
         };
         function setupPlannerListeners() {
             if (!currentUser) return;
@@ -3452,34 +3715,69 @@ if (achievementsGrid) {
         
         function renderPlannerCalendarView(tasks) {
             const mainContent = document.getElementById('planner-main-content');
-            // Basic calendar rendering logic - can be expanded
-            const today = new Date();
-            const year = today.getFullYear();
-            const month = today.getMonth();
-
-            const firstDay = new Date(year, month, 1).getDay();
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-            let calendarHtml = '<div class="calendar-grid">';
-            // Add empty cells for the start of the month
-            for (let i = 0; i < firstDay; i++) {
-                calendarHtml += '<div class="calendar-cell p-2 border border-gray-700"></div>';
-            }
+            const { calendarYear, calendarMonth } = plannerState;
+            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
             
-            // Add cells for each day of the month
-            for (let day = 1; day <= daysInMonth; day++) {
-                const date = new Date(year, month, day);
-                const tasksForDay = tasks.filter(t => t.dueDate && new Date(t.dueDate.seconds * 1000).toDateString() === date.toDateString());
-                
-                calendarHtml += `
-                    <div class="calendar-cell p-2 border border-gray-700">
-                        <div class="font-bold">${day}</div>
-                        ${tasksForDay.map(task => `<div class="calendar-task bg-blue-600 text-white" data-task-id="${task.id}">${task.title}</div>`).join('')}
-                    </div>
-                `;
+            // Calculate calendar grid days
+            const firstDayOfMonth = new Date(calendarYear, calendarMonth, 1);
+            const lastDayOfMonth = new Date(calendarYear, calendarMonth + 1, 0);
+            const lastDayOfPrevMonth = new Date(calendarYear, calendarMonth, 0);
+            
+            const daysInMonth = lastDayOfMonth.getDate();
+            const startDayOfWeek = firstDayOfMonth.getDay(); // 0=Sun, 1=Mon...
+            const endDayOfWeek = lastDayOfMonth.getDay();
+
+            let calendarDays = [];
+            // Days from previous month
+            for (let i = startDayOfWeek - 1; i >= 0; i--) {
+                const day = lastDayOfPrevMonth.getDate() - i;
+                const date = new Date(lastDayOfPrevMonth.getFullYear(), lastDayOfPrevMonth.getMonth(), day);
+                calendarDays.push({ day, date, isOtherMonth: true });
             }
-            calendarHtml += '</div>';
-            mainContent.innerHTML = calendarHtml;
+            // Days of current month
+            for (let day = 1; day <= daysInMonth; day++) {
+                const date = new Date(calendarYear, calendarMonth, day);
+                calendarDays.push({ day, date, isOtherMonth: false });
+            }
+            // Days from next month
+            for (let i = 1; i <= 6 - endDayOfWeek; i++) {
+                const date = new Date(calendarYear, calendarMonth + 1, i);
+                calendarDays.push({ day: i, date, isOtherMonth: true });
+            }
+
+            mainContent.innerHTML = `
+                <div class="calendar-container">
+                    <div class="calendar-header">
+                        <div class="calendar-title">${monthNames[calendarMonth]} ${calendarYear}</div>
+                        <div class="calendar-nav">
+                            <button class="calendar-nav-btn" data-direction="prev"><i class="fas fa-chevron-left"></i></button>
+                            <button class="calendar-nav-btn" data-direction="today">Today</button>
+                            <button class="calendar-nav-btn" data-direction="next"><i class="fas fa-chevron-right"></i></button>
+                        </div>
+                    </div>
+                    <div class="calendar-grid">
+                        ${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => `<div class="calendar-day-header">${day}</div>`).join('')}
+                        ${calendarDays.map(({ day, date, isOtherMonth }) => {
+                            const today = new Date();
+                            const isToday = date.toDateString() === today.toDateString();
+                            const tasksForDay = tasks.filter(t => t.dueDate && new Date(t.dueDate.seconds * 1000).toDateString() === date.toDateString());
+
+                            return `
+                                <div class="calendar-day-cell ${isOtherMonth ? 'other-month' : ''}" data-date="${date.toISOString().split('T')[0]}">
+                                    <div class="day-number ${isToday ? 'today' : ''}">${day}</div>
+                                    <div class="calendar-tasks-container">
+                                        ${tasksForDay.map(task => `
+                                            <div class="calendar-task priority-${task.priority} ${task.completed ? 'completed' : ''}" data-task-id="${task.id}">
+                                                ${task.title}
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
         }
 
         function renderPlannerTaskDetails() {
@@ -3494,27 +3792,43 @@ if (achievementsGrid) {
                 return;
             }
 
-            detailsPanel.classList.remove('hidden');
-            detailsPanel.innerHTML = `
-                <div class="p-4">
-                    <button id="close-task-details" class="float-right p-1 rounded-full hover:bg-gray-700">&times;</button>
-                    <input id="task-detail-title" class="text-xl font-semibold bg-transparent w-full border-none focus:ring-0 p-0 mb-4" value="${selectedTask.title}">
-                    
-                    <div class="text-sm text-gray-400 mb-2">Due Date</div>
-                    <input type="date" id="task-detail-due-date" class="w-full bg-gray-800 p-2 rounded-md mb-4" value="${selectedTask.dueDate ? new Date(selectedTask.dueDate.seconds * 1000).toISOString().split('T')[0] : ''}">
+            detailsPanel.classList.toggle('open', !!selectedTask);
+            detailsPanel.classList.toggle('hidden', !selectedTask);
+            
+            if (!selectedTask) {
+                detailsPanel.innerHTML = '';
+                return;
+            }
 
-                    <div class="text-sm text-gray-400 mb-2">Priority</div>
-                    <select id="task-detail-priority" class="w-full bg-gray-800 p-2 rounded-md mb-4">
-                        <option value="none" ${selectedTask.priority === 'none' ? 'selected' : ''}>No Priority</option>
-                        <option value="low" ${selectedTask.priority === 'low' ? 'selected' : ''}>Low</option>
-                        <option value="medium" ${selectedTask.priority === 'medium' ? 'selected' : ''}>Medium</option>
-                        <option value="high" ${selectedTask.priority === 'high' ? 'selected' : ''}>High</option>
-                    </select>
+            detailsPanel.innerHTML = `
+                <div class="p-4 h-full flex flex-col">
+                    <div class="flex-shrink-0">
+                        <button id="close-task-details" class="float-right p-1 rounded-full hover:bg-gray-700">&times;</button>
+                        <input id="task-detail-title" class="text-xl font-semibold bg-transparent w-full border-none focus:ring-0 p-0 mb-4" value="${selectedTask.title}">
+                    </div>
                     
-                    <div class="text-sm text-gray-400 mb-2">Notes</div>
-                    <textarea id="task-detail-notes" class="w-full bg-gray-800 p-2 rounded-md h-32 mb-4">${selectedTask.notes || ''}</textarea>
-                    
-                    <button id="delete-task-btn" class="w-full text-red-500 hover:bg-red-500/10 py-2 rounded-md">Delete Task</button>
+                    <div class="flex-grow overflow-y-auto pr-2">
+                        <div class="text-sm text-gray-400 mb-2">Due Date</div>
+                        <input type="date" id="task-detail-due-date" class="w-full bg-gray-800 p-2 rounded-md mb-4" value="${selectedTask.dueDate ? new Date(selectedTask.dueDate.seconds * 1000).toISOString().split('T')[0] : ''}">
+
+                        <div class="text-sm text-gray-400 mb-2">Priority</div>
+                        <select id="task-detail-priority" class="w-full bg-gray-800 p-2 rounded-md mb-4">
+                            <option value="none" ${selectedTask.priority === 'none' ? 'selected' : ''}>No Priority</option>
+                            <option value="low" ${selectedTask.priority === 'low' ? 'selected' : ''}>Low</option>
+                            <option value="medium" ${selectedTask.priority === 'medium' ? 'selected' : ''}>Medium</option>
+                            <option value="high" ${selectedTask.priority === 'high' ? 'selected' : ''}>High</option>
+                        </select>
+                        
+                        <div class="text-sm text-gray-400 mb-2">Notes</div>
+                        <textarea id="task-detail-notes" class="w-full bg-gray-800 p-2 rounded-md h-32 mb-4">${selectedTask.notes || ''}</textarea>
+                    </div>
+
+                    <div class="flex-shrink-0 pt-2 border-t border-gray-700">
+                        <button id="add-to-google-calendar-btn" class="w-full flex items-center justify-center gap-2 text-white bg-blue-600 hover:bg-blue-700 py-2 rounded-md mb-2">
+                            <i class="fab fa-google"></i> Add to Google Calendar
+                        </button>
+                        <button id="delete-task-btn" class="w-full text-red-500 hover:bg-red-500/10 py-2 rounded-md">Delete Task</button>
+                    </div>
                 </div>
             `;
         }
@@ -3740,11 +4054,11 @@ if (achievementsGrid) {
                 }
             };
 
-            function generateAIInsight(sessions) {
-                const insightTextEl = document.getElementById('ai-insight-text');
+            function generateAIInsight(sessions, elementId = 'ai-insight-text') {
+                const insightTextEl = document.getElementById(elementId);
                 if (!insightTextEl) return;
 
-                if (sessions.length < 5) {
+                if (sessions.length < 3) {
                     insightTextEl.textContent = "Start logging more sessions to unlock personalized insights!";
                     return;
                 }
@@ -3839,17 +4153,36 @@ if (achievementsGrid) {
                         insight = "Keep up the great work! More sessions will unlock deeper insights.";
                     }
                 }
+
+                if (insight === null) {
+                    // Fallback insight if no specific pattern is found
+                    const studySessions = sessions.filter(s => s.type === 'study');
+                    if (studySessions.length > 0) {
+                        const subjectTotals = studySessions.reduce((acc, s) => {
+                            acc[s.subject] = (acc[s.subject] || 0) + s.duration;
+                            return acc;
+                        }, {});
+                        const topSubject = Object.entries(subjectTotals).sort((a, b) => b[1] - a[1])[0];
+                        if (topSubject) {
+                            insight = `You've been focusing well on '${topSubject[0]}'. Consistency is building!`;
+                        } else {
+                            insight = "Keep up the great work! More sessions will unlock deeper insights.";
+                        }
+                    } else {
+                        insight = "Log some study sessions to see your personalized AI insights here!";
+                    }
+                }
                 insightTextEl.textContent = insight;
             }
 
             function renderPeriodView() {
                 const container = document.getElementById('period-view');
                 container.innerHTML = `
-                    <div class="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <div class="card flex flex-col justify-center items-center"><h3 class="text-slate-400 text-lg font-medium">Total Time</h3><p id="period-total-time" class="text-4xl font-bold text-cyan-400 mt-2">--:--:--</p></div>
-                        <div class="card flex flex-col justify-center items-center"><h3 class="text-slate-400 text-lg font-medium">Daily Average</h3><p id="period-daily-avg" class="text-4xl font-bold text-cyan-400 mt-2">--:--:--</p></div>
-                        <div class="card flex flex-col justify-center items-center"><h3 class="text-slate-400 text-lg font-medium">Focus Score</h3><p id="period-focus-score" class="text-4xl font-bold text-cyan-400 mt-2">--</p></div>
-                        <div class="card bg-gradient-to-br from-sky-500 to-indigo-600"><h3 class="text-white text-lg font-medium flex items-center"><i data-lucide="brain-circuit" class="mr-2"></i>AI Insight</h3><p id="ai-insight-text" class="text-white mt-2 text-sm">Analyzing your study patterns...</p></div>
+                    <div class="lg:col-span-3 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <div class="card flex flex-col justify-center items-center p-6"><h3 class="text-slate-400 text-lg font-medium">Total Time</h3><p id="period-total-time" class="text-4xl font-bold text-cyan-400 mt-2">--:--:--</p></div>
+                        <div class="card flex flex-col justify-center items-center p-6"><h3 class="text-slate-400 text-lg font-medium">Daily Average</h3><p id="period-daily-avg" class="text-4xl font-bold text-cyan-400 mt-2">--:--:--</p></div>
+                        <div class="card flex flex-col justify-center items-center p-6"><h3 class="text-slate-400 text-lg font-medium">Focus Score</h3><p id="period-focus-score" class="text-4xl font-bold text-cyan-400 mt-2">--</p></div>
+                        <div class="card bg-gradient-to-br from-sky-500 to-indigo-600 p-6"><h3 class="text-white text-lg font-medium flex items-center"><i data-lucide="brain-circuit" class="mr-2"></i>AI Insight</h3><p id="ai-insight-text" class="text-white mt-2 text-sm">Analyzing your study patterns...</p></div>
                     </div>
                     <div class="card lg:col-span-1"><h3 class="font-semibold text-xl mb-4">Subject Ratio</h3><div class="chart-container" style="height: 250px;"><canvas id="subject-ratio-chart"></canvas></div></div>
                     <div class="card lg:col-span-2"><h3 class="font-semibold text-xl mb-4">Time Per Day (Last 28 Days)</h3><div class="chart-container"><canvas id="time-per-day-chart"></canvas></div></div>
@@ -3982,10 +4315,11 @@ if (achievementsGrid) {
             function renderDayView() {
                 const container = document.getElementById('day-view');
                 container.innerHTML = `
-                    <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-6">
-                         <div class="card flex flex-col justify-center items-center"><h3 class="text-slate-400 text-lg font-medium">Total Time Today</h3><p id="day-total-time" class="text-4xl font-bold text-cyan-400 mt-2">--:--:--</p></div>
-                         <div class="card flex flex-col justify-center items-center"><h3 class="text-slate-400 text-lg font-medium">Sessions Today</h3><p id="day-session-count" class="text-4xl font-bold text-cyan-400 mt-2">--</p></div>
-                         <div class="card flex flex-col justify-center items-center"><h3 class="text-slate-400 text-lg font-medium">Avg. Session</h3><p id="day-avg-session" class="text-4xl font-bold text-cyan-400 mt-2">--m</p></div>
+                    <div class="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                         <div class="card flex flex-col justify-center items-center p-6"><h3 class="text-slate-400 text-lg font-medium">Total Time Today</h3><p id="day-total-time" class="text-4xl font-bold text-cyan-400 mt-2">--:--:--</p></div>
+                         <div class="card flex flex-col justify-center items-center p-6"><h3 class="text-slate-400 text-lg font-medium">Sessions Today</h3><p id="day-session-count" class="text-4xl font-bold text-cyan-400 mt-2">--</p></div>
+                         <div class="card flex flex-col justify-center items-center p-6"><h3 class="text-slate-400 text-lg font-medium">Avg. Session</h3><p id="day-avg-session" class="text-4xl font-bold text-cyan-400 mt-2">--m</p></div>
+                         <div class="card bg-gradient-to-br from-sky-500 to-indigo-600 p-6"><h3 class="text-white text-lg font-medium flex items-center"><i data-lucide="brain-circuit" class="mr-2"></i>AI Insight</h3><p id="day-ai-insight-text" class="text-white mt-2 text-sm">Analyzing today's patterns...</p></div>
                     </div>
                     <div class="card lg:col-span-1"><h3 class="font-semibold text-xl mb-4">Today's Subject Ratio</h3><div class="chart-container" style="height:250px;"><canvas id="day-subject-ratio-chart"></canvas></div></div>
                     <div class="card lg:col-span-1"><h3 class="font-semibold text-xl mb-4">Time Per Hour Today</h3><div class="chart-container"><canvas id="day-time-per-hour-chart"></canvas></div></div>
@@ -4002,6 +4336,11 @@ if (achievementsGrid) {
                 document.getElementById('day-total-time').textContent = formatTimeDashboard(totalMinutesToday);
                 document.getElementById('day-session-count').textContent = sessionCountToday;
                 document.getElementById('day-avg-session').textContent = `${avgSessionMinutes.toFixed(0)}m`;
+                
+                generateAIInsight(todayData, 'day-ai-insight-text');
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
 
                 const subjectDataToday = todayData.reduce((acc, session) => {
                     acc[session.subject] = (acc[session.subject] || 0) + session.duration;
@@ -4217,41 +4556,140 @@ if (achievementsGrid) {
             container.innerHTML = html;
         }
 
-        async function renderAvailableGroups() {
+        function timeSince(date) {
+            if (!date) return 'N/A';
+            const seconds = Math.floor((new Date() - date) / 1000);
+            let interval = seconds / 31536000;
+            if (interval > 1) return Math.floor(interval) + " years";
+            interval = seconds / 2592000;
+            if (interval > 1) return Math.floor(interval) + " months";
+            interval = seconds / 86400;
+            if (interval > 1) return Math.floor(interval) + "d";
+            interval = seconds / 3600;
+            if (interval > 1) return Math.floor(interval) + "h";
+            interval = seconds / 60;
+            if (interval > 1) return Math.floor(interval) + "m";
+            return Math.floor(seconds) + "s";
+        }
+
+        async function renderGroupRankings() {
             if (!currentUser) return;
             const container = document.getElementById('all-groups-list');
             if (!container) return;
+
+            container.innerHTML = '<div class="text-center text-gray-500 py-8"><i class="fas fa-spinner fa-spin fa-2x"></i></div>';
             
-            const joinedGroupIds = currentUserData.joinedGroups || [];
+            const sortMethod = document.querySelector('#group-ranking-sort-tabs .active')?.dataset.sort || 'studytime';
+            const filters = {
+                univ: document.querySelector('[data-filter="univ"]').checked,
+                available: document.querySelector('[data-filter="available"]').checked,
+                public: document.querySelector('[data-filter="public"]').checked,
+            };
 
             const groupsCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'groups');
             const groupsSnapshot = await getDocs(groupsCollectionRef);
-            const availableGroups = [];
-            groupsSnapshot.forEach(doc => {
-                if (!joinedGroupIds.includes(doc.id)) {
-                    availableGroups.push({ id: doc.id, ...doc.data() });
+            
+            const groupDataPromises = groupsSnapshot.docs.map(async (groupDoc) => {
+                const group = { id: groupDoc.id, ...groupDoc.data() };
+                if (!group.members || group.members.length === 0) {
+                    return { ...group, totalStudyTime: 0, attendance: 0 };
                 }
+
+                let totalStudyTime = 0;
+                const memberTimePromises = group.members.map(async (memberId) => {
+                    const publicUserRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', memberId);
+                    const publicUserSnap = await getDoc(publicUserRef);
+                    if (publicUserSnap.exists()) {
+                        return publicUserSnap.data().totalStudySeconds || 0;
+                    }
+                    return 0;
+                });
+                const memberTimes = await Promise.all(memberTimePromises);
+                totalStudyTime = memberTimes.reduce((sum, time) => sum + time, 0);
+
+                const mockAttendance = Math.floor(Math.random() * (100 - 70 + 1) + 70);
+
+                return { ...group, totalStudyTime, attendance: mockAttendance };
             });
 
-            if (availableGroups.length === 0) {
-                container.innerHTML = `<div class="empty-group"><i class="fas fa-search"></i><h3>No Groups Available</h3><p>There are no study groups available at the moment. Why not create your own group?</p><button class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition mt-4" id="create-first-group-btn">Create Group</button></div>`;
-                document.getElementById('create-first-group-btn').addEventListener('click', () => showPage('page-create-group'));
+            let allGroups = await Promise.all(groupDataPromises);
+
+            let filteredGroups = allGroups.filter(group => {
+                if (filters.univ && group.category !== 'University') return false;
+                if (filters.available && (group.members?.length || 0) >= group.capacity) return false;
+                if (filters.public && group.password) return false;
+                return true;
+            });
+
+            filteredGroups.sort((a, b) => {
+                switch (sortMethod) {
+                    case 'attendance':
+                        if (b.attendance !== a.attendance) return b.attendance - a.attendance;
+                        return (b.members?.length || 0) - (a.members?.length || 0);
+                    case 'new':
+                        return (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0);
+                    case 'studytime':
+                    default:
+                        const avgA = a.totalStudyTime / (a.members?.length || 1);
+                        const avgB = b.totalStudyTime / (b.members?.length || 1);
+                        if (avgB !== avgA) return avgB - avgA;
+                        return (b.members?.length || 0) - (a.members?.length || 0);
+                }
+            });
+            
+            if (filteredGroups.length === 0) {
+                container.innerHTML = `<div class="empty-group"><i class="fas fa-search-minus"></i><h3>No Groups Found</h3><p>Try adjusting your filters or create a new group!</p></div>`;
                 return;
             }
-            
-            container.innerHTML = '<div class="grid grid-cols-1 gap-4">' + availableGroups.map(group => {
+
+            container.innerHTML = '<div class="flex flex-col gap-4">' + filteredGroups.map((group, index) => {
+                const rank = index + 1;
                 const memberCount = group.members ? group.members.length : 0;
+                const avgStudyTimePerMember = group.totalStudyTime / (memberCount || 1);
                 const isFull = memberCount >= group.capacity;
-                const isPrivate = !!group.password;
-                let headerColor = 'linear-gradient(135deg, #4361ee 0%, #4895ef 100%)';
-                if (group.category === 'Language study') headerColor = 'linear-gradient(135deg, #00bcd4 0%, #0097a7 100%)';
-                else if (group.category === 'Secondary School') headerColor = 'linear-gradient(135deg, #9c27b0 0%, #673ab7 100%)';
-                else if (group.category === 'University') headerColor = 'linear-gradient(135deg, #ff9800 0%, #f57c00 100%)';
-                return `<div class="group-card"><div class="group-header" style="background: ${headerColor}"><div class="group-category">${group.category}</div><div class="group-name">${group.name}${isFull ? '<span class="badge">Full</span>' : ''}</div><div class="group-stats"><div class="stat-item"><div class="stat-value">${group.attendance || 0}%</div><div class="stat-label">Attendance</div></div><div class="stat-item"><div class="stat-value">${group.avgTime || 'N/A'}</div><div class="stat-label">Avg. Time</div></div><div class="stat-item"><div class="stat-value">${memberCount}/${group.capacity}</div><div class="stat-label">Members</div></div></div></div><div class="group-body"><div class="group-goal"><div class="goal-text">Goal: ${group.timeGoal} hours/day</div><div class="leader"><i class="fas fa-crown"></i> Leader: ${group.leaderName}</div></div><div class="group-description">${group.description}</div><button class="join-btn" data-id="${group.id}" data-private="${isPrivate}" ${isFull ? 'disabled' : ''}>${isFull ? 'Group Full' : 'Join Group'}</button><div class="group-meta"><div>Started: ${group.createdAt?.toDate().toLocaleDateString()}</div><div><i class="fas ${isPrivate ? 'fa-lock' : 'fa-lock-open'}"></i> ${isPrivate ? 'Private' : 'Public'}</div></div></div></div>`;
+                const isJoined = (currentUserData.joinedGroups || []).includes(group.id);
+
+                return `
+                <div class="group-card ranking bg-gray-800 rounded-xl overflow-hidden shadow-lg" data-group-id="${group.id}">
+                    <div class="p-4">
+                        <div class="flex justify-between items-center text-xs text-gray-400 mb-2">
+                            <span class="font-bold text-base ${rank === 1 ? 'text-yellow-400' : (rank === 2 ? 'text-gray-300' : (rank === 3 ? 'text-yellow-600' : 'text-blue-400'))}">
+                                Ranked #${rank} <span class="text-white">${group.category.substring(0,2).toUpperCase()}</span>
+                            </span>
+                            <span class="flex items-center gap-2">
+                                ${Math.random() > 0.8 ? '<span class="bg-purple-500 text-white px-2 py-0.5 rounded-full text-xs font-bold">Promoted</span>' : ''}
+                                <span>${timeSince(group.createdAt?.toDate())} ago</span>
+                            </span>
+                        </div>
+                        <h3 class="text-lg font-bold truncate mb-2 text-white">${group.name}</h3>
+                        <div class="grid grid-cols-3 gap-x-2 gap-y-1 text-xs mb-3">
+                            <span class="text-gray-400">Goal <b class="text-white">${group.timeGoal}h</b></span>
+                            <span class="text-gray-400 col-span-2">Members <b class="text-white">${memberCount}/${group.capacity} people</b></span>
+                            <span class="text-gray-400 col-span-3">Leader <b class="text-white">${group.leaderName}</b></span>
+                            <span class="text-gray-400">Attendance <b class="text-white">${group.attendance}%</b></span>
+                            <span class="text-gray-400 col-span-2">Time <b class="text-white">${formatTime(avgStudyTimePerMember, false)}</b></span>
+                            <span class="text-gray-400 col-span-3">Started <b class="text-white">${group.createdAt?.toDate().toLocaleDateString()}</b></span>
+                        </div>
+                        <p class="text-gray-400 text-sm mb-3 h-8 overflow-hidden">${group.description}</p>
+                        
+                        <button class="join-btn w-full mt-2 ${isJoined ? 'bg-blue-600' : 'bg-green-500 hover:bg-green-600'}" data-id="${group.id}" data-private="${!!group.password}" ${isFull && !isJoined ? 'disabled' : ''}>
+                             ${isJoined ? 'Joined' : (isFull ? 'Group Full' : 'Join Group')}
+                        </button>
+                    </div>
+                </div>`;
             }).join('') + '</div>';
-            
-            document.querySelectorAll('.join-btn:not(:disabled)').forEach(button => {
+
+            document.querySelectorAll('.join-btn').forEach(button => {
                 button.addEventListener('click', async function() {
+                    if ((currentUserData.joinedGroups || []).includes(this.dataset.id)) {
+                        showToast("You've already joined this group.", 'info');
+                        return;
+                    }
+                     if (this.disabled) {
+                        showToast("This group is currently full.", "info");
+                        return;
+                    }
+
                     const groupId = this.getAttribute('data-id');
                     const isPrivate = this.getAttribute('data-private') === 'true';
                     
@@ -4268,9 +4706,23 @@ if (achievementsGrid) {
                             }
                             modal.classList.remove('active');
                             await joinGroup(groupId);
+                            renderGroupRankings();
                         };
                     } else {
                         await joinGroup(groupId);
+                        renderGroupRankings();
+                    }
+                });
+            });
+             document.querySelectorAll('.group-card.ranking').forEach(card => {
+                card.addEventListener('click', (e) => {
+                    if(e.target.classList.contains('join-btn')) return;
+                    const groupId = card.dataset.groupId;
+                    if ((currentUserData.joinedGroups || []).includes(groupId)) {
+                         renderGroupDetail(groupId);
+                         showPage('page-group-detail');
+                    } else {
+                        showToast('Join the group to see details.', 'info');
                     }
                 });
             });
@@ -4494,7 +4946,26 @@ if (achievementsGrid) {
                     showToast('Link copied to clipboard!', 'success');
                 });
             } else if (subpage === 'chat') {
-                container.innerHTML = `<div class="p-4 flex flex-col h-full"><div id="chat-messages" class="flex-grow overflow-y-auto"></div><form id="chat-form" class="flex gap-2 mt-4"><input id="chat-input" class="flex-grow bg-gray-700 rounded-lg p-3" placeholder="Type a message..."><button type="submit" class="bg-blue-600 px-4 rounded-lg"><i class="fas fa-paper-plane"></i></button></form></div>`;
+                container.innerHTML = `
+                    <div class="p-4 flex flex-col h-full">
+                        <div id="chat-messages" class="flex-grow overflow-y-auto mb-4"></div>
+                        <div class="relative">
+                            <form id="chat-form" class="flex items-center gap-2 bg-gray-800 rounded-full p-2">
+                                <button type="button" id="chat-attach-btn" class="text-gray-400 hover:text-white p-2 rounded-full w-10 h-10 flex-shrink-0">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                                <input id="chat-input" class="flex-grow bg-transparent text-white focus:outline-none" placeholder="Message...">
+                                <button type="submit" class="bg-blue-600 w-10 h-10 rounded-full flex items-center justify-center text-white flex-shrink-0">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </form>
+                            <div id="chat-attachment-menu" class="hidden absolute bottom-full left-0 mb-2 w-48 bg-gray-700 rounded-lg shadow-lg p-2">
+                                <button data-chat-action="file" class="w-full text-left p-2 hover:bg-gray-600 rounded flex items-center gap-3"><i class="fas fa-file-alt w-4"></i> File</button>
+                                <button data-chat-action="album" class="w-full text-left p-2 hover:bg-gray-600 rounded flex items-center gap-3"><i class="fas fa-images w-4"></i> Album</button>
+                                <button data-chat-action="camera" class="w-full text-left p-2 hover:bg-gray-600 rounded flex items-center gap-3"><i class="fas fa-camera w-4"></i> Camera</button>
+                            </div>
+                        </div>
+                    </div>`;
                 setupGroupChat(currentGroupId);
             } else if (subpage === 'rankings') {
                  container.innerHTML = `<div class="px-4 pt-4 border-b border-gray-800">
@@ -4857,10 +5328,18 @@ if (achievementsGrid) {
                     const isSent = msg.senderId === currentUser.uid;
                     const messageEl = document.createElement('div');
                     messageEl.classList.add('chat-message', isSent ? 'sent' : 'received');
+
+                    let messageContent = '';
+                    if (msg.text) {
+                        messageContent = `<div>${msg.text}</div>`;
+                    } else if (msg.imageUrl) {
+                        messageContent = `<img src="${msg.imageUrl}" class="rounded-lg max-w-full h-auto cursor-pointer" style="max-height: 300px;" onclick="viewImage(this.src)">`;
+                    }
+
                     messageEl.innerHTML = `
                         <div class="chat-bubble ${isSent ? 'sent' : 'received'}">
                             ${!isSent ? `<div class="chat-sender">${msg.senderName}</div>` : ''}
-                            <div>${msg.text}</div>
+                            ${messageContent}
                             <div class="text-xs ${isSent ? 'text-blue-200' : 'text-gray-400'} text-right mt-1">
                                 ${msg.timestamp ? msg.timestamp.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}
                             </div>
@@ -4986,7 +5465,7 @@ if (achievementsGrid) {
         }));
 
         ael('groups-btn', 'click', () => { renderJoinedGroups(); showPage('page-my-groups'); });
-        ael('go-to-find-groups-btn', 'click', () => { renderAvailableGroups(); showPage('page-find-groups'); });
+        ael('go-to-find-groups-btn', 'click', () => { renderGroupRankings(); showPage('page-find-groups'); });
         ael('go-to-create-group-btn', 'click', () => { showPage('page-create-group'); });
         ael('profile-btn', 'click', () => { showPage('page-profile'); });
         
@@ -5003,23 +5482,75 @@ if (achievementsGrid) {
 
             // Handle the "Explore Groups" button on the empty state
             if (e.target.id === 'explore-groups-btn') {
-                renderAvailableGroups(); 
+                renderGroupRankings(); 
                 showPage('page-find-groups');
             }
         });
         
-        ael('group-detail-nav', 'click', (e) => {
-            const navItem = e.target.closest('.group-nav-item');
-            if (navItem) {
-                renderGroupSubPage(navItem.dataset.subpage);
+        // --- NEW: Group Ranking Page Listeners ---
+        ael('page-find-groups', 'click', (e) => {
+            const sortBtn = e.target.closest('#group-ranking-sort-tabs .group-filter-btn');
+            if (sortBtn) {
+                document.querySelectorAll('#group-ranking-sort-tabs .group-filter-btn').forEach(btn => btn.classList.remove('active'));
+                sortBtn.classList.add('active');
+                renderGroupRankings();
             }
         });
-        
-        // Group Settings Modal Listener
+        ael('page-find-groups', 'change', (e) => {
+            const filterCheckbox = e.target.closest('#group-ranking-filters input[type="checkbox"]');
+            if (filterCheckbox) {
+                renderGroupRankings();
+            }
+        });
+
+        // Group Settings Modal Listener & Group Nav
         ael('page-group-detail', 'click', (e) => {
+            // Group Nav
+            const navItem = e.target.closest('.group-nav-item');
+            if (navItem) {
+                const subpage = navItem.dataset.subpage;
+                renderGroupSubPage(subpage);
+                return; // Prevent other handlers on this page from firing
+            }
+
+            // Group Settings
             if (e.target.closest('#group-settings-btn')) {
                 const modal = document.getElementById('group-settings-modal');
                 if(modal) modal.classList.add('active');
+                return;
+            }
+
+            // Chat Attachment Button
+            const attachBtn = e.target.closest('#chat-attach-btn');
+            const attachMenu = document.getElementById('chat-attachment-menu');
+            if (attachBtn) {
+                if (attachMenu) attachMenu.classList.toggle('hidden');
+                return;
+            }
+
+            const chatActionBtn = e.target.closest('[data-chat-action]');
+            if (chatActionBtn) {
+                const action = chatActionBtn.dataset.chatAction;
+                const imageUploadInput = document.getElementById('image-upload-input');
+                
+                if (action === 'album') {
+                    imageUploadInput.removeAttribute('capture');
+                    imageUploadInput.click();
+                } else if (action === 'camera') {
+                    imageUploadInput.setAttribute('capture', 'camera');
+                    imageUploadInput.click();
+                } else {
+                    showToast(`'${action.charAt(0).toUpperCase() + action.slice(1)}' feature is coming soon!`, 'info');
+                }
+
+                if (attachMenu) attachMenu.classList.add('hidden'); // Hide menu after click
+                return;
+            }
+
+
+            // Hide attachment menu if clicking outside of it
+            if (attachMenu && !attachMenu.classList.contains('hidden') && !e.target.closest('#chat-attachment-menu') && !e.target.closest('#chat-attach-btn')) {
+                attachMenu.classList.add('hidden');
             }
         });
 
@@ -5607,6 +6138,7 @@ if (e.target.classList.contains('edit-subject-btn')) {
                 plannerState.activeListId = sidebarItem.dataset.listId;
                 plannerState.selectedTaskId = null; // Deselect task when changing lists
                 renderPlannerPage();
+                document.getElementById('planner-sidebar').classList.remove('open'); // Close sidebar on mobile
                 return;
             }
 
@@ -5614,6 +6146,29 @@ if (e.target.classList.contains('edit-subject-btn')) {
             if (viewBtn) {
                 plannerState.currentView = viewBtn.dataset.view;
                 renderPlannerMainContent();
+                return;
+            }
+
+            const calendarNavBtn = e.target.closest('.calendar-nav-btn');
+            if (calendarNavBtn) {
+                const direction = calendarNavBtn.dataset.direction;
+                if (direction === 'prev') {
+                    plannerState.calendarMonth--;
+                    if (plannerState.calendarMonth < 0) {
+                        plannerState.calendarMonth = 11;
+                        plannerState.calendarYear--;
+                    }
+                } else if (direction === 'next') {
+                    plannerState.calendarMonth++;
+                    if (plannerState.calendarMonth > 11) {
+                        plannerState.calendarMonth = 0;
+                        plannerState.calendarYear++;
+                    }
+                } else if (direction === 'today') {
+                    plannerState.calendarYear = new Date().getFullYear();
+                    plannerState.calendarMonth = new Date().getMonth();
+                }
+                renderPlannerMainContent(); // Re-render the calendar view
                 return;
             }
             
@@ -5625,18 +6180,21 @@ if (e.target.classList.contains('edit-subject-btn')) {
                 }
                 plannerState.selectedTaskId = taskItem.dataset.taskId;
                 renderPlannerPage(); // Re-render to show selection and details
+                document.getElementById('planner-sidebar').classList.remove('open'); // Close sidebar if open
                 return;
             }
             
             if (e.target.id === 'close-task-details') {
                 plannerState.selectedTaskId = null;
                 renderPlannerTaskDetails();
+                return;
             }
             
             if(e.target.id === 'delete-task-btn') {
                 showConfirmationModal('Delete Task?', 'Are you sure you want to delete this task?', () => {
                    deletePlannerTask(plannerState.selectedTaskId);
                 });
+                return;
             }
             if (e.target.id === 'add-list-btn') {
                 const listName = prompt("Enter new project name:");
@@ -5648,6 +6206,30 @@ if (e.target.classList.contains('edit-subject-btn')) {
                         members: [currentUser.uid]
                     });
                 }
+                return;
+            }
+
+            if (e.target.id === 'planner-menu-toggle') {
+                document.getElementById('planner-sidebar').classList.toggle('open');
+                return;
+            }
+
+            if (e.target.id === 'add-to-google-calendar-btn') {
+                const task = plannerState.tasks.find(t => t.id === plannerState.selectedTaskId);
+                if (task) {
+                    let url = 'https://www.google.com/calendar/render?action=TEMPLATE';
+                    url += `&text=${encodeURIComponent(task.title)}`;
+                    if (task.dueDate && task.dueDate.seconds) {
+                        const startDate = new Date(task.dueDate.seconds * 1000);
+                        const formattedStartDate = startDate.toISOString().split('T')[0].replace(/-/g, '');
+                        url += `&dates=${formattedStartDate}/${formattedStartDate}`; // All-day event
+                    }
+                    if (task.notes) {
+                        url += `&details=${encodeURIComponent(task.notes)}`;
+                    }
+                    window.open(url, '_blank');
+                }
+                return;
             }
         });
         
@@ -6016,6 +6598,14 @@ if (e.target.classList.contains('edit-subject-btn')) {
                 }
             });
 
+            ael('image-upload-input', 'change', (e) => {
+                const file = e.target.files[0];
+                if (file && currentGroupId) {
+                    handleImageUpload(file, currentGroupId);
+                }
+                e.target.value = null;
+            });
+
             // --- Service Worker Registration (Robust Version) ---
         if ('serviceWorker' in navigator) {
             // Service Workers require a secure context (HTTPS or localhost) to register.
@@ -6066,6 +6656,14 @@ if (e.target.classList.contains('edit-subject-btn')) {
     </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
 
 
 
