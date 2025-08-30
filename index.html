@@ -5523,6 +5523,7 @@ if (achievementsGrid) {
         // Auth
         ael('login-form', 'submit', async (e) => {
             e.preventDefault();
+            authError.textContent = '';
             const email = document.getElementById('login-email').value;
             const password = document.getElementById('login-password').value;
             try {
@@ -5530,6 +5531,106 @@ if (achievementsGrid) {
             } catch (error) {
                 authError.textContent = error.message;
             }
+        });
+
+        ael('signup-form', 'submit', async (e) => {
+            e.preventDefault();
+            authError.textContent = '';
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+             if (password.length < 6) {
+                authError.textContent = 'Password must be at least 6 characters long.';
+                return;
+            }
+            try {
+                await createUserWithEmailAndPassword(auth, email, password);
+            } catch (error) {
+                authError.textContent = error.message;
+            }
+        });
+
+        ael('auth-toggle-btn', 'click', () => {
+            const loginForm = document.getElementById('login-form');
+            const signupForm = document.getElementById('signup-form');
+            const toggleText = document.getElementById('login-toggle-text');
+            const toggleBtn = document.getElementById('auth-toggle-btn');
+            authError.textContent = '';
+
+            if (loginForm.classList.contains('hidden')) {
+                loginForm.classList.remove('hidden');
+                signupForm.classList.add('hidden');
+                toggleText.textContent = "Don't have an account?";
+                toggleBtn.textContent = 'Sign Up';
+            } else {
+                loginForm.classList.add('hidden');
+                signupForm.classList.remove('hidden');
+                toggleText.textContent = 'Already have an account?';
+                toggleBtn.textContent = 'Sign In';
+            }
+        });
+
+        ael('google-signin-btn', 'click', async () => {
+            authError.textContent = '';
+            const provider = new GoogleAuthProvider();
+            try {
+                await signInWithPopup(auth, provider);
+            } catch (error) {
+                authError.textContent = error.message;
+                console.error("Google Sign-in Error:", error);
+            }
+        });
+        
+        ael('username-setup-form', 'submit', async (e) => {
+            e.preventDefault();
+            if (!currentUser) return;
+
+            const usernameInput = document.getElementById('username-input');
+            const username = usernameInput.value.trim();
+            const usernameError = document.getElementById('username-error');
+            const selectedAvatarEl = document.querySelector('#username-avatar-picker .avatar-option.selected img');
+            const photoURL = selectedAvatarEl ? selectedAvatarEl.src : PRESET_AVATARS[0];
+
+            if (username.length < 3) {
+                usernameError.textContent = 'Username must be at least 3 characters.';
+                return;
+            }
+            usernameError.textContent = '';
+
+            const btn = e.target.querySelector('button[type="submit"]');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+            try {
+                const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
+                const publicUserRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
+                
+                const batch = firestoreWriteBatch(db);
+                batch.update(userRef, { username, photoURL });
+                batch.update(publicUserRef, { username, photoURL });
+                await batch.commit();
+                
+                const updatedUserDoc = await getDoc(userRef);
+                currentUserData = updatedUserDoc.data();
+                updateProfileUI(currentUserData);
+                showPage('page-timer');
+                setupRealtimeListeners();
+                await loadDailyTotal();
+                initializePushNotifications();
+
+            } catch (error) {
+                console.error("Error setting username:", error);
+                usernameError.textContent = 'Failed to save profile. Please try again.';
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'Save Profile';
+            }
+        });
+
+        ael('sign-out-btn', 'click', () => {
+            signOut(auth).catch(error => {
+                console.error("Sign out error", error);
+                showToast("Failed to sign out.", "error");
+            });
         });
 
         // Navigation
@@ -5618,8 +5719,11 @@ if (achievementsGrid) {
         ael('normal-timer-btn', 'click', () => switchTimerMode('normal'));
         ael('pomodoro-timer-btn', 'click', () => switchTimerMode('pomodoro'));
 
-        // Planner View Controls
-        ael('planner-view-controls', 'click', e => {
+        // --- NEW UNIFIED PLANNER EVENT LISTENERS ---
+
+        // Consolidated click handler for the entire planner page
+        ael('page-planner', 'click', e => {
+            // View switcher (List, Board, Calendar)
             const viewBtn = e.target.closest('.planner-view-btn');
             if (viewBtn) {
                 const view = viewBtn.dataset.view;
@@ -5627,9 +5731,115 @@ if (achievementsGrid) {
                     plannerState.currentView = view;
                     renderPlannerMainContent();
                 }
+                return;
+            }
+
+            // Sidebar list/project selection
+            const sidebarItem = e.target.closest('.planner-sidebar-item');
+            if (sidebarItem) {
+                const listId = sidebarItem.dataset.listId;
+                if (listId && listId !== plannerState.activeListId) {
+                    plannerState.activeListId = listId;
+                    plannerState.selectedTaskId = null; // Deselect task when switching lists
+                    renderPlannerPage();
+                }
+                if (window.innerWidth < 768) { // Close sidebar on mobile after selection
+                    document.getElementById('planner-sidebar')?.classList.remove('open');
+                }
+                return;
+            }
+
+            // Task item selection (in List, Board, or Calendar view)
+            const taskItem = e.target.closest('.task-item, .kanban-card, .calendar-task');
+            if (taskItem && !e.target.closest('.task-checkbox-planner')) {
+                const taskId = taskItem.dataset.taskId;
+                if (taskId) {
+                    plannerState.selectedTaskId = (plannerState.selectedTaskId === taskId) ? null : taskId;
+                    renderPlannerPage(); // Re-render to show selection and details panel
+                    if (window.innerWidth < 768 && plannerState.selectedTaskId) { // Open details panel on mobile
+                        document.getElementById('planner-task-details')?.classList.add('open');
+                    }
+                }
+                return;
+            }
+
+            // Task completion checkbox
+            const taskCheckbox = e.target.closest('.task-checkbox-planner');
+            if (taskCheckbox) {
+                const taskId = taskCheckbox.closest('.task-item').dataset.taskId;
+                if (taskId) {
+                    updatePlannerTask(taskId, { completed: taskCheckbox.checked });
+                }
+                return;
+            }
+
+            // Calendar navigation buttons (Prev, Today, Next)
+            const calNavBtn = e.target.closest('.calendar-nav-btn');
+            if (calNavBtn) {
+                const direction = calNavBtn.dataset.direction;
+                if (direction === 'next') {
+                    plannerState.calendarMonth++;
+                    if (plannerState.calendarMonth > 11) {
+                        plannerState.calendarMonth = 0;
+                        plannerState.calendarYear++;
+                    }
+                } else if (direction === 'prev') {
+                    plannerState.calendarMonth--;
+                    if (plannerState.calendarMonth < 0) {
+                        plannerState.calendarMonth = 11;
+                        plannerState.calendarYear--;
+                    }
+                } else if (direction === 'today') {
+                    plannerState.calendarYear = new Date().getFullYear();
+                    plannerState.calendarMonth = new Date().getMonth();
+                }
+                renderPlannerCalendarView(plannerState.tasks.filter(t => t.listId === plannerState.activeListId));
+                return;
+            }
+
+            // Task Details Panel actions
+            if (e.target.closest('#close-task-details')) {
+                plannerState.selectedTaskId = null;
+                renderPlannerTaskDetails(); // This will hide the panel
+                return;
+            }
+            if (e.target.closest('#delete-task-btn')) {
+                if (plannerState.selectedTaskId) {
+                     showConfirmationModal(
+                        'Delete Task?',
+                        'Are you sure you want to permanently delete this task?',
+                        () => deletePlannerTask(plannerState.selectedTaskId)
+                    );
+                }
+                return;
+            }
+
+            // Mobile sidebar toggle
+            if (e.target.closest('#planner-menu-toggle')) {
+                document.getElementById('planner-sidebar')?.classList.toggle('open');
             }
         });
         
+        // Delegated input/change handler for the task details panel
+        ael('planner-task-details', 'change', e => {
+            const taskId = plannerState.selectedTaskId;
+            if (!taskId) return;
+            
+            const target = e.target;
+            let updates = {};
+
+            if (target.id === 'task-detail-title') updates.title = target.value.trim();
+            else if (target.id === 'task-detail-due-date') updates.dueDate = target.value ? new Date(target.value + 'T00:00:00') : null;
+            else if (target.id === 'task-detail-priority') updates.priority = target.value;
+            else if (target.id === 'task-detail-notes') updates.notes = target.value;
+
+            if (Object.keys(updates).length > 0) {
+                updatePlannerTask(taskId, updates);
+            }
+        });
+
+        // --- END OF UNIFIED PLANNER LISTENERS ---
+
         // Create Group Controls
         ael('create-group-done-btn', 'click', async () => {
             const form = document.getElementById('create-group-form');
@@ -5802,6 +6012,54 @@ if (achievementsGrid) {
 
             studyGoalModal.classList.remove('active');
             showToast("Study goal updated!", "success");
+        });
+
+        ael('page-find-groups', 'click', (e) => {
+            const sortBtn = e.target.closest('#group-ranking-sort-tabs .group-filter-btn');
+            if (sortBtn && !sortBtn.classList.contains('active')) {
+                document.querySelectorAll('#group-ranking-sort-tabs .group-filter-btn').forEach(btn => btn.classList.remove('active'));
+                sortBtn.classList.add('active');
+                renderGroupRankings();
+            }
+            const filterCheckbox = e.target.closest('#group-ranking-filters input[type="checkbox"]');
+            if (filterCheckbox) {
+                renderGroupRankings();
+            }
+        });
+
+        ael('group-detail-nav', 'click', (e) => {
+            const navItem = e.target.closest('.group-nav-item');
+            if (navItem && !navItem.classList.contains('active')) {
+                const subpage = navItem.dataset.subpage;
+                renderGroupSubPage(subpage);
+            }
+        });
+
+        ael('page-group-detail', 'click', e => {
+            const settingsBtn = e.target.closest('#group-settings-btn');
+            if (settingsBtn) {
+                document.getElementById('group-settings-modal').classList.add('active');
+                return;
+            }
+            
+            const attachBtn = e.target.closest('#chat-attach-btn');
+            if (attachBtn) {
+                document.getElementById('chat-attachment-menu').classList.toggle('hidden');
+            } else if (!e.target.closest('#chat-attachment-menu')) {
+                 const menu = document.getElementById('chat-attachment-menu');
+                 if(menu) menu.classList.add('hidden');
+            }
+
+            const chatAction = e.target.closest('[data-chat-action]');
+            if (chatAction) {
+                const action = chatAction.dataset.chatAction;
+                if (action === 'album') {
+                    document.getElementById('image-upload-input').click();
+                } else {
+                    showToast(`${action.charAt(0).toUpperCase() + action.slice(1)} upload coming soon!`, 'info');
+                }
+                 document.getElementById('chat-attachment-menu').classList.add('hidden');
+            }
         });
 
         ael('pomodoro-settings-form', 'submit', async (e) => {
@@ -6047,12 +6305,20 @@ if (achievementsGrid) {
                 }
             });
 
-            ael('image-upload-input', 'change', (e) => {
+            ael('profile-picture-upload', 'change', (e) => {
                 const file = e.target.files[0];
                 if (file) {
                     uploadProfilePicture(file);
                 }
-                e.target.value = null; // Reset input
+                e.target.value = ''; // Reset input
+            });
+
+            ael('image-upload-input', 'change', (e) => {
+                const file = e.target.files[0];
+                if (file && currentGroupId) {
+                    handleImageUpload(file, currentGroupId);
+                }
+                e.target.value = ''; // Reset input
             });
 
             // --- START: ADDED EVENT LISTENERS ---
@@ -6259,6 +6525,10 @@ if (achievementsGrid) {
     </script>
 </body>
 </html>
+
+
+
+
 
 
 
