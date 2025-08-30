@@ -1597,13 +1597,25 @@
                     <div id="group-selector-container" class="group-detail-header-dropdown">
                          <select id="group-selector"></select>
                     </div>
+                    <!-- NEW VIEW SWITCH -->
+                    <div id="group-view-switch" class="hidden timer-switch-container bg-gray-800 p-1 mx-2">
+                        <button id="realtime-view-btn" class="timer-switch-btn text-xs px-3 py-1 active">Realtime</button>
+                        <button id="studicon-view-btn" class="timer-switch-btn text-xs px-3 py-1">Studicon</button>
+                    </div>
+
+                    <div class="flex-grow"></div> <!-- Spacer -->
+
                     <!-- New Ranking Switch -->
                     <div id="ranking-scope-switch" class="hidden timer-switch-container bg-gray-800 p-1">
                         <button id="group-ranking-scope-btn" class="timer-switch-btn text-xs px-3 py-1 active">Group</button>
                         <button id="global-ranking-scope-btn" class="timer-switch-btn text-xs px-3 py-1">Global</button>
                     </div>
+                    <!-- NEW STORE BUTTON -->
+                    <button id="studicon-store-btn" class="hidden text-gray-400 hover:text-white w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-700">
+                        <i class="fas fa-store"></i>
+                    </button>
                     <!-- New Settings Button (placeholder) -->
-                    <div id="group-settings-btn-container" class="w-10 h-10 ml-4"></div>
+                    <div id="group-settings-btn-container" class="w-10 h-10"></div>
                 </header>
                 <div id="group-detail-content" class="flex-grow overflow-y-auto no-scrollbar">
                 </div>
@@ -1748,6 +1760,58 @@
         </div>
     </div>
 
+    <!-- Studicon Store Modal -->
+    <div id="studicon-store-modal" class="modal">
+        <div class="modal-content max-w-2xl w-full">
+            <div class="modal-header">
+                <div class="modal-title">Studicon Store</div>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div id="studicon-store-content">
+                <div id="studicon-category-tabs" class="flex space-x-1 border-b border-gray-700 mb-4">
+                    <!-- Category tabs will be injected here -->
+                </div>
+                <div id="studicon-picker" class="max-h-[60vh] overflow-y-auto avatar-picker grid-cols-5">
+                    <!-- Studicons will be injected here -->
+                </div>
+            </div>
+            <button id="save-studicon-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition mt-4">Save Studicon</button>
+        </div>
+    </div>
+
+    <!-- User Profile Modal -->
+    <div id="user-profile-modal" class="modal">
+        <div class="modal-content max-w-sm w-full">
+            <div class="modal-header">
+                <div class="modal-title">User Profile</div>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div id="user-profile-content" class="text-center">
+                <!-- Loading state -->
+                <div id="user-profile-loading" class="py-8"><i class="fas fa-spinner fa-spin fa-2x"></i></div>
+                <!-- Content state -->
+                <div id="user-profile-details" class="hidden">
+                    <div id="user-profile-avatar" class="profile-avatar mx-auto mb-4 w-24 h-24 text-4xl overflow-hidden"></div>
+                    <h2 id="user-profile-name" class="text-2xl font-bold"></h2>
+                    <div class="mt-6 p-4 bg-gray-800 rounded-lg">
+                        <p class="text-4xl font-bold text-cyan-400" id="user-profile-total-today">00:00:00</p>
+                        <p class="text-sm text-gray-400">Total Study Time Today</p>
+                    </div>
+                    <div class="mt-4 grid grid-cols-2 gap-4 text-left text-sm">
+                        <div class="bg-gray-800 p-3 rounded-lg">
+                            <p class="text-gray-400">Overall Study Time</p>
+                            <p class="font-semibold text-white" id="user-profile-total-overall">--</p>
+                        </div>
+                        <div class="bg-gray-800 p-3 rounded-lg">
+                            <p class="text-gray-400">Last Active</p>
+                            <p class="font-semibold text-white" id="user-profile-last-active">--</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 
     <script type="module">
     // Firebase SDKS 
@@ -1807,6 +1871,36 @@ import {
             'https://api.dicebear.com/8.x/pixel-art/svg?seed=Gizmo',
             'https://api.dicebear.com/8.x/pixel-art/svg?seed=Jasper'
         ];
+        const STUDICONS = {
+            'Minimalist': [
+                'https://api.dicebear.com/8.x/miniavs/svg?seed=Angel', 'https://api.dicebear.com/8.x/miniavs/svg?seed=Annie',
+                'https://api.dicebear.com/8.x/miniavs/svg?seed=Charlie', 'https://api.dicebear.com/8.x/miniavs/svg?seed=Misty',
+                'https://api.dicebear.com/8.x/miniavs/svg?seed=Garfield', 'https://api.dicebear.com/8.x/miniavs/svg?seed=Sheba',
+                'https://api.dicebear.com/8.x/miniavs/svg?seed=Midnight', 'https://api.dicebear.com/8.x/miniavs/svg?seed=Snuggles',
+                'https://api.dicebear.com/8.x/miniavs/svg?seed=Pumpkin', 'https://api.dicebear.com/8.x/miniavs/svg?seed=Patches',
+            ],
+            'Pixel Art': [
+                'https://api.dicebear.com/8.x/pixel-art/svg?seed=Buddy', 'https://api.dicebear.com/8.x/pixel-art/svg?seed=Coco',
+                'https://api.dicebear.com/8.x/pixel-art/svg?seed=Gizmo', 'https://api.dicebear.com/8.x/pixel-art/svg?seed=Jasper',
+                'https://api.dicebear.com/8.x/pixel-art/svg?seed=Loki', 'https://api.dicebear.com/8.x/pixel-art/svg?seed=Milo',
+                'https://api.dicebear.com/8.x/pixel-art/svg?seed=Oscar', 'https://api.dicebear.com/8.x/pixel-art/svg?seed=Peanut',
+                'https://api.dicebear.com/8.x/pixel-art/svg?seed=Rocky', 'https://api.dicebear.com/8.x/pixel-art/svg?seed=Shadow',
+            ],
+            'Adventurer': [
+                'https://api.dicebear.com/8.x/adventurer/svg?seed=Bandit', 'https://api.dicebear.com/8.x/adventurer/svg?seed=Bear',
+                'https://api.dicebear.com/8.x/adventurer/svg?seed=Callie', 'https://api.dicebear.com/8.x/adventurer/svg?seed=Cleo',
+                'https://api.dicebear.com/8.x/adventurer/svg?seed=Cookie', 'https://api.dicebear.com/8.x/adventurer/svg?seed=Dusty',
+                'https://api.dicebear.com/8.x/adventurer/svg?seed=Felix', 'https://api.dicebear.com/8.x/adventurer/svg?seed=George',
+                'https://api.dicebear.com/8.x/adventurer/svg?seed=Jack', 'https://api.dicebear.com/8.x/adventurer/svg?seed=Kiki',
+            ],
+            'Bottts': [
+                'https://api.dicebear.com/8.x/bottts/svg?seed=Abby', 'https://api.dicebear.com/8.x/bottts/svg?seed=Baby',
+                'https://api.dicebear.com/8.x/bottts/svg?seed=Boo', 'https://api.dicebear.com/8.x/bottts/svg?seed=Bubba',
+                'https://api.dicebear.com/8.x/bottts/svg?seed=Cali', 'https://api.dicebear.com/8.x/bottts/svg?seed=Chance',
+                'https://api.dicebear.com/8.x/bottts/svg?seed=Cuddles', 'https://api.dicebear.com/8.x/bottts/svg?seed=Frankie',
+                'https://api.dicebear.com/8.x/bottts/svg?seed=Harley', 'https://api.dicebear.com/8.x/bottts/svg?seed=Lilly',
+            ],
+        };
         // --- Web Worker Implementation ---
         const workerCode = `
             let timerInterval = null;
@@ -2936,6 +3030,79 @@ let pauseStartTime = 0;
             closeModalBtns.forEach(btn => btn.onclick = cleanup);
         }
 
+        async function showUserProfileModal(userId) {
+            if (!userId) return;
+            
+            const modal = document.getElementById('user-profile-modal');
+            const loadingEl = document.getElementById('user-profile-loading');
+            const detailsEl = document.getElementById('user-profile-details');
+            
+            modal.classList.add('active');
+            loadingEl.classList.remove('hidden');
+            detailsEl.classList.add('hidden');
+
+            try {
+                // Fetch public and private data in parallel
+                const publicUserRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', userId);
+                const privateUserRef = doc(db, 'artifacts', appId, 'users', userId);
+                
+                const [publicUserSnap, privateUserSnap] = await Promise.all([
+                    getDoc(publicUserRef),
+                    getDoc(privateUserRef)
+                ]);
+
+                if (!publicUserSnap.exists() || !privateUserSnap.exists()) {
+                    throw new Error("User data not found.");
+                }
+
+                const publicData = publicUserSnap.data();
+                const privateData = privateUserSnap.data();
+
+                // Fetch last session for last active time
+                const sessionsRef = collection(privateUserRef, 'sessions');
+                const q = query(sessionsRef, orderBy('endedAt', 'desc'), limit(1));
+                const lastSessionSnapshot = await getDocs(q);
+                
+                let lastActiveText = "No sessions yet";
+                if (!lastSessionSnapshot.empty) {
+                    const lastSessionData = lastSessionSnapshot.docs[0].data();
+                    const endedAt = lastSessionData.endedAt?.toDate();
+                    if (endedAt) {
+                         lastActiveText = timeSince(endedAt) + ' ago';
+                    }
+                }
+                
+                // Calculate total time today
+                const todayStr = getCurrentDate().toISOString().split('T')[0];
+                let totalTodaySeconds = 0;
+                if (privateData.totalTimeToday && privateData.totalTimeToday.date === todayStr) {
+                    totalTodaySeconds = privateData.totalTimeToday.seconds || 0;
+                }
+
+                // Update UI
+                const avatarEl = document.getElementById('user-profile-avatar');
+                if (publicData.photoURL) {
+                    avatarEl.innerHTML = `<img src="${publicData.photoURL}" alt="${publicData.username}" class="w-full h-full object-cover">`;
+                } else {
+                    const initial = publicData.username ? publicData.username.charAt(0).toUpperCase() : 'U';
+                    avatarEl.innerHTML = `<span>${initial}</span>`;
+                }
+                
+                document.getElementById('user-profile-name').textContent = publicData.username || 'Anonymous';
+                document.getElementById('user-profile-total-today').textContent = formatTime(totalTodaySeconds);
+                document.getElementById('user-profile-total-overall').textContent = formatTime(publicData.totalStudySeconds || 0, false);
+                document.getElementById('user-profile-last-active').textContent = lastActiveText;
+
+                loadingEl.classList.add('hidden');
+                detailsEl.classList.remove('hidden');
+
+            } catch (error) {
+                console.error("Error fetching user profile:", error);
+                modal.classList.remove('active');
+                showToast('Could not load user profile.', 'error');
+            }
+        }
+
         // --- Firebase Initialization ---
         function initializeFirebase() {
             try {
@@ -3519,6 +3686,7 @@ if (sessionType === 'study') {
                     email: user.email,
                     username: user.displayName,
                     photoURL: PRESET_AVATARS[0], // Default avatar
+                    studiconURL: 'https://api.dicebear.com/8.x/miniavs/svg?seed=Angel', // Default studicon
                     joinedGroups: [],
                     createdAt: serverTimestamp(),
                     totalStudySeconds: 0,
@@ -3556,7 +3724,9 @@ if (sessionType === 'study') {
                     username: user.displayName,
                     email: user.email,
                     totalStudySeconds: 0,
-                    totalBreakSeconds: 0 // Initialize for public too
+                    totalBreakSeconds: 0, // Initialize for public too
+                    photoURL: PRESET_AVATARS[0], // Public profile needs it too
+                    studiconURL: 'https://api.dicebear.com/8.x/miniavs/svg?seed=Angel',
                 });
                 userDoc = await getDoc(userDocRef);
             }
@@ -4037,6 +4207,56 @@ if (achievementsGrid) {
         // =================================================================================
         // ============================= NEW PLANNER LOGIC END =============================
         // =================================================================================
+        
+        function renderGroupStudiconView() {
+            const container = document.getElementById('group-detail-content');
+            if (!container) return;
+
+            // Use Object.entries to get member ID
+            const membersArray = Object.entries(groupRealtimeData.members).map(([uid, data]) => ({ uid, ...data })).sort((a, b) => {
+                const aIsStudying = !!a.studying;
+                const bIsStudying = !!b.studying;
+                if (aIsStudying !== bIsStudying) {
+                    return aIsStudying ? -1 : 1;
+                }
+                return (a.username || '').localeCompare(b.username || '');
+            });
+            
+            const todayStr = getCurrentDate().toISOString().split('T')[0];
+            
+            container.innerHTML = `
+                <div class="p-4 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4">
+                    ${membersArray.map(member => {
+                        const isStudying = !!member.studying;
+                        const studiconUrl = member.studiconURL || 'https://api.dicebear.com/8.x/miniavs/svg?seed=Angel';
+
+                        // --- NEW: Calculate total time today for display ---
+                        let totalTodaySeconds = 0;
+                        if (member.totalTimeToday && member.totalTimeToday.date === todayStr) {
+                            totalTodaySeconds = member.totalTimeToday.seconds || 0;
+                        }
+                        const currentSessionElapsed = (isStudying && member.studying.type === 'study') 
+                            ? (Date.now() - member.studying.startTime.toDate()) / 1000 
+                            : 0;
+                        const effectiveTotalToday = totalTodaySeconds + currentSessionElapsed;
+                        // --- END NEW ---
+
+                        return `
+                            <div class="text-center cursor-pointer studicon-member-card" data-user-id="${member.uid}">
+                                <div class="relative w-20 h-20 mx-auto">
+                                    <div class="member-avatar ${isStudying ? 'studying' : ''} w-full h-full">
+                                        <img src="${studiconUrl}" class="w-full h-full object-cover rounded-full pointer-events-none">
+                                        ${isStudying ? '<div class="member-status-icon"></div>' : ''}
+                                    </div>
+                                </div>
+                                <p class="mt-2 text-sm font-semibold truncate text-white pointer-events-none">${member.username || 'Anonymous'}</p>
+                                <p class="text-lg font-bold text-cyan-400 pointer-events-none">${formatTime(effectiveTotalToday)}</p>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
 
 
         async function renderLeaderboard(period = 'weekly', containerId = 'ranking-list') {
@@ -4118,7 +4338,7 @@ if (achievementsGrid) {
                     : `<span>${(user.username || 'U').charAt(0).toUpperCase()}</span>`;
 
                 return `
-                    <div class="ranking-item ${currentUser.uid === user.id ? 'bg-blue-900/30' : ''}">
+                    <div class="ranking-item ${currentUser.uid === user.id ? 'bg-blue-900/30' : ''}" data-user-id="${user.id}">
                         <div class="rank ${rankClass}">${rank}</div>
                         <div class="user-avatar bg-gray-600 overflow-hidden">${avatarHTML}</div>
                         <div class="user-info">
@@ -5086,6 +5306,15 @@ if (achievementsGrid) {
                     rankingScopeSwitch.classList.remove('flex');
                 }
             }
+            // Show/hide view switch and store button for 'home' subpage
+            const viewSwitch = document.getElementById('group-view-switch');
+            const storeBtn = document.getElementById('studicon-store-btn');
+            if (viewSwitch && storeBtn) {
+                const showControls = (subpage === 'home');
+                viewSwitch.classList.toggle('hidden', !showControls);
+                viewSwitch.classList.toggle('flex', showControls);
+                storeBtn.classList.toggle('hidden', !showControls);
+            }
 
             document.querySelectorAll('.group-nav-item').forEach(i => i.classList.remove('active'));
             const activeNavItem = document.querySelector(`.group-nav-item[data-subpage="${subpage}"]`);
@@ -5094,8 +5323,13 @@ if (achievementsGrid) {
             }
             
             if (subpage === 'home') {
-                 container.innerHTML = '<div id="group-member-list" class="p-4 flex flex-col gap-3"></div>';
-                 renderGroupMembers();
+                const isStudiconView = document.getElementById('studicon-view-btn')?.classList.contains('active');
+                 if (isStudiconView) {
+                    renderGroupStudiconView();
+                } else {
+                    container.innerHTML = '<div id="group-member-list" class="p-4 flex flex-col gap-3"></div>';
+                    renderGroupMembers();
+                }
             } else if (subpage === 'invite') {
                 const inviteLink = `${window.location.origin}${window.location.pathname}?groupId=${currentGroupId}`;
                 container.innerHTML = `<div class="p-8 text-center"><img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(inviteLink)}" class="mx-auto mb-4 rounded-lg"><p class="text-blue-400 break-all">${inviteLink}</p><div class="flex gap-4 mt-4"><button id="copy-link-btn" class="w-full py-2 bg-gray-700 rounded-lg">Copy Link</button><button class="w-full py-2 bg-orange-500 rounded-lg">Share Link</button></div><p class="text-gray-500 mt-4 text-sm">Share this link to invite a friend or organization to study with you.</p></div>`;
@@ -5249,18 +5483,18 @@ if (achievementsGrid) {
                     : `<span>${(memberData.username || 'U').charAt(0).toUpperCase()}</span>`;
 
                 return `
-                    <div class="member-list-card">
-                        <div class="member-avatar ${isStudying ? 'studying' : ''} overflow-hidden">
+                    <div class="member-list-card cursor-pointer" data-user-id="${member.id}">
+                        <div class="member-avatar ${isStudying ? 'studying' : ''} overflow-hidden pointer-events-none">
                             ${avatarHTML}
                             ${isStudying ? '<div class="member-status-icon"></div>' : ''}
                         </div>
-                        <div class="flex-grow">
+                        <div class="flex-grow pointer-events-none">
                             <div class="font-bold text-white">${memberData.username || 'Anonymous'}</div>
                             <div class="text-sm ${isStudying ? 'text-green-400' : 'text-gray-400'}" id="member-subject-${memberId}">
                                 ${isStudying ? `Studying: ${memberData.studying.subject}` : 'Idle'}
                             </div>
                         </div>
-                        <div class="text-right">
+                        <div class="text-right pointer-events-none">
                             <div class="text-xl font-semibold text-white" id="member-time-${memberId}" data-base-time="${member.data.totalTimeToday && member.data.totalTimeToday.date === todayStr ? member.data.totalTimeToday.seconds : 0}" data-start-time="${isStudying ? memberData.studying.startTime.toDate().getTime() : 0}">
                                 ${formatTime(totalTodaySeconds)}
                             </div>
@@ -5350,7 +5584,7 @@ if (achievementsGrid) {
                     : `<span>${(user.username || 'U').charAt(0).toUpperCase()}</span>`;
 
                 return `
-                    <div class="ranking-item ${currentUser.uid === user.id ? 'bg-blue-900/30' : ''}">
+                    <div class="ranking-item ${currentUser.uid === user.id ? 'bg-blue-900/30' : ''}" data-user-id="${user.id}">
                         <div class="rank ${rankClass}">${rank}</div>
                         <div class="user-avatar bg-gray-600 overflow-hidden">${avatarHTML}</div>
                         <div class="user-info">
@@ -5957,6 +6191,22 @@ if (achievementsGrid) {
                 document.getElementById('group-settings-modal').classList.add('active');
                 return;
             }
+
+            // Studicon Store Button
+            const storeBtn = e.target.closest('#studicon-store-btn');
+            if (storeBtn) {
+                openStudiconStore();
+                return;
+            }
+
+            // View Switcher Button
+            const viewBtn = e.target.closest('#group-view-switch .timer-switch-btn');
+            if (viewBtn && !viewBtn.classList.contains('active')) {
+                document.querySelectorAll('#group-view-switch .timer-switch-btn').forEach(btn => btn.classList.remove('active'));
+                viewBtn.classList.add('active');
+                renderGroupSubPage('home'); // Re-render the home subpage with the new view
+                return;
+            }
             
             const attachBtn = e.target.closest('#chat-attach-btn');
             if (attachBtn) {
@@ -5975,6 +6225,14 @@ if (achievementsGrid) {
                     showToast(`${action.charAt(0).toUpperCase() + action.slice(1)} upload coming soon!`, 'info');
                 }
                  document.getElementById('chat-attachment-menu').classList.add('hidden');
+            }
+
+            const userCard = e.target.closest('[data-user-id]');
+            if (userCard) {
+                const userId = userCard.dataset.userId;
+                if (userId && userId !== currentUser.uid) {
+                    showUserProfileModal(userId);
+                }
             }
         });
 
@@ -6013,6 +6271,78 @@ if (achievementsGrid) {
                 showToast("Pomodoro settings saved!", "success");
         });
         
+        function renderStudiconPicker(category) {
+            const pickerContainer = document.getElementById('studicon-picker');
+            if (!pickerContainer) return;
+            
+            pickerContainer.innerHTML = STUDICONS[category].map(url => `
+                <div class="avatar-option" data-url="${url}">
+                    <img src="${url}" alt="Studicon">
+                </div>
+            `).join('');
+            
+            const currentStudicon = (currentUserData && groupRealtimeData.members[currentUser.uid]) ? groupRealtimeData.members[currentUser.uid].studiconURL : null;
+
+            if (currentStudicon) {
+                const selectedOption = pickerContainer.querySelector(`.avatar-option[data-url="${currentStudicon}"]`);
+                if (selectedOption) {
+                    selectedOption.classList.add('selected');
+                }
+            }
+        }
+
+        function openStudiconStore() {
+            const modal = document.getElementById('studicon-store-modal');
+            const categoryTabsContainer = document.getElementById('studicon-category-tabs');
+            const categories = Object.keys(STUDICONS);
+            
+            categoryTabsContainer.innerHTML = categories.map((cat, index) => `
+                <button class="studicon-category-tab flex-1 py-2 px-4 rounded-t-lg font-semibold text-sm ${index === 0 ? 'ranking-tab-btn active' : 'ranking-tab-btn'}" data-category="${cat}">${cat}</button>
+            `).join('');
+            
+            renderStudiconPicker(categories[0]);
+            modal.classList.add('active');
+        }
+        
+        ael('studicon-store-modal', 'click', async (e) => {
+            const tab = e.target.closest('.studicon-category-tab');
+            if (tab && !tab.classList.contains('active')) {
+                document.querySelectorAll('.studicon-category-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                renderStudiconPicker(tab.dataset.category);
+                return;
+            }
+            
+            const option = e.target.closest('.avatar-option');
+            if (option) {
+                document.querySelectorAll('#studicon-picker .avatar-option').forEach(opt => opt.classList.remove('selected'));
+                option.classList.add('selected');
+                return;
+            }
+
+            const saveBtn = e.target.closest('#save-studicon-btn');
+            if (saveBtn) {
+                const selectedStudicon = document.querySelector('#studicon-picker .avatar-option.selected')?.dataset.url;
+                if (selectedStudicon && currentUser) {
+                    const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
+                    const publicUserRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
+                    try {
+                        const batch = firestoreWriteBatch(db);
+                        batch.update(userRef, { studiconURL: selectedStudicon });
+                        batch.update(publicUserRef, { studiconURL: selectedStudicon });
+                        await batch.commit();
+                        document.getElementById('studicon-store-modal').classList.remove('active');
+                        showToast('Studicon updated!', 'success');
+                    } catch (error) {
+                        console.error("Studicon update failed:", error);
+                        showToast('Failed to update studicon.', 'error');
+                    }
+                } else {
+                    showToast('Please select a studicon.', 'info');
+                }
+            }
+        });
+
         ael('edit-group-info-form', 'submit', async (e) => {
             e.preventDefault();
             const btn = e.target.querySelector('button[type="submit"]');
@@ -6283,6 +6613,15 @@ if (achievementsGrid) {
                 if (tab) {
                     const period = tab.dataset.period;
                     renderLeaderboard(period);
+                    return;
+                }
+
+                const rankingItem = e.target.closest('.ranking-item[data-user-id]');
+                if (rankingItem) {
+                    const userId = rankingItem.dataset.userId;
+                    if (userId && userId !== currentUser.uid) {
+                        showUserProfileModal(userId);
+                    }
                 }
             });
 
@@ -6446,6 +6785,8 @@ if (achievementsGrid) {
     </script>
 </body>
 </html>
+
+
 
 
 
