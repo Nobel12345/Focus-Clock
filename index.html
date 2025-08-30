@@ -1588,7 +1588,7 @@
             </div>
             
             <div id="page-group-detail" class="page flex-col h-full overflow-y-auto no-scrollbar">
-                <header class="p-4 md:p-6 flex items-center justify-between z-20 border-b border-gray-800 sticky top-0 bg-gray-900">
+                <header class="p-4 md:p-6 flex items-center z-20 border-b border-gray-800 sticky top-0 bg-gray-900">
                     <button class="back-button text-gray-400 hover:text-white" data-target="my-groups">
                         <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
@@ -1597,26 +1597,43 @@
                     <div id="group-selector-container" class="group-detail-header-dropdown">
                          <select id="group-selector"></select>
                     </div>
-                    <!-- NEW VIEW SWITCH -->
-                    <div id="group-view-switch" class="hidden timer-switch-container bg-gray-800 p-1 mx-2">
-                        <button id="realtime-view-btn" class="timer-switch-btn text-xs px-3 py-1 active">Realtime</button>
-                        <button id="studicon-view-btn" class="timer-switch-btn text-xs px-3 py-1">Studicon</button>
-                    </div>
+                    
+                    <div class="ml-auto flex items-center gap-2">
+                        <!-- New Ranking Switch -->
+                        <div id="ranking-scope-switch" class="hidden timer-switch-container bg-gray-800 p-1">
+                            <button id="group-ranking-scope-btn" class="timer-switch-btn text-xs px-3 py-1 active">Group</button>
+                            <button id="global-ranking-scope-btn" class="timer-switch-btn text-xs px-3 py-1">Global</button>
+                        </div>
 
-                    <div class="flex-grow"></div> <!-- Spacer -->
-
-                    <!-- New Ranking Switch -->
-                    <div id="ranking-scope-switch" class="hidden timer-switch-container bg-gray-800 p-1">
-                        <button id="group-ranking-scope-btn" class="timer-switch-btn text-xs px-3 py-1 active">Group</button>
-                        <button id="global-ranking-scope-btn" class="timer-switch-btn text-xs px-3 py-1">Global</button>
+                        <!-- Desktop Home Controls -->
+                        <div id="group-desktop-controls" class="hidden md:flex items-center gap-2">
+                            <div id="group-view-switch" class="timer-switch-container bg-gray-800 p-1">
+                                <button id="realtime-view-btn" data-view-target="realtime" class="timer-switch-btn text-xs px-3 py-1 active">Realtime</button>
+                                <button id="studicon-view-btn" data-view-target="studicon" class="timer-switch-btn text-xs px-3 py-1">Studicon</button>
+                            </div>
+                            <button id="studicon-store-btn" class="text-gray-400 hover:text-white w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-700">
+                                <i class="fas fa-store"></i>
+                            </button>
+                            <div id="group-settings-btn-container" class="w-10 h-10"></div>
+                        </div>
                     </div>
-                    <!-- NEW STORE BUTTON -->
-                    <button id="studicon-store-btn" class="hidden text-gray-400 hover:text-white w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-700">
-                        <i class="fas fa-store"></i>
-                    </button>
-                    <!-- New Settings Button (placeholder) -->
-                    <div id="group-settings-btn-container" class="w-10 h-10"></div>
                 </header>
+                <div id="group-mobile-controls" class="md:hidden sticky top-[73px] bg-gray-900 z-10 border-b border-gray-800 p-2 space-y-2 hidden">
+                    <div class="flex justify-center">
+                        <div id="group-view-switch-mobile" class="timer-switch-container bg-gray-800 p-1">
+                            <button id="realtime-view-btn-mobile" data-view-target="realtime" class="timer-switch-btn text-xs px-3 py-1 active">Realtime</button>
+                            <button id="studicon-view-btn-mobile" data-view-target="studicon" class="timer-switch-btn text-xs px-3 py-1">Studicon</button>
+                        </div>
+                    </div>
+                    <div class="flex justify-around items-center pt-2 border-t border-gray-700/50">
+                        <button id="studicon-store-btn-mobile" class="flex flex-col items-center text-gray-400 w-20">
+                            <i class="fas fa-store text-xl"></i>
+                            <span class="text-xs mt-1">Store</span>
+                        </button>
+                        <div id="group-settings-btn-container-mobile" class="w-20 text-center">
+                        </div>
+                    </div>
+                </div>
                 <div id="group-detail-content" class="flex-grow overflow-y-auto no-scrollbar">
                 </div>
                 <nav id="group-detail-nav" class="bg-gray-800 border-t border-gray-700 grid grid-cols-5 sticky bottom-0">
@@ -1813,6 +1830,21 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Quick Add Task Modal -->
+    <div id="quick-add-task-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Add Task for <span id="quick-add-task-date"></span></div>
+                <button class="close-modal">&times;</button>
+            </div>
+            <form id="quick-add-task-form">
+                <input type="hidden" id="quick-add-task-date-input">
+                <input type="text" id="quick-add-task-title-input" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Task title..." required>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition mt-4">Add Task</button>
+            </form>
         </div>
     </div>
 
@@ -3993,13 +4025,41 @@ if (achievementsGrid) {
         
         function renderPlannerListView(tasks) {
             const mainContent = document.getElementById('planner-main-content');
-            const sortedTasks = tasks.sort((a,b) => (a.completed - b.completed) || ((b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)));
+            
+            const uncompletedTasks = tasks
+                .filter(t => !t.completed)
+                .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+
+            const completedTasks = tasks
+                .filter(t => t.completed)
+                .sort((a, b) => (b.completedAt?.seconds || 0) - (a.completedAt?.seconds || 0));
+
+            const uncompletedHtml = uncompletedTasks.length > 0
+                ? uncompletedTasks.map(task => renderPlannerTaskItem(task)).join('')
+                : '<p class="text-gray-500 px-3 py-2">No active tasks here. Add one above!</p>';
+
+            const completedHtml = completedTasks.length > 0
+                ? `
+                    <div class="mt-8">
+                        <h3 class="px-3 py-1 text-sm font-semibold text-gray-400 border-b border-gray-700 mb-3 flex items-center gap-2">
+                            <i class="fas fa-check-circle"></i>
+                            Completed (${completedTasks.length})
+                        </h3>
+                        <div class="space-y-2">
+                            ${completedTasks.map(task => renderPlannerTaskItem(task)).join('')}
+                        </div>
+                    </div>
+                ` : '';
+
             mainContent.innerHTML = `
                 <form id="add-planner-task-form" class="mb-4">
                     <input type="text" id="add-planner-task-input" class="w-full bg-gray-800 border-2 border-gray-700 rounded-lg p-3 text-white focus:outline-none focus:border-blue-500" placeholder="+ Add a new task to ${plannerState.activeListId === 'inbox' ? 'Inbox' : plannerState.lists.find(l=>l.id===plannerState.activeListId)?.name || ''}..."/>
                 </form>
-                <div id="planner-task-list" class="space-y-2">
-                    ${sortedTasks.map(task => renderPlannerTaskItem(task)).join('')}
+                <div id="planner-task-list">
+                    <div class="space-y-2">
+                        ${uncompletedHtml}
+                    </div>
+                    ${completedHtml}
                 </div>
             `;
         }
@@ -4155,7 +4215,7 @@ if (achievementsGrid) {
                     </div>
 
                     <div class="flex-shrink-0 pt-2 border-t border-gray-700">
-                        <button id="add-to-google-calendar-btn" class="w-full flex items-center justify-center gap-2 text-white bg-blue-600 hover:bg-blue-700 py-2 rounded-md mb-2">
+                        <button id="add-to-google-calendar-btn" class="w-full flex items-center justify-center gap-2 text-white bg-blue-600 hover:bg-blue-700 py-2 rounded-md mb-2 ${!selectedTask.dueDate ? 'opacity-50 cursor-not-allowed' : ''}" ${!selectedTask.dueDate ? 'disabled' : ''}>
                             <i class="fab fa-google"></i> Add to Google Calendar
                         </button>
                         <button id="delete-task-btn" class="w-full text-red-500 hover:bg-red-500/10 py-2 rounded-md">Delete Task</button>
@@ -4164,7 +4224,7 @@ if (achievementsGrid) {
             `;
         }
 
-        async function addPlannerTask(title) {
+        async function addPlannerTask(title, dueDateStr = null) {
             if (!currentUser || !title.trim()) return;
             const currentList = plannerState.lists.find(l => l.id === plannerState.activeListId) || { members: [currentUser.uid] };
             
@@ -4180,7 +4240,7 @@ if (achievementsGrid) {
                     notes: '',
                     subtasks: [],
                     tags: [],
-                    dueDate: null,
+                    dueDate: dueDateStr ? new Date(dueDateStr + 'T00:00:00') : null,
                 });
             } catch (error) {
                 console.error("Error adding task:", error);
@@ -5312,10 +5372,20 @@ if (achievementsGrid) {
 
                 // --- NEW: Render Settings Button for ALL members ---
                 const settingsBtnContainer = document.getElementById('group-settings-btn-container');
+                const settingsBtnContainerMobile = document.getElementById('group-settings-btn-container-mobile');
+
                 if (settingsBtnContainer) {
                     settingsBtnContainer.innerHTML = `
                         <button id="group-settings-btn" class="text-gray-400 hover:text-white w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-700">
                             <i class="fas fa-cog"></i>
+                        </button>
+                    `;
+                }
+                if (settingsBtnContainerMobile) {
+                    settingsBtnContainerMobile.innerHTML = `
+                        <button id="group-settings-btn-mobile" class="flex flex-col items-center text-gray-400">
+                            <i class="fas fa-cog text-xl"></i>
+                            <span class="text-xs mt-1">Settings</span>
                         </button>
                     `;
                 }
@@ -5369,25 +5439,19 @@ if (achievementsGrid) {
             const container = document.getElementById('group-detail-content');
             if (!container) return;
             
-            // Show/hide the ranking scope switch
+            // Show/hide controls based on subpage
             const rankingScopeSwitch = document.getElementById('ranking-scope-switch');
+            const desktopHomeControls = document.getElementById('group-desktop-controls');
+            const mobileHomeControls = document.getElementById('group-mobile-controls');
+
             if (rankingScopeSwitch) {
-                if (subpage === 'rankings') {
-                    rankingScopeSwitch.classList.remove('hidden');
-                    rankingScopeSwitch.classList.add('flex');
-                } else {
-                    rankingScopeSwitch.classList.add('hidden');
-                    rankingScopeSwitch.classList.remove('flex');
-                }
+                rankingScopeSwitch.classList.toggle('hidden', subpage !== 'rankings');
+                rankingScopeSwitch.classList.toggle('flex', subpage === 'rankings');
             }
-            // Show/hide view switch and store button for 'home' subpage
-            const viewSwitch = document.getElementById('group-view-switch');
-            const storeBtn = document.getElementById('studicon-store-btn');
-            if (viewSwitch && storeBtn) {
-                const showControls = (subpage === 'home');
-                viewSwitch.classList.toggle('hidden', !showControls);
-                viewSwitch.classList.toggle('flex', showControls);
-                storeBtn.classList.toggle('hidden', !showControls);
+            if (desktopHomeControls && mobileHomeControls) {
+                const showHomeControls = (subpage === 'home');
+                desktopHomeControls.classList.toggle('hidden', !showHomeControls);
+                mobileHomeControls.classList.toggle('hidden', !showHomeControls);
             }
 
             document.querySelectorAll('.group-nav-item').forEach(i => i.classList.remove('active'));
@@ -6054,15 +6118,190 @@ if (achievementsGrid) {
         ael('pomodoro-timer-btn', 'click', () => switchTimerMode('pomodoro'));
 
         // --- NEW UNIFIED PLANNER EVENT LISTENERS ---
-        ael('page-planner', 'click', e => {
-            const viewBtn = e.target.closest('.planner-view-btn');
-            if (viewBtn && !viewBtn.classList.contains('active')) {
-                plannerState.currentView = viewBtn.dataset.view;
-                renderPlannerMainContent();
-                return; // Stop further execution
+        // This single block handles all interactions within the planner for robustness
+        const plannerPage = document.getElementById('page-planner');
+        if (plannerPage) {
+            let detailUpdateDebounceTimer;
+
+            // Main click handler
+            plannerPage.addEventListener('click', e => {
+                const target = e.target;
+
+                // --- NEW: Calendar day click for adding task ---
+                const dayCell = target.closest('.calendar-day-cell:not(.other-month)');
+                if (dayCell && !target.closest('.calendar-task')) {
+                    const dateStr = dayCell.dataset.date;
+                    if (dateStr) {
+                        const modal = document.getElementById('quick-add-task-modal');
+                        document.getElementById('quick-add-task-date').textContent = new Date(dateStr + 'T00:00:00').toLocaleDateString(undefined, { month: 'long', day: 'numeric' });
+                        document.getElementById('quick-add-task-date-input').value = dateStr;
+                        modal.classList.add('active');
+                        document.getElementById('quick-add-task-title-input').focus();
+                    }
+                    return; 
+                }
+
+                // View switcher
+                const viewBtn = target.closest('.planner-view-btn');
+                if (viewBtn && !viewBtn.classList.contains('active')) {
+                    plannerState.currentView = viewBtn.dataset.view;
+                    renderPlannerMainContent();
+                    return;
+                }
+
+                // Sidebar list selection
+                const sidebarItem = target.closest('.planner-sidebar-item');
+                if (sidebarItem && !sidebarItem.classList.contains('active')) {
+                    plannerState.activeListId = sidebarItem.dataset.listId;
+                    plannerState.selectedTaskId = null; // Deselect task when changing lists
+                    renderPlannerPage();
+                    return;
+                }
+                
+                // Calendar navigation
+                const calNavBtn = target.closest('.calendar-nav-btn');
+                if (calNavBtn) {
+                    const direction = calNavBtn.dataset.direction;
+                    if (direction === 'today') {
+                        plannerState.calendarYear = new Date().getFullYear();
+                        plannerState.calendarMonth = new Date().getMonth();
+                    } else if (direction === 'next') {
+                        plannerState.calendarMonth++;
+                        if (plannerState.calendarMonth > 11) {
+                            plannerState.calendarMonth = 0;
+                            plannerState.calendarYear++;
+                        }
+                    } else if (direction === 'prev') {
+                        plannerState.calendarMonth--;
+                        if (plannerState.calendarMonth < 0) {
+                            plannerState.calendarMonth = 11;
+                            plannerState.calendarYear--;
+                        }
+                    }
+                    renderPlannerCalendarView(plannerState.tasks.filter(t => t.listId === plannerState.activeListId));
+                    return;
+                }
+
+                // Task item selection (in any view)
+                const taskItem = target.closest('.task-item, .kanban-card, .calendar-task');
+                if (taskItem && taskItem.dataset.taskId) {
+                    // Don't select if a checkbox was the direct target of the click
+                    if (!target.classList.contains('task-checkbox-planner')) {
+                        plannerState.selectedTaskId = taskItem.dataset.taskId;
+                        // Re-render to highlight selection and show details panel
+                        renderPlannerPage(); 
+                    }
+                    return;
+                }
+                
+                // Task details panel buttons
+                const detailsPanel = target.closest('#planner-task-details');
+                if(detailsPanel) {
+                    const taskId = plannerState.selectedTaskId;
+                    if (!taskId) return;
+                    
+                    if (target.closest('#close-task-details')) {
+                        plannerState.selectedTaskId = null;
+                        renderPlannerTaskDetails(); // Hides the panel
+                    }
+                    else if (target.closest('#delete-task-btn')) {
+                        showConfirmationModal('Delete Task?', 'This task will be permanently deleted.', () => deletePlannerTask(taskId));
+                    }
+                    else if (target.closest('#add-to-google-calendar-btn')) {
+                        const task = plannerState.tasks.find(t => t.id === taskId);
+                        if (task && task.dueDate) {
+                            const startDate = new Date(task.dueDate.seconds * 1000);
+                            
+                            const formatForGoogle = (date) => {
+                                // YYYYMMDD format
+                                return date.toISOString().replace(/[-:]/g, '').split('.')[0].substring(0, 8);
+                            };
+                            
+                            const startDateStr = formatForGoogle(startDate);
+                            // For an all-day event, the end date should be the next day
+                            const endDate = new Date(startDate);
+                            endDate.setDate(startDate.getDate() + 1);
+                            const endDateStr = formatForGoogle(endDate);
+                            
+                            const title = encodeURIComponent(task.title);
+                            const details = encodeURIComponent(task.notes || `Task from FocusFlow.`);
+                            
+                            const calendarUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startDateStr}/${endDateStr}&details=${details}`;
+                            
+                            window.open(calendarUrl, '_blank');
+                        }
+                    }
+                }
+            });
+
+            // Handler for form inputs that change value
+            plannerPage.addEventListener('change', e => {
+                const target = e.target;
+
+                // Task checkbox in list view
+                if (target.classList.contains('task-checkbox-planner')) {
+                    const taskId = target.closest('.task-item').dataset.taskId;
+                    const isCompleted = target.checked;
+                    updatePlannerTask(taskId, {
+                        completed: isCompleted,
+                        completedAt: isCompleted ? serverTimestamp() : null // Add/remove completion timestamp
+                    });
+                }
+                
+                // Task details panel inputs (selects, date pickers)
+                if(target.closest('#planner-task-details')) {
+                    const taskId = plannerState.selectedTaskId;
+                     if (!taskId) return;
+                    if (target.matches('#task-detail-due-date, #task-detail-priority')) {
+                        const updateData = {};
+                        if(target.id === 'task-detail-due-date') {
+                            updateData.dueDate = target.value ? new Date(target.value + 'T00:00:00') : null;
+                        } else if (target.id === 'task-detail-priority') {
+                            updateData.priority = target.value;
+                        }
+                        updatePlannerTask(taskId, updateData);
+                    }
+                }
+            });
+
+            // Handler for text inputs with debouncing
+            plannerPage.addEventListener('input', e => {
+                const target = e.target;
+                if(target.closest('#planner-task-details')) {
+                    const taskId = plannerState.selectedTaskId;
+                    if (!taskId) return;
+
+                    if (target.matches('#task-detail-title, #task-detail-notes')) {
+                        clearTimeout(detailUpdateDebounceTimer);
+                        detailUpdateDebounceTimer = setTimeout(() => {
+                            const updateData = {};
+                            if (target.id === 'task-detail-title') updateData.title = target.value;
+                            if (target.id === 'task-detail-notes') updateData.notes = target.value;
+                            updatePlannerTask(taskId, updateData);
+                        }, 750); // Debounce by 750ms
+                    }
+                }
+            });
+        }
+        // --- END OF UNIFIED PLANNER LISTENERS ---
+
+        ael('quick-add-task-form', 'submit', async (e) => {
+            e.preventDefault();
+            const modal = document.getElementById('quick-add-task-modal');
+            const titleInput = document.getElementById('quick-add-task-title-input');
+            const dateInput = document.getElementById('quick-add-task-date-input');
+            
+            const title = titleInput.value.trim();
+            const date = dateInput.value;
+
+            if (title && date) {
+                await addPlannerTask(title, date);
+                titleInput.value = '';
+                modal.classList.remove('active');
+            } else {
+                showToast('Please enter a title for the task.', 'error');
             }
         });
-        // --- END OF UNIFIED PLANNER LISTENERS ---
 
         // Create Group Controls
         ael('create-group-done-btn', 'click', async () => {
@@ -6260,7 +6499,7 @@ if (achievementsGrid) {
         });
         
         ael('page-group-detail', 'click', async e => {
-            const settingsBtn = e.target.closest('#group-settings-btn');
+            const settingsBtn = e.target.closest('#group-settings-btn, #group-settings-btn-mobile');
             if (settingsBtn) {
                 const groupRef = doc(db, 'artifacts', appId, 'public', 'data', 'groups', currentGroupId);
                 const groupSnap = await getDoc(groupRef);
@@ -6271,17 +6510,22 @@ if (achievementsGrid) {
             }
 
             // Studicon Store Button
-            const storeBtn = e.target.closest('#studicon-store-btn');
+            const storeBtn = e.target.closest('#studicon-store-btn, #studicon-store-btn-mobile');
             if (storeBtn) {
                 openStudiconStore();
                 return;
             }
 
             // View Switcher Button
-            const viewBtn = e.target.closest('#group-view-switch .timer-switch-btn');
+            const viewBtn = e.target.closest('[data-view-target]');
             if (viewBtn && !viewBtn.classList.contains('active')) {
-                document.querySelectorAll('#group-view-switch .timer-switch-btn').forEach(btn => btn.classList.remove('active'));
-                viewBtn.classList.add('active');
+                const targetView = viewBtn.dataset.viewTarget;
+
+                // Update both desktop and mobile switches to stay in sync
+                document.querySelectorAll('[data-view-target]').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.viewTarget === targetView);
+                });
+
                 renderGroupSubPage('home'); // Re-render the home subpage with the new view
                 return;
             }
@@ -6944,6 +7188,10 @@ if (achievementsGrid) {
     </script>
 </body>
 </html>
+
+
+
+
 
 
 
