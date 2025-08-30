@@ -692,6 +692,13 @@
             justify-content: center;
             font-size: 2rem;
             font-weight: bold;
+            position: relative;
+            overflow: hidden; /* To contain the image */
+        }
+        .profile-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
         .profile-name { font-size: 1.3rem; font-weight: 600; }
         .profile-email { color: #9CA3AF; }
@@ -1256,11 +1263,52 @@
             color: #9CA3AF;
             pointer-events: none;
         }
+
+        /* Avatar Selection Styles */
+        .avatar-picker {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-top: 1rem;
+            margin-bottom: 1rem;
+        }
+        .avatar-option {
+            position: relative;
+            cursor: pointer;
+            border: 3px solid transparent;
+            border-radius: 50%;
+            transition: all 0.2s;
+        }
+        .avatar-option img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+        .avatar-option.selected {
+            border-color: #3B82F6;
+            transform: scale(1.1);
+        }
+        .avatar-upload-label {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            background-color: rgba(0,0,0,0.6);
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
     </style>
 </head>
 <body class="bg-gray-900 text-white flex flex-col h-screen antialiased">
 
     <input type="file" id="image-upload-input" class="hidden" accept="image/*">
+    <input type="file" id="profile-picture-upload" class="hidden" accept="image/*">
 
     <div id="auth-screen" class="active flex-col items-center justify-center h-full p-4 fade-in">
         <div class="w-full max-w-sm text-center">
@@ -1305,12 +1353,15 @@
     <div id="page-username-setup" class="page flex-col items-center justify-center h-full p-4 fade-in">
         <div class="w-full max-w-sm text-center">
             <h1 class="text-3xl font-bold text-white mb-2">Welcome to FocusFlow!</h1>
-            <p class="text-gray-400 mb-8">Let's set up your username.</p>
+            <p class="text-gray-400 mb-8">Let's set up your profile.</p>
             <div class="bg-gray-800 p-8 rounded-2xl shadow-lg">
                 <form id="username-setup-form" class="space-y-4">
+                    <div class="avatar-picker" id="username-avatar-picker">
+                        <!-- Avatar options will be injected here -->
+                    </div>
                     <input type="text" id="username-input" placeholder="Enter your username" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required minlength="3">
                     <p id="username-error" class="text-red-400 text-sm h-5"></p>
-                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Save Username</button>
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Save Profile</button>
                 </form>
             </div>
         </div>
@@ -1433,7 +1484,15 @@
                     <div class="w-6"></div> 
                 </header>
                 <div class="profile-container">
-                    <div class="profile-header"><div id="profile-page-avatar" class="profile-avatar">U</div><div><div id="profile-page-name" class="profile-name">User Name</div><div id="profile-page-email" class="profile-email">user@example.com</div></div></div>
+                    <div class="profile-header">
+                        <div id="profile-page-avatar" class="profile-avatar bg-blue-500">
+                             <!-- Profile image or initial will be here -->
+                        </div>
+                        <div>
+                            <div id="profile-page-name" class="profile-name">User Name</div>
+                            <div id="profile-page-email" class="profile-email">user@example.com</div>
+                        </div>
+                    </div>
                     <div class="card text-center p-4 bg-yellow-500/10 border-yellow-500/30 mb-6 rounded-lg">
     <h3 class="font-bold text-lg text-yellow-400">Current Streak</h3>
     <p class="text-4xl font-black text-white" id="profile-streak-display">0 days</p>
@@ -1589,7 +1648,9 @@
     <div id="confirmation-modal" class="modal"><div class="modal-content"><div class="modal-header"><h2 id="confirmation-modal-title" class="modal-title">Are you sure?</h2><button class="close-modal">&times;</button></div><p id="confirmation-modal-message">This action cannot be undone.</p><div id="confirmation-modal-buttons"><button id="cancel-btn">Cancel</button><button id="confirm-btn">Confirm</button></div></div></div>
     
     <!-- Edit Profile Modal -->
-    <div id="edit-profile-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Edit Profile</div><button class="close-modal">&times;</button></div><form id="edit-profile-form"><div class="mb-4"><label for="edit-username-input" class="block text-gray-300 mb-2">Username</label><input type="text" id="edit-username-input" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required minlength="3"></div><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Save Changes</button></form></div></div>
+    <div id="edit-profile-modal" class="modal">
+        <div class="modal-content"><div class="modal-header"><div class="modal-title">Edit Profile</div><button class="close-modal">&times;</button></div><form id="edit-profile-form"><div class="mb-4"><label for="edit-username-input" class="block text-gray-300 mb-2">Username</label><input type="text" id="edit-username-input" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required minlength="3"></div><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Save Changes</button></form></div></div>
+    </div>
     
     <!-- Study Goal Modal -->
     <div id="study-goal-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Set Study Goal</div><button class="close-modal">&times;</button></div><form id="study-goal-form"><div class="mb-4"><label for="study-goal-input" class="block text-gray-300 mb-2">Daily Study Goal (hours)</label><input type="number" id="study-goal-input" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required min="1" max="24"></div><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Set Goal</button></form></div></div>
@@ -1673,6 +1734,20 @@
 
     <div id="image-view-modal" class="modal bg-black/80"><div class="modal-content bg-transparent shadow-none p-0 w-full h-full flex items-center justify-center"><button class="close-modal absolute top-4 right-4 text-white text-4xl z-10">&times;</button><img id="fullscreen-image" src="" class="max-w-[95vw] max-h-[95vh] object-contain"></div></div>
 
+    <!-- Avatar Character Selection Modal -->
+    <div id="avatar-character-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Choose Character</div>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div id="avatar-character-picker" class="avatar-picker">
+                <!-- Character options will be injected here -->
+            </div>
+            <button id="save-character-avatar-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition mt-4">Save Character</button>
+        </div>
+    </div>
+
 
     <script type="module">
     // Firebase SDKS 
@@ -1722,6 +1797,16 @@ import {
     'marathoner': { name: 'Marathoner', description: 'Complete a single study session over 2 hours.' },
     'consistent_coder': { name: 'Consistent Coder', description: 'Maintain a 7-day study streak.' }
 };
+        const PRESET_AVATARS = [
+            'https://api.dicebear.com/8.x/lorelei/svg?seed=Mimi',
+            'https://api.dicebear.com/8.x/lorelei/svg?seed=Max',
+            'https://api.dicebear.com/8.x/lorelei/svg?seed=Leo',
+            'https://api.dicebear.com/8.x/lorelei/svg?seed=Muffin',
+            'https://api.dicebear.com/8.x/pixel-art/svg?seed=Buddy',
+            'https://api.dicebear.com/8.x/pixel-art/svg?seed=Coco',
+            'https://api.dicebear.com/8.x/pixel-art/svg?seed=Gizmo',
+            'https://api.dicebear.com/8.x/pixel-art/svg?seed=Jasper'
+        ];
         // --- Web Worker Implementation ---
         const workerCode = `
             let timerInterval = null;
@@ -2086,6 +2171,56 @@ let pauseStartTime = 0;
                 modal.classList.add('active');
             }
         }
+
+        async function uploadProfilePicture(file) {
+            if (!currentUser) return;
+            if (!file.type.startsWith('image/')) {
+                showToast('Please select an image file.', 'error');
+                return;
+            }
+            if (file.size > 5 * 1024 * 1024) { // 5MB limit
+                showToast('Image is too large (max 5MB).', 'error');
+                return;
+            }
+            showToast('Uploading profile picture...', 'info');
+
+            const toBase64 = file => new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => {
+                    const img = new Image();
+                    img.src = reader.result;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const MAX_WIDTH = 400; // Smaller size for profile pics
+                        let width = img.width;
+                        let height = img.height;
+
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        resolve(canvas.toDataURL('image/jpeg', 0.8)); // Use JPEG for smaller size
+                    };
+                };
+                reader.onerror = error => reject(error);
+            });
+
+            try {
+                const base64Image = await toBase64(file);
+                const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
+                await updateDoc(userRef, { photoURL: base64Image });
+                showToast('Profile picture updated!', 'success');
+            } catch (error) {
+                console.error("Error uploading profile picture:", error);
+                showToast('Profile picture upload failed.', 'error');
+            }
+        }
+
 
         async function handleImageUpload(file, groupId) {
             if (!file.type.startsWith('image/')) {
@@ -3377,6 +3512,7 @@ if (sessionType === 'study') {
                 const initialData = {
                     email: user.email,
                     username: user.displayName,
+                    photoURL: PRESET_AVATARS[0], // Default avatar
                     joinedGroups: [],
                     createdAt: serverTimestamp(),
                     totalStudySeconds: 0,
@@ -3426,13 +3562,24 @@ if (sessionType === 'study') {
             currentUserData = userData; 
             const username = userData.username || 'Anonymous';
             const email = userData.email || '';
+            const photoURL = userData.photoURL;
             const studyGoal = userData.studyGoalHours;
 
             document.getElementById('profile-page-name').textContent = username;
             document.getElementById('profile-page-email').textContent = email;
-            const avatarChar = username ? username.charAt(0).toUpperCase() : 'U';
-            document.getElementById('header-avatar').textContent = avatarChar;
-            document.getElementById('profile-page-avatar').textContent = avatarChar;
+            
+            const headerAvatar = document.getElementById('header-avatar');
+            const profileAvatar = document.getElementById('profile-page-avatar');
+            
+            [headerAvatar, profileAvatar].forEach(el => {
+                if (photoURL) {
+                    el.innerHTML = `<img src="${photoURL}" alt="${username}" class="w-full h-full object-cover">`;
+                } else {
+                    const initial = username ? username.charAt(0).toUpperCase() : 'U';
+                    el.textContent = initial;
+                    el.innerHTML = `<span>${initial}</span>`; // Ensure it's not trying to render an img tag
+                }
+            });
             
             const studyGoalValueEl = document.getElementById('study-goal-value');
             if (studyGoal) {
@@ -5385,67 +5532,6 @@ if (achievementsGrid) {
             }
         });
 
-        ael('signup-form', 'submit', async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('signup-email').value;
-            const password = document.getElementById('signup-password').value;
-            try {
-                await createUserWithEmailAndPassword(auth, email, password);
-            } catch (error) {
-                authError.textContent = error.message;
-            }
-        });
-
-        ael('google-signin-btn', 'click', async () => {
-            const provider = new GoogleAuthProvider();
-            try {
-                await signInWithPopup(auth, provider);
-            } catch (error) {
-                authError.textContent = error.message;
-            }
-        });
-
-        ael('auth-toggle-btn', 'click', () => {
-            const isLogin = !document.getElementById('login-form').classList.contains('hidden');
-            document.getElementById('login-form').classList.toggle('hidden', isLogin);
-            document.getElementById('signup-form').classList.toggle('hidden', !isLogin);
-            document.getElementById('auth-toggle-btn').textContent = isLogin ? 'Sign In' : 'Sign Up';
-            document.getElementById('login-toggle-text').textContent = isLogin ? 'Already have an account?' : "Don't have an account?";
-            authError.textContent = '';
-        });
-
-        ael('sign-out-btn', 'click', () => {
-            signOut(auth).catch(error => {
-                showToast(`Sign out failed: ${error.message}`, 'error');
-            });
-        });
-        
-        ael('username-setup-form', 'submit', async (e) => {
-            e.preventDefault();
-            if (!currentUser) return;
-            const usernameInput = document.getElementById('username-input');
-            const usernameError = document.getElementById('username-error');
-            const username = usernameInput.value.trim();
-            
-            if (username.length < 3) {
-                usernameError.textContent = "Username must be at least 3 characters.";
-                return;
-            }
-            usernameError.textContent = '';
-
-            const userDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
-            await setDoc(userDocRef, { username: username }, { merge: true });
-            
-            const publicUserDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
-            await setDoc(publicUserDocRef, { username: username }, { merge: true });
-            
-            const userDoc = await getDoc(userDocRef);
-            updateProfileUI(userDoc.data());
-            showPage('page-timer');
-            setupRealtimeListeners();
-            loadDailyTotal();
-        });
-
         // Navigation
         document.querySelectorAll('.nav-item').forEach(item => item.addEventListener('click', function() {
             document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
@@ -5469,6 +5555,154 @@ if (achievementsGrid) {
         ael('go-to-create-group-btn', 'click', () => { showPage('page-create-group'); });
         ael('profile-btn', 'click', () => { showPage('page-profile'); });
         
+        // --- FIXES START HERE ---
+
+        // Timer Controls
+        ael('start-studying-btn', 'click', () => {
+            document.getElementById('start-session-modal').classList.add('active');
+        });
+        
+        ael('stop-studying-btn', 'click', () => {
+             showConfirmationModal(
+                'Stop Studying?',
+                'Are you sure you want to end this study session?',
+                () => stopTimer()
+            );
+        });
+
+        ael('pause-btn', 'click', pauseTimer);
+        ael('resume-btn', 'click', resumeTimer);
+        
+        ael('start-session-form', 'submit', (e) => {
+            e.preventDefault();
+            const selectedSubjectEl = document.querySelector('#subject-selection-list .subject-item.selected');
+            if (selectedSubjectEl) {
+                const subjectName = selectedSubjectEl.dataset.subjectName;
+                startTimer(subjectName);
+                document.getElementById('start-session-modal').classList.remove('active');
+            } else {
+                showToast("Please select a subject to start studying.", "error");
+            }
+        });
+
+        ael('subject-selection-list', 'click', (e) => {
+            const subjectItem = e.target.closest('.subject-item');
+            if (subjectItem && !e.target.closest('button')) {
+                document.querySelectorAll('#subject-selection-list .subject-item.selected').forEach(el => el.classList.remove('selected'));
+                subjectItem.classList.add('selected');
+            }
+        });
+
+        // Timer Mode Switch
+        function switchTimerMode(mode) {
+            if (timerMode === mode || pomodoroState !== 'idle') {
+                if (pomodoroState !== 'idle') {
+                    showToast('Cannot switch modes during an active session.', 'error');
+                }
+                return;
+            }
+
+            timerMode = mode;
+            document.getElementById('normal-timer-btn').classList.toggle('active', mode === 'normal');
+            document.getElementById('pomodoro-timer-btn').classList.toggle('active', mode === 'pomodoro');
+
+            if (mode === 'pomodoro') {
+                sessionTimerDisplay.textContent = formatPomodoroTime(pomodoroSettings.work * 60);
+                pomodoroStatusDisplay.textContent = 'Ready for Pomodoro';
+                pomodoroStatusDisplay.style.color = '#9ca3af';
+            } else { // 'normal'
+                sessionTimerDisplay.textContent = formatTime(0);
+                pomodoroStatusDisplay.textContent = '';
+            }
+        }
+        ael('normal-timer-btn', 'click', () => switchTimerMode('normal'));
+        ael('pomodoro-timer-btn', 'click', () => switchTimerMode('pomodoro'));
+
+        // Planner View Controls
+        ael('planner-view-controls', 'click', e => {
+            const viewBtn = e.target.closest('.planner-view-btn');
+            if (viewBtn) {
+                const view = viewBtn.dataset.view;
+                if (view && view !== plannerState.currentView) {
+                    plannerState.currentView = view;
+                    renderPlannerMainContent();
+                }
+            }
+        });
+        
+        // Create Group Controls
+        ael('create-group-done-btn', 'click', async () => {
+            const form = document.getElementById('create-group-form');
+            const nameInput = document.getElementById('group-name-input');
+            const descriptionInput = document.getElementById('group-description-input');
+            
+            if (!nameInput.value.trim() || !descriptionInput.value.trim()) {
+                showToast('Group Name and Description are required.', 'error');
+                if (!nameInput.value.trim()) nameInput.focus();
+                else if (!descriptionInput.value.trim()) descriptionInput.focus();
+                return;
+            }
+        
+            const name = nameInput.value.trim();
+            const password = document.getElementById('group-password-input').value.trim();
+            const category = form.querySelector('.category-option.selected').textContent;
+            const timeGoal = parseInt(form.querySelector('.time-option.selected').textContent, 10);
+            const capacity = parseInt(document.getElementById('capacity-value').textContent, 10);
+            const description = descriptionInput.value.trim();
+            
+            const doneBtn = document.getElementById('create-group-done-btn');
+            doneBtn.disabled = true;
+            doneBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+        
+            try {
+                const newGroupRef = await addDoc(collection(db, `artifacts/${appId}/public/data/groups`), {
+                    name, password: password || null, category, timeGoal, capacity, description,
+                    leaderId: currentUser.uid, leaderName: currentUserData.username,
+                    members: [currentUser.uid], createdAt: serverTimestamp(),
+                    avgTime: '0h 0m', attendance: 0
+                });
+        
+                const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
+                await updateDoc(userRef, { joinedGroups: arrayUnion(newGroupRef.id) });
+        
+                showToast('Group created successfully!', 'success');
+                renderGroupRankings();
+                showPage('page-find-groups');
+                form.reset();
+            } catch (error) {
+                console.error('Error creating group:', error);
+                showToast('Failed to create group.', 'error');
+            } finally {
+                doneBtn.disabled = false;
+                doneBtn.textContent = 'Done';
+            }
+        });
+
+        ael('create-group-form', 'click', (e) => {
+            if (e.target.classList.contains('category-option')) {
+                document.querySelectorAll('#create-group-form .category-option').forEach(el => el.classList.remove('selected'));
+                e.target.classList.add('selected');
+            }
+            if (e.target.classList.contains('time-option')) {
+                document.querySelectorAll('#create-group-form .time-option').forEach(el => el.classList.remove('selected'));
+                e.target.classList.add('selected');
+            }
+        });
+        
+        ael('increase-capacity', 'click', () => {
+            const capacityEl = document.getElementById('capacity-value');
+            let current = parseInt(capacityEl.textContent, 10);
+            if (current < 100) capacityEl.textContent = current + 1;
+        });
+        
+        ael('decrease-capacity', 'click', () => {
+            const capacityEl = document.getElementById('capacity-value');
+            let current = parseInt(capacityEl.textContent, 10);
+            if (current > 2) capacityEl.textContent = current - 1;
+        });
+
+        // --- FIXES END HERE ---
+
         ael('page-my-groups', 'click', (e) => {
             // Handle clicking on a group card to enter the detail view
             const groupCard = e.target.closest('.group-card');
@@ -5487,821 +5721,13 @@ if (achievementsGrid) {
             }
         });
         
-        // --- NEW: Group Ranking Page Listeners ---
-        ael('page-find-groups', 'click', (e) => {
-            const sortBtn = e.target.closest('#group-ranking-sort-tabs .group-filter-btn');
-            if (sortBtn) {
-                document.querySelectorAll('#group-ranking-sort-tabs .group-filter-btn').forEach(btn => btn.classList.remove('active'));
-                sortBtn.classList.add('active');
-                renderGroupRankings();
-            }
-        });
-        ael('page-find-groups', 'change', (e) => {
-            const filterCheckbox = e.target.closest('#group-ranking-filters input[type="checkbox"]');
-            if (filterCheckbox) {
-                renderGroupRankings();
-            }
-        });
-
-        // Group Settings Modal Listener & Group Nav
-        ael('page-group-detail', 'click', (e) => {
-            // Group Nav
-            const navItem = e.target.closest('.group-nav-item');
-            if (navItem) {
-                const subpage = navItem.dataset.subpage;
-                renderGroupSubPage(subpage);
-                return; // Prevent other handlers on this page from firing
-            }
-
-            // Group Settings
-            if (e.target.closest('#group-settings-btn')) {
-                const modal = document.getElementById('group-settings-modal');
-                if(modal) modal.classList.add('active');
-                return;
-            }
-
-            // Chat Attachment Button
-            const attachBtn = e.target.closest('#chat-attach-btn');
-            const attachMenu = document.getElementById('chat-attachment-menu');
-            if (attachBtn) {
-                if (attachMenu) attachMenu.classList.toggle('hidden');
-                return;
-            }
-
-            const chatActionBtn = e.target.closest('[data-chat-action]');
-            if (chatActionBtn) {
-                const action = chatActionBtn.dataset.chatAction;
-                const imageUploadInput = document.getElementById('image-upload-input');
-                
-                if (action === 'album') {
-                    imageUploadInput.removeAttribute('capture');
-                    imageUploadInput.click();
-                } else if (action === 'camera') {
-                    imageUploadInput.setAttribute('capture', 'camera');
-                    imageUploadInput.click();
-                } else {
-                    showToast(`'${action.charAt(0).toUpperCase() + action.slice(1)}' feature is coming soon!`, 'info');
-                }
-
-                if (attachMenu) attachMenu.classList.add('hidden'); // Hide menu after click
-                return;
-            }
-
-
-            // Hide attachment menu if clicking outside of it
-            if (attachMenu && !attachMenu.classList.contains('hidden') && !e.target.closest('#chat-attachment-menu') && !e.target.closest('#chat-attach-btn')) {
-                attachMenu.classList.add('hidden');
-            }
-        });
-
-        document.getElementById('group-settings-modal')?.addEventListener('click', (e) => {
-            const item = e.target.closest('.group-settings-item');
-            if (item) {
-                const action = item.dataset.action;
-                if (action === 'edit-info') {
-                    openEditGroupInfoModal();
-                } else {
-                    // You can implement the logic for each action here
-                    showToast(`Action: ${action} (Coming Soon!)`, 'info');
-                }
-                document.getElementById('group-settings-modal').classList.remove('active');
-            }
-        });
-
-        // Group Creation
-        ael('create-group-done-btn', 'click', async () => {
-            const form = document.getElementById('create-group-form');
-            if (!form.checkValidity()) {
-                showToast('Please fill out all required fields.', 'error');
-                form.reportValidity();
-                return;
-            }
-            const btn = document.getElementById('create-group-done-btn');
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
-            
-            try {
-                const username = currentUserData.username;
-
-                const groupsCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'groups');
-                const newGroup = {
-                    name: document.getElementById('group-name-input').value.trim(),
-                    password: document.getElementById('group-password-input').value,
-                    category: document.querySelector('.category-option.selected').textContent,
-                    timeGoal: parseInt(document.querySelector('.time-option.selected').textContent),
-                    capacity: parseInt(document.getElementById('capacity-value').textContent),
-                    description: document.getElementById('group-description-input').value.trim(),
-                    leaderId: currentUser.uid,
-                    leaderName: username,
-                    members: [currentUser.uid],
-                    createdAt: serverTimestamp()
-                };
-                const docRef = await addDoc(groupsCollectionRef, newGroup);
-                await joinGroup(docRef.id);
-                renderJoinedGroups();
-                showPage('page-my-groups');
-                showToast('Group created successfully!', 'success');
-            } catch (error) {
-                console.error("Error creating group: ", error);
-                showToast("Failed to create group.", "error");
-            } finally {
-                btn.disabled = false;
-                btn.textContent = 'Done';
-            }
-        });
-
-        // Other UI
-        document.querySelectorAll('.category-option, .time-option').forEach(option => {
-            option.addEventListener('click', () => {
-                const parent = option.parentElement;
-                parent.querySelectorAll(`.${option.classList[0]}`).forEach(opt => opt.classList.remove('selected'));
-                option.classList.add('selected');
-            });
-        });
-        
-        let capacity = 15;
-        ael('increase-capacity', 'click', () => { if (capacity < 100) { document.getElementById('capacity-value').textContent = ++capacity; } else showToast('Maximum capacity is 100', 'info'); });
-        ael('decrease-capacity', 'click', () => { if (capacity > 2) { document.getElementById('capacity-value').textContent = --capacity; } else showToast('Minimum capacity is 2', 'info'); });
-        
-        // Modals
-        const addSubjectModal = document.getElementById('add-subject-modal');
-        const startSessionModal = document.getElementById('start-session-modal');
-
-        ael('add-subject-btn', 'click', () => { 
-            isAddingSubjectFromStartSession = false; // Reset flag
-            addSubjectModal.classList.add('active'); 
-        });
-        addSubjectModal.querySelector('.close-modal').addEventListener('click', () => { addSubjectModal.classList.remove('active'); });
-        
-        addSubjectModal.querySelectorAll('.color-dot').forEach(dot => {
-            dot.addEventListener('click', () => {
-                addSubjectModal.querySelectorAll('.color-dot').forEach(d => d.classList.remove('selected'));
-                dot.classList.add('selected');
-            });
-        });
-
-        ael('add-subject-form', 'submit', async (e) => {
-            e.preventDefault();
-            if (!currentUser) return;
-            const name = document.getElementById('add-subject-name').value.trim();
-            const selectedColorDot = addSubjectModal.querySelector('.color-dot.selected');
-            const color = selectedColorDot ? selectedColorDot.dataset.color : 'bg-blue-500'; // Default color if none selected
-            
-            if (!name) {
-                showToast("Please provide a name for the subject.", "error");
-                return;
-            }
-
-            const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
-            const subjectsRef = collection(userRef, 'subjects');
-            
-            // Get current count to set initial order
-            const subjectsSnapshot = await getDocs(subjectsRef);
-            const order = subjectsSnapshot.size;
-
-            await addDoc(subjectsRef, { name, color, order });
-            
-            addSubjectModal.classList.remove('active'); // This fixes the modal not hiding
-            document.getElementById('add-subject-form').reset();
-            // Re-select a default color for the next time the modal opens
-            addSubjectModal.querySelector('.color-dot.selected')?.classList.remove('selected');
-            addSubjectModal.querySelector('.color-dot[data-color="bg-blue-500"]')?.classList.add('selected');
-
-            // After adding, re-render the subject list in the start session modal and select the new subject
-            const updatedSubjectsSnapshot = await getDocs(query(subjectsRef, orderBy('order', 'asc')));
-            const subjects = [];
-            updatedSubjectsSnapshot.forEach(doc => subjects.push({ id: doc.id, ...doc.data() }));
-            renderSubjectSelectionList(subjects, name); // Pass the newly added subject's name for auto-selection
-
-            showToast("Subject added!", "success");
-
-            // If the subject was added from the "Start New Session" modal, re-open it
-            if (isAddingSubjectFromStartSession) {
-                startSessionModal.classList.add('active');
-                isAddingSubjectFromStartSession = false; // Reset flag
-            }
-        });
-        // Event listener for the edit subject form
-ael('edit-subject-form', 'submit', async (e) => {
-    e.preventDefault();
-    if (!currentUser) return;
-
-    const modal = document.getElementById('edit-subject-modal');
-    const subjectId = document.getElementById('edit-subject-id').value;
-    const newName = document.getElementById('edit-subject-name').value.trim();
-    const selectedColorDot = document.querySelector('#edit-subject-color-picker .color-dot.selected');
-    
-    if (!newName) {
-        showToast("Subject name cannot be empty.", "error");
-        return;
-    }
-
-    if (!selectedColorDot) {
-        showToast("Please select a color for the subject.", "error");
-        return;
-    }
-
-    const newColor = selectedColorDot.dataset.color;
-
-    try {
-        const subjectRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'subjects', subjectId);
-        await updateDoc(subjectRef, {
-            name: newName,
-            color: newColor
-        });
-        
-        modal.classList.remove('active');
-        showToast("Subject updated successfully!", "success");
-        // The existing onSnapshot listener will automatically refresh the UI.
-    } catch (error) {
-        console.error("Error updating subject:", error);
-        showToast("Failed to update subject.", "error");
-    }
-});
-        ael('start-studying-btn', 'click', () => { startSessionModal.classList.add('active'); });
-        ael('close-start-session-modal', 'click', () => { startSessionModal.classList.remove('active'); });
-        
-        // Modified: When "Add New Subject" is clicked from "Start New Session"
-        ael('open-add-subject-modal-from-start', 'click', () => { 
-            isAddingSubjectFromStartSession = true; // Set flag
-            startSessionModal.classList.remove('active'); // Hide "Start New Session" modal
-            addSubjectModal.classList.add('active'); // Show "Add New Subject" modal
-        });
-
-        ael('start-session-form', 'submit', (e) => {
-            e.preventDefault();
-            const selectedSubjectEl = document.querySelector('#subject-selection-list .subject-item.selected');
-            if (!selectedSubjectEl) {
-                showToast("Please select a subject to start studying.", "error");
-                return;
-            }
-            const subject = selectedSubjectEl.dataset.subjectName;
-            startSessionModal.classList.remove('active');
-            startTimer(subject);
-        });
-
-        ael('stop-studying-btn', 'click', stopTimer);
-        
-        ael('pause-btn', 'click', pauseTimer);
-        ael('resume-btn', 'click', resumeTimer);
-
-        ael('manual-start-btn', 'click', () => {
-            if (nextPomodoroPhase) {
-                // Play the starting sound since this is a manual action
-                playSound(pomodoroSounds.start, pomodoroSounds.volume);
-                
-                // Start the next phase using our stored variable
-                startNextPomodoroPhase(nextPomodoroPhase);
-                nextPomodoroPhase = null; // Clear the variable after use
-
-                // Update button visibility to show the running state
-                document.getElementById('manual-start-btn').classList.add('hidden');
-                document.getElementById('stop-studying-btn').classList.remove('hidden');
-                document.getElementById('pause-btn').classList.remove('hidden');
-            }
-        });
-        
-        // --- Timer Switch Logic ---
-        const normalTimerBtn = document.getElementById('normal-timer-btn');
-        const pomodoroTimerBtn = document.getElementById('pomodoro-timer-btn');
-        
-        ael('normal-timer-btn', 'click', () => {
-            if (timerMode === 'normal') return;
-            if(timerInterval || pomodoroStatusDisplay.textContent) stopTimer(); // Stop any active timer
-            timerMode = 'normal';
-            normalTimerBtn.classList.add('active');
-            pomodoroTimerBtn.classList.remove('active');
-            sessionTimerDisplay.textContent = formatTime(0);
-            pomodoroStatusDisplay.textContent = '';
-        });
-        
-        ael('pomodoro-timer-btn', 'click', () => {
-            if (timerMode === 'pomodoro') return;
-            if(timerInterval) stopTimer(); // Stop any active timer
-            timerMode = 'pomodoro';
-            pomodoroTimerBtn.classList.add('active');
-            normalTimerBtn.classList.remove('active');
-            pomodoroStatusDisplay.textContent = 'Ready for Pomodoro';
-            pomodoroStatusDisplay.style.color = '#9ca3af';
-            sessionTimerDisplay.textContent = formatPomodoroTime(pomodoroSettings.work * 60);
-
-            // --- Add this block for Notification Permissions ---
-            if ("Notification" in window) {
-                // Check if permission needs to be asked
-                if (Notification.permission === 'default') {
-                    showConfirmationModal(
-                        'Enable Notifications?',
-                        'To get alerts when your Pomodoro sessions end, please click "Confirm" to allow notifications.',
-                        () => { // This function runs if the user clicks "Confirm"
-                            Notification.requestPermission().then(permission => {
-                                if (permission === 'granted') {
-                                    showToast('Notifications have been enabled!', 'success');
-                                } else {
-                                    showToast('Notifications were not enabled. You can change this in your browser settings.', 'info');
-                                }
-                            });
-                        },
-                        'Confirm' // Custom text for confirm button
-                    );
-                } else if (Notification.permission === 'denied') {
-                    // If permission is already blocked, inform the user how to fix it.
-                    // This directly addresses the situation from your screenshot.
-                    showToast('Notifications are blocked. Please allow them in your browser settings.', 'info', 5000);
-                }
-            }
-            // --- End of Notification Permissions block ---
-            });
-        
-        // --- Worker Message Handling (with Fallback) ---
-        pomodoroWorker.onmessage = (e) => {
-            const { type, timeLeft } = e.data;
-            if (type === 'tick') {
-                sessionTimerDisplay.textContent = formatPomodoroTime(timeLeft);
-            } else if (type === 'phase_ended') {
-                // Always handle phase end from the in-page worker when it fires
-                // This ensures transitions happen when the tab is active/visible
-                const oldState = pomodoroState;
-                // Calculate the next state based on the current Pomodoro cycle
-                const currentCycle = Math.floor((currentUserData.pomodoroCycle || 0) / 2); // Divide by 2 as each cycle has 2 phases (work + break)
-                let newState;
-
-                if (oldState === 'work') {
-                    // Check if it's time for a long break based on the interval
-                    newState = ((currentCycle + 1) % pomodoroSettings.long_break_interval === 0) ? 'long_break' : 'short_break';
-                } else { // It was a break (short_break or long_break)
-                    newState = 'work';
-                }
-                
-                // Trigger the main application's phase end logic
-                handlePomodoroPhaseEnd({ newState, oldState });
-                
-                // Important Note: The Service Worker will still schedule a notification.
-                // This is desired for background scenarios where the in-page worker might suspend.
-                // The main thread should also be responsible for cancelling any *old* SW alarms
-                // and scheduling *new* ones for the *next* phase, which your `startNextPomodoroPhase`
-                // function already handles.
-            }
-        };
-       
-
-        // --- STEP 1: ADD THIS ENTIRE NEW FUNCTION HERE ---
-        async function handlePomodoroPhaseEnd({ newState, oldState }) {
-            // 1. Save the completed session
-            if (oldState === 'work') {
-                await saveSession(activeSubject, pomodoroSettings.work * 60, 'study');
-            } else { // It was a break
-                const breakDuration = oldState === 'short_break' ? pomodoroSettings.short_break * 60 : pomodoroSettings.long_break * 60;
-                await saveSession('Break', breakDuration, 'break');
-            }
-
-            // 2. Play the sound for the transition
-            const soundToPlay = oldState === 'work' ? pomodoroSounds.break : pomodoroSounds.focus;
-            playSound(soundToPlay, pomodoroSounds.volume);
-            
-            // 3. Check if we should auto-start the next phase
-            const shouldAutoStart = (newState === 'work' && pomodoroSettings.autoStartFocus) || (newState.includes('break') && pomodoroSettings.autoStartBreak);
-
-            if (shouldAutoStart) {
-                // If auto-start is enabled, immediately start the next phase.
-                startNextPomodoroPhase(newState);
-            } else {
-                // If auto-start is disabled, stop the timer and set up for manual start.
-                pomodoroWorker.postMessage({ command: 'stop' });
-                pomodoroState = 'idle';
-                nextPomodoroPhase = newState; // Store the next state for the button
-                
-                const manualStartBtn = document.getElementById('manual-start-btn');
-                manualStartBtn.textContent = `Start ${newState.replace('_', ' ')}`;
-                manualStartBtn.classList.remove('hidden');
-                
-                // Hide the main timer controls
-                document.getElementById('stop-studying-btn').classList.add('hidden');
-                document.getElementById('pause-btn').classList.add('hidden');
-                document.getElementById('resume-btn').classList.add('hidden');
-                
-                // Update UI to show it's ready for the next phase
-                pomodoroStatusDisplay.textContent = `Ready for ${newState.replace('_', ' ')}`;
-                
-                // Reset timer display based on the upcoming phase
-                let nextDuration = 0;
-                if (newState === 'work') {
-                    nextDuration = pomodoroSettings.work * 60;
-                } else if (newState === 'short_break') {
-                    nextDuration = pomodoroSettings.short_break * 60;
-                } else {
-                    nextDuration = pomodoroSettings.long_break * 60;
-                }
-                sessionTimerDisplay.textContent = formatPomodoroTime(nextDuration);
-            }
-        }
-        // --- END OF NEW FUNCTION ---
-
-        // --- NEW: Service Worker Message Listener (The Reliable Alarm) ---
-        navigator.serviceWorker.addEventListener('message', async (event) => {
-    if (event.data) {
-        if (event.data.type === 'TIMER_ENDED') { // This now comes from local worker OR server push
-            handlePomodoroPhaseEnd(event.data);
-        } else if (event.data.type === 'NOTIFICATION_ACTION_TRIGGERED') {
-            // This message comes from service-worker.js when a user clicks an FCM notification
-            console.log('Notification action received:', event.data.action, event.data.newState, event.data.oldState);
-            if (event.data.action === 'start-next') {
-                // User explicitly clicked "Start Next Session" on the notification
-                playSound(pomodoroSounds.start, pomodoroSounds.volume);
-                startNextPomodoroPhase(event.data.newState);
-            } else if (event.data.action === 'stop') {
-                // User explicitly clicked "Stop Timer" on the notification
-                stopTimer();
-                showToast('Timer stopped via notification.', 'info');
-            } else {
-                // This handles a generic click on the notification body (not an action button)
-                // It will trigger the auto-start logic if enabled, or set up the manual start button.
-                handlePomodoroPhaseEnd({ newState: event.data.newState, oldState: event.data.oldState });
-            }
-        }
-    }
-});
-
-        // --- Drag and Drop Functionality for Subjects ---
-        const subjectListContainer = document.getElementById('subject-selection-list');
-
-        subjectListContainer.addEventListener('dragstart', (e) => {
-            const targetItem = e.target.closest('.subject-item');
-            if (targetItem) {
-                draggedItem = targetItem;
-                e.dataTransfer.effectAllowed = 'move';
-                // Set a small transparent image for drag feedback (optional, but good practice)
-                const img = new Image();
-                img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-                e.dataTransfer.setDragImage(img, 0, 0);
-                setTimeout(() => {
-                    draggedItem.classList.add('dragging');
-                }, 0); // Add class after drag image is set
-            }
-        });
-
-        subjectListContainer.addEventListener('dragover', (e) => {
-            e.preventDefault(); // Necessary to allow dropping
-            const targetItem = e.target.closest('.subject-item');
-            if (targetItem && targetItem !== draggedItem) {
-                const rect = targetItem.getBoundingClientRect();
-                const offsetY = e.clientY - rect.top;
-                const isAfter = offsetY > rect.height / 2;
-
-                // Remove drag-over from all siblings
-                Array.from(subjectListContainer.children).forEach(item => item.classList.remove('drag-over'));
-
-                if (isAfter) {
-                    targetItem.classList.add('drag-over');
-                    // We're dragging over the bottom half, so insert after this element
-                } else {
-                    targetItem.classList.add('drag-over');
-                    // We're dragging over the top half, so insert before this element
-                }
-            }
-        });
-
-        subjectListContainer.addEventListener('dragenter', (e) => {
-            e.preventDefault();
-            const targetItem = e.target.closest('.subject-item');
-            if (targetItem && targetItem !== draggedItem) {
-                targetItem.classList.add('drag-over');
-            }
-        });
-
-        subjectListContainer.addEventListener('dragleave', (e) => {
-            const targetItem = e.target.closest('.subject-item');
-            if (targetItem) {
-                targetItem.classList.remove('drag-over');
-            }
-        });
-
-        subjectListContainer.addEventListener('drop', async (e) => {
-            e.preventDefault();
-            const targetItem = e.target.closest('.subject-item');
-            
-            // Clean up all drag-over classes
-            Array.from(subjectListContainer.children).forEach(item => item.classList.remove('drag-over'));
-
-            if (draggedItem && targetItem && draggedItem !== targetItem) {
-                const subjectId = draggedItem.dataset.subjectId;
-                const allItems = Array.from(subjectListContainer.children);
-                const oldIndex = allItems.indexOf(draggedItem);
-                let newIndex = allItems.indexOf(targetItem);
-
-                const rect = targetItem.getBoundingClientRect();
-                const offsetY = e.clientY - rect.top;
-                const isAfter = offsetY > rect.height / 2;
-
-                if (isAfter && newIndex < allItems.length - 1) {
-                    // If dropping after the target and target is not the last, insert after next sibling
-                    subjectListContainer.insertBefore(draggedItem, targetItem.nextSibling);
-                    newIndex++; // Adjust index as it's inserted after
-                } else {
-                    // Insert before the target
-                    subjectListContainer.insertBefore(draggedItem, targetItem);
-                }
-                
-                // If the item was moved downwards, and inserted before an element, its new index might be the same as the target's original index.
-                // If it was moved upwards, and inserted before an element, its new index will be the target's index.
-                // The key is the final order in the DOM.
-
-                // Recalculate new index after DOM manipulation
-                const finalNewIndex = Array.from(subjectListContainer.children).indexOf(draggedItem);
-
-                // Update Firestore with the new order for all subjects
-                await updateSubjectOrderInFirestore();
-            }
-        });
-
-        subjectListContainer.addEventListener('dragend', () => {
-            if (draggedItem) {
-                draggedItem.classList.remove('dragging');
-            }
-            // Ensure all drag-over classes are removed
-            Array.from(subjectListContainer.children).forEach(item => item.classList.remove('drag-over'));
-            draggedItem = null;
-        });
-
-        async function updateSubjectOrderInFirestore() {
-            if (!currentUser) return;
-            const subjectsRef = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'subjects');
-            const batch = firestoreWriteBatch(db); // <-- Use the alias
-
-            const subjectElements = Array.from(subjectListContainer.children);
-            
-            for (let i = 0; i < subjectElements.length; i++) {
-                const subjectId = subjectElements[i].dataset.subjectId;
-                const subjectDocRef = doc(subjectsRef, subjectId);
-                batch.update(subjectDocRef, { order: i });
-            }
-            await batch.commit(); // This executes all pending writes in the batch
-
-    showToast("Subject order updated!", "success");
-}
-
-
-        document.getElementById('subject-selection-list').addEventListener('click', async (e) => {
-            e.stopPropagation();
-            const optionsBtn = e.target.closest('.subject-options-btn');
-            const subjectItem = e.target.closest('.subject-item');
-
-            if (optionsBtn) {
-                const menu = optionsBtn.nextElementSibling;
-                document.querySelectorAll('.subject-options-menu').forEach(m => {
-                    if (m !== menu) m.classList.remove('active');
-                    });
-                menu.classList.toggle('active');
-                return;
-            }
-
-            if (subjectItem) {
-                 document.querySelectorAll('#subject-selection-list .subject-item').forEach(i => i.classList.remove('selected'));
-                 subjectItem.classList.add('selected');
-            }
-            
-            if (e.target.classList.contains('delete-subject-btn')) {
-                const itemToDelete = e.target.closest('.subject-item');
-                const subjectId = itemToDelete.dataset.subjectId;
-                const subjectName = itemToDelete.dataset.subjectName;
-                showConfirmationModal(
-                    'Delete Subject?', 
-                    `Are you sure you want to delete "${subjectName}"? This cannot be undone.`,
-                    async () => {
-                        const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
-                        await deleteDoc(doc(userRef, 'subjects', subjectId));
-                        // After deleting, re-evaluate and update the order of remaining subjects
-                        await updateSubjectOrderInFirestore();
-                        showToast(`Deleted "${subjectName}"`, 'success');
-                    }
-                );
-            }
-            
-if (e.target.classList.contains('edit-subject-btn')) {
-    const itemToEdit = e.target.closest('.subject-item');
-    const subjectId = itemToEdit.dataset.subjectId;
-    const subjectName = itemToEdit.dataset.subjectName;
-    // This finds the color div and gets its background color class (e.g., 'bg-red-500')
-    const subjectColorClass = Array.from(itemToEdit.querySelector('.w-4.h-4').classList).find(c => c.startsWith('bg-'));
-
-    const modal = document.getElementById('edit-subject-modal');
-    document.getElementById('edit-subject-id').value = subjectId;
-    document.getElementById('edit-subject-name').value = subjectName;
-
-    const colorPicker = document.getElementById('edit-subject-color-picker');
-    // We can copy the color dots from the "Add Subject" modal to ensure they are the same
-    const addSubjectColorPicker = document.querySelector('#add-subject-modal .subject-color-picker');
-    colorPicker.innerHTML = addSubjectColorPicker.innerHTML;
-
-    // Now, find and select the correct color dot in the new modal
-    colorPicker.querySelectorAll('.color-dot').forEach(dot => {
-        dot.classList.remove('selected');
-        if (dot.dataset.color === subjectColorClass) {
-            dot.classList.add('selected');
-        }
-        // Add a click listener for the color dots in the edit modal
-        dot.addEventListener('click', () => {
-             colorPicker.querySelectorAll('.color-dot').forEach(d => d.classList.remove('selected'));
-             dot.classList.add('selected');
-        });
-    });
-
-    modal.classList.add('active');
-}
-        });
-        
-        const addTaskModal = document.getElementById('add-task-modal');
-        ael('add-task-btn', 'click', () => { addTaskModal.classList.add('active'); });
-        addTaskModal.querySelector('.close-modal').addEventListener('click', () => { addTaskModal.classList.remove('active'); });
-
-        ael('add-task-form', 'submit', async (e) => {
-            e.preventDefault();
-            if (!currentUser) return;
-            const name = document.getElementById('add-task-name').value.trim();
-            const date = document.getElementById('add-task-date').value;
-            if (!name || !date) {
-                showToast("Please provide a name and date for the task.", "error");
-                return;
-            }
-            const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
-            const plannerTasksRef = collection(userRef, 'plannerTasks');
-            await addDoc(plannerTasksRef, { name, date, completed: false });
-            
-            addTaskModal.classList.remove('active');
-            document.getElementById('add-task-form').reset();
-            showToast("Task added!", "success");
-        });
-        
-        // --- NEW PLANNER EVENT LISTENERS ---
-        ael('page-planner', 'click', async (e) => {
-            const sidebarItem = e.target.closest('.planner-sidebar-item');
-            if (sidebarItem) {
-                plannerState.activeListId = sidebarItem.dataset.listId;
-                plannerState.selectedTaskId = null; // Deselect task when changing lists
-                renderPlannerPage();
-                document.getElementById('planner-sidebar').classList.remove('open'); // Close sidebar on mobile
-                return;
-            }
-
-            const viewBtn = e.target.closest('.planner-view-btn');
-            if (viewBtn) {
-                plannerState.currentView = viewBtn.dataset.view;
-                renderPlannerMainContent();
-                return;
-            }
-
-            const calendarNavBtn = e.target.closest('.calendar-nav-btn');
-            if (calendarNavBtn) {
-                const direction = calendarNavBtn.dataset.direction;
-                if (direction === 'prev') {
-                    plannerState.calendarMonth--;
-                    if (plannerState.calendarMonth < 0) {
-                        plannerState.calendarMonth = 11;
-                        plannerState.calendarYear--;
-                    }
-                } else if (direction === 'next') {
-                    plannerState.calendarMonth++;
-                    if (plannerState.calendarMonth > 11) {
-                        plannerState.calendarMonth = 0;
-                        plannerState.calendarYear++;
-                    }
-                } else if (direction === 'today') {
-                    plannerState.calendarYear = new Date().getFullYear();
-                    plannerState.calendarMonth = new Date().getMonth();
-                }
-                renderPlannerMainContent(); // Re-render the calendar view
-                return;
-            }
-            
-            const taskItem = e.target.closest('.task-item, .kanban-card, .calendar-task');
-            if (taskItem) {
-                 if (e.target.classList.contains('task-checkbox-planner')) {
-                    // This is handled by the 'change' event listener
-                    return;
-                }
-                plannerState.selectedTaskId = taskItem.dataset.taskId;
-                renderPlannerPage(); // Re-render to show selection and details
-                document.getElementById('planner-sidebar').classList.remove('open'); // Close sidebar if open
-                return;
-            }
-            
-            if (e.target.id === 'close-task-details') {
-                plannerState.selectedTaskId = null;
-                renderPlannerTaskDetails();
-                return;
-            }
-            
-            if(e.target.id === 'delete-task-btn') {
-                showConfirmationModal('Delete Task?', 'Are you sure you want to delete this task?', () => {
-                   deletePlannerTask(plannerState.selectedTaskId);
-                });
-                return;
-            }
-            if (e.target.id === 'add-list-btn') {
-                const listName = prompt("Enter new project name:");
-                if (listName && listName.trim()) {
-                    await addDoc(collection(db, `/artifacts/${appId}/public/data/lists`), {
-                        name: listName.trim(),
-                        createdAt: serverTimestamp(),
-                        ownerId: currentUser.uid,
-                        members: [currentUser.uid]
-                    });
-                }
-                return;
-            }
-
-            if (e.target.id === 'planner-menu-toggle') {
-                document.getElementById('planner-sidebar').classList.toggle('open');
-                return;
-            }
-
-            if (e.target.id === 'add-to-google-calendar-btn') {
-                const task = plannerState.tasks.find(t => t.id === plannerState.selectedTaskId);
-                if (task) {
-                    let url = 'https://www.google.com/calendar/render?action=TEMPLATE';
-                    url += `&text=${encodeURIComponent(task.title)}`;
-                    if (task.dueDate && task.dueDate.seconds) {
-                        const startDate = new Date(task.dueDate.seconds * 1000);
-                        const formattedStartDate = startDate.toISOString().split('T')[0].replace(/-/g, '');
-                        url += `&dates=${formattedStartDate}/${formattedStartDate}`; // All-day event
-                    }
-                    if (task.notes) {
-                        url += `&details=${encodeURIComponent(task.notes)}`;
-                    }
-                    window.open(url, '_blank');
-                }
-                return;
-            }
-        });
-        
-        ael('page-planner', 'change', async (e) => {
-            // Handle task completion checkbox
-            if (e.target.classList.contains('task-checkbox-planner')) {
-                const taskId = e.target.closest('.task-item').dataset.taskId;
-                const completed = e.target.checked;
-                await updatePlannerTask(taskId, { completed });
-            }
-
-            // Handle task detail updates (due date, priority)
-            if (plannerState.selectedTaskId) {
-                 const updateData = {};
-                 let needsUpdate = false;
-
-                 if (e.target.id === 'task-detail-due-date') {
-                     updateData.dueDate = e.target.value ? new Date(e.target.value) : null;
-                     needsUpdate = true;
-                 } else if (e.target.id === 'task-detail-priority') {
-                     updateData.priority = e.target.value;
-                     needsUpdate = true;
-                 }
-
-                 if (needsUpdate) {
-                     updatePlannerTask(plannerState.selectedTaskId, updateData);
-                 }
-            }
-        });
-        
-        ael('page-planner', 'submit', async (e) => {
-            e.preventDefault();
-            if (e.target.id === 'add-planner-task-form') {
-                const input = document.getElementById('add-planner-task-input');
-                const title = input.value;
-                if (title) {
-                    await addPlannerTask(title);
-                    input.value = '';
-                }
-            }
-        });
-
-        ael('page-planner', 'focusout', (e) => {
-            if (!plannerState.selectedTaskId) return;
-
-            const updateData = {};
-            let needsUpdate = false;
-
-            if (e.target.id === 'task-detail-title') {
-                updateData.title = e.target.value;
-                needsUpdate = true;
-            } else if (e.target.id === 'task-detail-notes') {
-                updateData.notes = e.target.value;
-                needsUpdate = true;
-            }
-            
-            if (needsUpdate) {
-                updatePlannerTask(plannerState.selectedTaskId, updateData);
-            }
-        });
-        
-        ael('ranking-period-tabs', 'click', (e) => {
-            if (e.target.classList.contains('ranking-tab-btn')) {
-                const period = e.target.dataset.period;
-                renderLeaderboard(period);
-            }
-        });
-
         // Profile Settings Modals
         const editProfileModal = document.getElementById('edit-profile-modal');
         ael('settings-account', 'click', () => {
             document.getElementById('edit-username-input').value = currentUserData.username || '';
+            const profileAvatarContainer = document.querySelector('.profile-header .profile-avatar');
+            profileAvatarContainer.style.cursor = 'pointer';
+            
             editProfileModal.classList.add('active');
         });
         
@@ -6440,6 +5866,29 @@ if (e.target.classList.contains('edit-subject-btn')) {
             } finally {
                 btn.disabled = false;
                 btn.textContent = 'Save Changes';
+            }
+        });
+
+        ael('edit-profile-form', 'submit', async(e) => {
+             e.preventDefault();
+            if (!currentUser) return;
+            const newUsername = document.getElementById('edit-username-input').value.trim();
+            if (newUsername.length < 3) {
+                showToast('Username must be at least 3 characters long.', 'error');
+                return;
+            }
+
+            const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
+            const publicUserRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
+            
+            try {
+                await updateDoc(userRef, { username: newUsername });
+                await updateDoc(publicUserRef, { username: newUsername });
+                editProfileModal.classList.remove('active');
+                showToast('Profile updated!', 'success');
+            } catch (error) {
+                console.error("Error updating profile: ", error);
+                showToast('Failed to update profile.', 'error');
             }
         });
 
@@ -6600,11 +6049,95 @@ if (e.target.classList.contains('edit-subject-btn')) {
 
             ael('image-upload-input', 'change', (e) => {
                 const file = e.target.files[0];
-                if (file && currentGroupId) {
-                    handleImageUpload(file, currentGroupId);
+                if (file) {
+                    uploadProfilePicture(file);
                 }
-                e.target.value = null;
+                e.target.value = null; // Reset input
             });
+
+            // --- START: ADDED EVENT LISTENERS ---
+
+            // Add Subject Modal and Form
+            const addSubjectModal = document.getElementById('add-subject-modal');
+            ael('add-subject-btn', 'click', () => {
+                if (!addSubjectModal) return;
+                // Reset form state for a new subject
+                document.getElementById('add-subject-form').reset();
+                document.querySelectorAll('#add-subject-modal .color-dot').forEach(el => el.classList.remove('selected'));
+                // Select default color
+                const defaultColor = document.querySelector('#add-subject-modal .color-dot[data-color="bg-blue-500"]');
+                if (defaultColor) defaultColor.classList.add('selected');
+                addSubjectModal.classList.add('active');
+            });
+
+            ael('add-subject-form', 'submit', async (e) => {
+                e.preventDefault();
+                if (!currentUser) return;
+                const modal = document.getElementById('add-subject-modal');
+                const subjectName = document.getElementById('add-subject-name').value.trim();
+                const colorEl = document.querySelector('#add-subject-modal .color-dot.selected');
+                
+                if (!subjectName || !colorEl) {
+                    showToast('Please provide a name and select a color.', 'error');
+                    return;
+                }
+                const color = colorEl.dataset.color;
+
+                const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
+                const subjectsRef = collection(userRef, 'subjects');
+                // Get the highest current order value to append the new subject at the end
+                const q = query(subjectsRef, orderBy('order', 'desc'), limit(1));
+                const lastSubjectSnap = await getDocs(q);
+                const lastOrder = lastSubjectSnap.empty ? -1 : lastSubjectSnap.docs[0].data().order;
+
+                await addDoc(subjectsRef, { name: subjectName, color: color, order: lastOrder + 1 });
+                modal.classList.remove('active');
+                showToast(`Subject "${subjectName}" added!`, 'success');
+            });
+
+            // Ranking Page Tabs
+            ael('page-ranking', 'click', (e) => {
+                const tab = e.target.closest('.ranking-tab-btn');
+                if (tab) {
+                    const period = tab.dataset.period;
+                    renderLeaderboard(period);
+                }
+            });
+
+            // Planner Page Form Submission (Delegated)
+            ael('page-planner', 'submit', (e) => {
+                if (e.target.id === 'add-planner-task-form') {
+                    e.preventDefault();
+                    const input = document.getElementById('add-planner-task-input');
+                    const title = input.value.trim();
+                    if (title) {
+                        addPlannerTask(title);
+                        input.value = '';
+                    }
+                }
+            });
+            
+            // Group Settings Modal Actions (Delegated)
+            const groupSettingsModal = document.getElementById('group-settings-modal');
+            if (groupSettingsModal) {
+                groupSettingsModal.addEventListener('click', (e) => {
+                    const item = e.target.closest('.group-settings-item');
+                    if (item) {
+                        const action = item.dataset.action;
+                        switch(action) {
+                            case 'edit-info':
+                                openEditGroupInfoModal();
+                                break;
+                            default:
+                                showToast(`'${item.textContent}' feature is coming soon!`, 'info');
+                                break;
+                        }
+                        groupSettingsModal.classList.remove('active');
+                    }
+                });
+            }
+
+            // --- END: ADDED EVENT LISTENERS ---
 
             // --- Service Worker Registration (Robust Version) ---
         if ('serviceWorker' in navigator) {
@@ -6653,27 +6186,79 @@ if (e.target.classList.contains('edit-subject-btn')) {
         }
     };
         
+        document.addEventListener('DOMContentLoaded', () => {
+            const usernameAvatarPicker = document.getElementById('username-avatar-picker');
+            if (usernameAvatarPicker) {
+                usernameAvatarPicker.innerHTML = PRESET_AVATARS.map((url, index) => `
+                    <div class="avatar-option ${index === 0 ? 'selected' : ''}">
+                        <img src="${url}" alt="Avatar ${index + 1}">
+                    </div>
+                `).join('');
+                
+                usernameAvatarPicker.addEventListener('click', e => {
+                    const option = e.target.closest('.avatar-option');
+                    if (option) {
+                        usernameAvatarPicker.querySelectorAll('.avatar-option').forEach(opt => opt.classList.remove('selected'));
+                        option.classList.add('selected');
+                    }
+                });
+            }
+
+            const profileAvatar = document.getElementById('profile-page-avatar');
+            if (profileAvatar) {
+                profileAvatar.addEventListener('click', () => {
+                     showConfirmationModal(
+                        'Change the profile image', 
+                        '', // No message needed, buttons are the options
+                        () => { // On Confirm (Choose from Album)
+                            document.getElementById('profile-picture-upload').click();
+                        },
+                        () => { // On Cancel (Choose Character)
+                            const characterPickerModal = document.getElementById('avatar-character-modal');
+                            const picker = document.getElementById('avatar-character-picker');
+                            picker.innerHTML = PRESET_AVATARS.map(url => {
+                                const isSelected = currentUserData.photoURL === url;
+                                return `<div class="avatar-option ${isSelected ? 'selected' : ''}"><img src="${url}" alt="Character"></div>`
+                            }).join('');
+                            characterPickerModal.classList.add('active');
+                        },
+                        'Choose image from the album', // Confirm button text
+                        'Choose character' // Cancel button text
+                    );
+                });
+            }
+
+            const characterPicker = document.getElementById('avatar-character-picker');
+            if(characterPicker) {
+                characterPicker.addEventListener('click', e => {
+                    const option = e.target.closest('.avatar-option');
+                    if (option) {
+                        characterPicker.querySelectorAll('.avatar-option').forEach(opt => opt.classList.remove('selected'));
+                        option.classList.add('selected');
+                    }
+                });
+            }
+
+            ael('save-character-avatar-btn', 'click', async () => {
+                const selectedAvatar = document.querySelector('#avatar-character-picker .avatar-option.selected img')?.src;
+                if (selectedAvatar && currentUser) {
+                    const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
+                    try {
+                        await updateDoc(userRef, { photoURL: selectedAvatar });
+                        document.getElementById('avatar-character-modal').classList.remove('active');
+                        showToast('Avatar updated!', 'success');
+                    } catch (error) {
+                        showToast('Failed to update avatar.', 'error');
+                    }
+                } else {
+                    showToast('Please select a character.', 'info');
+                }
+            });
+
+        });
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
