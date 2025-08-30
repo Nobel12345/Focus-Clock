@@ -2213,7 +2213,13 @@ let pauseStartTime = 0;
             try {
                 const base64Image = await toBase64(file);
                 const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
-                await updateDoc(userRef, { photoURL: base64Image });
+                const publicUserRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
+                
+                const batch = firestoreWriteBatch(db);
+                batch.update(userRef, { photoURL: base64Image });
+                batch.update(publicUserRef, { photoURL: base64Image });
+                await batch.commit();
+
                 showToast('Profile picture updated!', 'success');
             } catch (error) {
                 console.error("Error uploading profile picture:", error);
@@ -4090,6 +4096,7 @@ if (achievementsGrid) {
                 return {
                     id: userDoc.id,
                     username: userData.username || 'Anonymous',
+                    photoURL: userData.photoURL,
                     totalStudySeconds: totalSeconds
                 };
             });
@@ -4106,10 +4113,14 @@ if (achievementsGrid) {
                 if (rank === 2) rankClass = 'rank-2';
                 if (rank === 3) rankClass = 'rank-3';
 
+                const avatarHTML = user.photoURL 
+                    ? `<img src="${user.photoURL}" class="w-full h-full object-cover">`
+                    : `<span>${(user.username || 'U').charAt(0).toUpperCase()}</span>`;
+
                 return `
                     <div class="ranking-item ${currentUser.uid === user.id ? 'bg-blue-900/30' : ''}">
                         <div class="rank ${rankClass}">${rank}</div>
-                        <div class="user-avatar bg-gray-600">${(user.username || 'U').charAt(0).toUpperCase()}</div>
+                        <div class="user-avatar bg-gray-600 overflow-hidden">${avatarHTML}</div>
                         <div class="user-info">
                             <div class="user-name">${user.username}</div>
                             <div class="user-time">${formatTime(user.totalStudySeconds, false)} ${periodText}</div>
@@ -5233,10 +5244,14 @@ if (achievementsGrid) {
                 const isStudying = member.isStudying;
                 const totalTodaySeconds = member.effectiveTotalToday; // Use the calculated effective total
 
+                const avatarHTML = memberData.photoURL
+                    ? `<img src="${memberData.photoURL}" class="w-full h-full object-cover">`
+                    : `<span>${(memberData.username || 'U').charAt(0).toUpperCase()}</span>`;
+
                 return `
                     <div class="member-list-card">
-                        <div class="member-avatar ${isStudying ? 'studying' : ''}">
-                            ${(memberData.username || 'U').charAt(0).toUpperCase()}
+                        <div class="member-avatar ${isStudying ? 'studying' : ''} overflow-hidden">
+                            ${avatarHTML}
                             ${isStudying ? '<div class="member-status-icon"></div>' : ''}
                         </div>
                         <div class="flex-grow">
@@ -5315,6 +5330,7 @@ if (achievementsGrid) {
                 return {
                     id: memberId,
                     username: memberData.username || 'Anonymous',
+                    photoURL: memberData.photoURL,
                     totalStudySeconds: totalSeconds
                 };
             });
@@ -5329,10 +5345,14 @@ if (achievementsGrid) {
                 if (rank === 2) rankClass = 'rank-2';
                 if (rank === 3) rankClass = 'rank-3';
 
+                const avatarHTML = user.photoURL
+                    ? `<img src="${user.photoURL}" class="w-full h-full object-cover">`
+                    : `<span>${(user.username || 'U').charAt(0).toUpperCase()}</span>`;
+
                 return `
                     <div class="ranking-item ${currentUser.uid === user.id ? 'bg-blue-900/30' : ''}">
                         <div class="rank ${rankClass}">${rank}</div>
-                        <div class="user-avatar bg-gray-600">${(user.username || 'U').charAt(0).toUpperCase()}</div>
+                        <div class="user-avatar bg-gray-600 overflow-hidden">${avatarHTML}</div>
                         <div class="user-info">
                             <div class="user-name">${user.username}</div>
                             <div class="user-time">${formatTime(user.totalStudySeconds, false)} ${periodText}</div>
@@ -5414,9 +5434,14 @@ if (achievementsGrid) {
                     if (!userData) return '';
                     const memberStats = memberAttendanceData[memberId] || { totalTime: 0, daysStudied: new Set() };
                     const memberAttendanceRate = Math.round((memberStats.daysStudied.size / daysInMonth) * 100);
+                    
+                    const avatarHTML = userData.photoURL
+                        ? `<img src="${userData.photoURL}" class="w-full h-full object-cover">`
+                        : `<span>${(userData.username || 'U').charAt(0).toUpperCase()}</span>`;
+
                     return `
                         <div class="member-row">
-                            <div class="member-avatar-sm">${(userData.username || 'U').charAt(0).toUpperCase()}</div>
+                            <div class="member-avatar-sm overflow-hidden">${avatarHTML}</div>
                             <div class="member-info">
                                 <div class="member-name-sm">${userData.username || 'Anonymous'}</div>
                                 <div class="member-time-sm">${formatTime(memberStats.totalTime, false)} total</div>
@@ -5716,128 +5741,19 @@ if (achievementsGrid) {
                 pomodoroStatusDisplay.textContent = '';
             }
         }
+        
         ael('normal-timer-btn', 'click', () => switchTimerMode('normal'));
         ael('pomodoro-timer-btn', 'click', () => switchTimerMode('pomodoro'));
 
         // --- NEW UNIFIED PLANNER EVENT LISTENERS ---
-
-        // Consolidated click handler for the entire planner page
         ael('page-planner', 'click', e => {
-            // View switcher (List, Board, Calendar)
             const viewBtn = e.target.closest('.planner-view-btn');
-            if (viewBtn) {
-                const view = viewBtn.dataset.view;
-                if (view && view !== plannerState.currentView) {
-                    plannerState.currentView = view;
-                    renderPlannerMainContent();
-                }
-                return;
-            }
-
-            // Sidebar list/project selection
-            const sidebarItem = e.target.closest('.planner-sidebar-item');
-            if (sidebarItem) {
-                const listId = sidebarItem.dataset.listId;
-                if (listId && listId !== plannerState.activeListId) {
-                    plannerState.activeListId = listId;
-                    plannerState.selectedTaskId = null; // Deselect task when switching lists
-                    renderPlannerPage();
-                }
-                if (window.innerWidth < 768) { // Close sidebar on mobile after selection
-                    document.getElementById('planner-sidebar')?.classList.remove('open');
-                }
-                return;
-            }
-
-            // Task item selection (in List, Board, or Calendar view)
-            const taskItem = e.target.closest('.task-item, .kanban-card, .calendar-task');
-            if (taskItem && !e.target.closest('.task-checkbox-planner')) {
-                const taskId = taskItem.dataset.taskId;
-                if (taskId) {
-                    plannerState.selectedTaskId = (plannerState.selectedTaskId === taskId) ? null : taskId;
-                    renderPlannerPage(); // Re-render to show selection and details panel
-                    if (window.innerWidth < 768 && plannerState.selectedTaskId) { // Open details panel on mobile
-                        document.getElementById('planner-task-details')?.classList.add('open');
-                    }
-                }
-                return;
-            }
-
-            // Task completion checkbox
-            const taskCheckbox = e.target.closest('.task-checkbox-planner');
-            if (taskCheckbox) {
-                const taskId = taskCheckbox.closest('.task-item').dataset.taskId;
-                if (taskId) {
-                    updatePlannerTask(taskId, { completed: taskCheckbox.checked });
-                }
-                return;
-            }
-
-            // Calendar navigation buttons (Prev, Today, Next)
-            const calNavBtn = e.target.closest('.calendar-nav-btn');
-            if (calNavBtn) {
-                const direction = calNavBtn.dataset.direction;
-                if (direction === 'next') {
-                    plannerState.calendarMonth++;
-                    if (plannerState.calendarMonth > 11) {
-                        plannerState.calendarMonth = 0;
-                        plannerState.calendarYear++;
-                    }
-                } else if (direction === 'prev') {
-                    plannerState.calendarMonth--;
-                    if (plannerState.calendarMonth < 0) {
-                        plannerState.calendarMonth = 11;
-                        plannerState.calendarYear--;
-                    }
-                } else if (direction === 'today') {
-                    plannerState.calendarYear = new Date().getFullYear();
-                    plannerState.calendarMonth = new Date().getMonth();
-                }
-                renderPlannerCalendarView(plannerState.tasks.filter(t => t.listId === plannerState.activeListId));
-                return;
-            }
-
-            // Task Details Panel actions
-            if (e.target.closest('#close-task-details')) {
-                plannerState.selectedTaskId = null;
-                renderPlannerTaskDetails(); // This will hide the panel
-                return;
-            }
-            if (e.target.closest('#delete-task-btn')) {
-                if (plannerState.selectedTaskId) {
-                     showConfirmationModal(
-                        'Delete Task?',
-                        'Are you sure you want to permanently delete this task?',
-                        () => deletePlannerTask(plannerState.selectedTaskId)
-                    );
-                }
-                return;
-            }
-
-            // Mobile sidebar toggle
-            if (e.target.closest('#planner-menu-toggle')) {
-                document.getElementById('planner-sidebar')?.classList.toggle('open');
+            if (viewBtn && !viewBtn.classList.contains('active')) {
+                plannerState.currentView = viewBtn.dataset.view;
+                renderPlannerMainContent();
+                return; // Stop further execution
             }
         });
-        
-        // Delegated input/change handler for the task details panel
-        ael('planner-task-details', 'change', e => {
-            const taskId = plannerState.selectedTaskId;
-            if (!taskId) return;
-            
-            const target = e.target;
-            let updates = {};
-
-            if (target.id === 'task-detail-title') updates.title = target.value.trim();
-            else if (target.id === 'task-detail-due-date') updates.dueDate = target.value ? new Date(target.value + 'T00:00:00') : null;
-            else if (target.id === 'task-detail-priority') updates.priority = target.value;
-            else if (target.id === 'task-detail-notes') updates.notes = target.value;
-
-            if (Object.keys(updates).length > 0) {
-                updatePlannerTask(taskId, updates);
-            }
-        });
-
         // --- END OF UNIFIED PLANNER LISTENERS ---
 
         // Create Group Controls
@@ -6509,11 +6425,16 @@ if (achievementsGrid) {
                 const selectedAvatar = document.querySelector('#avatar-character-picker .avatar-option.selected img')?.src;
                 if (selectedAvatar && currentUser) {
                     const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
+                    const publicUserRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
                     try {
-                        await updateDoc(userRef, { photoURL: selectedAvatar });
+                        const batch = firestoreWriteBatch(db);
+                        batch.update(userRef, { photoURL: selectedAvatar });
+                        batch.update(publicUserRef, { photoURL: selectedAvatar });
+                        await batch.commit();
                         document.getElementById('avatar-character-modal').classList.remove('active');
                         showToast('Avatar updated!', 'success');
                     } catch (error) {
+                        console.error("Avatar update failed:", error);
                         showToast('Failed to update avatar.', 'error');
                     }
                 } else {
@@ -6525,11 +6446,6 @@ if (achievementsGrid) {
     </script>
 </body>
 </html>
-
-
-
-
-
 
 
 
