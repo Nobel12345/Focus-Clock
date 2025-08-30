@@ -1690,6 +1690,10 @@
                 <div class="group-settings-item" data-action="member-logs"><i class="fas fa-history"></i><span>Member Logs</span></div>
                 <div class="group-settings-item" data-action="group-ranking"><i class="fas fa-trophy"></i><span>External Rankings</span></div>
                 <div class="group-settings-item" data-action="group-settings"><i class="fas fa-cog"></i><span>General Settings</span></div>
+                <hr class="border-gray-600 !my-3">
+                <div class="group-settings-item text-red-400 hover:bg-red-500/10" data-action="leave-group">
+                    <i class="fas fa-sign-out-alt"></i><span>Leave Group</span>
+                </div>
             </div>
         </div>
     </div>
@@ -1843,6 +1847,7 @@ import {
             collection, 
             onSnapshot,
             arrayUnion,
+            arrayRemove,
             updateDoc,
             deleteDoc,
             getDocs,
@@ -3816,7 +3821,10 @@ if (achievementsGrid) {
                         pomodoroSounds = {...pomodoroSounds, ...data.pomodoroSounds};
                     }
                     updateProfileUI(data);
-                    renderJoinedGroups();
+                    // This listener updates joinedGroups, so we call the render function
+                    if (document.getElementById('page-my-groups').classList.contains('active')) {
+                        renderJoinedGroups();
+                    }
                 }
             });
             
@@ -4905,6 +4913,8 @@ if (achievementsGrid) {
             if (!currentUser) return;
             const container = document.getElementById('my-groups-list');
             if (!container) return;
+            
+            container.innerHTML = '<div class="text-center text-gray-500 py-8"><i class="fas fa-spinner fa-spin fa-2x"></i></div>';
 
             const joinedGroupIds = currentUserData.joinedGroups || [];
             
@@ -4912,26 +4922,95 @@ if (achievementsGrid) {
                 container.innerHTML = `<div class="empty-group"><i class="fas fa-users-slash"></i><h3>No Groups Joined Yet</h3><p>You haven't joined any study groups. Join a group or create your own to get started!</p><button class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition mt-4" id="explore-groups-btn">Explore Groups</button></div>`;
                 return;
             }
+            
+            const todayStr = getCurrentDate().toISOString().split('T')[0];
 
-            const groupsCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'groups');
-            const groupsSnapshot = await getDocs(groupsCollectionRef);
-            const allGroups = {};
-            groupsSnapshot.forEach(doc => allGroups[doc.id] = { id: doc.id, ...doc.data() });
+            const groupsQuery = query(collection(db, 'artifacts', appId, 'public', 'data', 'groups'), where('__name__', 'in', joinedGroupIds));
+            const snapshot = await getDocs(groupsQuery);
+            
+            const groupPromises = snapshot.docs.map(async (groupDoc) => {
+                const group = { id: groupDoc.id, ...groupDoc.data() };
+                const members = group.members || [];
+                if (members.length === 0) {
+                    return { ...group, attendance: 0, avgTime: 0, newMessages: 0 };
+                }
 
-            let html = '<div class="grid grid-cols-1 gap-4">';
-            joinedGroupIds.forEach(groupId => {
-                const group = allGroups[groupId];
-                if (!group) return;
-                const memberCount = group.members ? group.members.length : 0;
-                const isFull = memberCount >= group.capacity;
-                let headerColor = 'linear-gradient(135deg, #4361ee 0%, #4895ef 100%)';
-                if (group.category === 'Language study') headerColor = 'linear-gradient(135deg, #00bcd4 0%, #0097a7 100%)';
-                else if (group.category === 'Secondary School') headerColor = 'linear-gradient(135deg, #9c27b0 0%, #673ab7 100%)';
-                else if (group.category === 'University') headerColor = 'linear-gradient(135deg, #ff9800 0%, #f57c00 100%)';
-                html += `<div class="group-card" data-group-id="${group.id}"><div class="group-header" style="background: ${headerColor}"><div class="group-category">${group.category}</div><div class="group-name">${group.name}${isFull ? '<span class="badge">Full</span>' : ''}</div><div class="group-stats"><div class="stat-item"><div class="stat-value">${group.attendance || 0}%</div><div class="stat-label">Attendance</div></div><div class="stat-item"><div class="stat-value">${group.avgTime || 'N/A'}</div><div class="stat-label">Avg. Time</div></div><div class="stat-item"><div class="stat-value">${memberCount}/${group.capacity}</div><div class="stat-label">Members</div></div></div></div><div class="group-body"><div class="group-goal"><div class="goal-text">Goal: ${group.timeGoal} hours/day</div><div class="leader"><i class="fas fa-crown"></i> Leader: ${group.leaderName}</div></div><div class="group-description">${group.description}</div><div class="joined-badge"><i class="fas fa-check-circle"></i> Joined</div><div class="group-meta"><div>Started: ${group.createdAt?.toDate().toLocaleDateString()}</div><div><i class="fas fa-comment"></i> 12 new</div></div></div></div>`;
+                // Fetch member data and their sessions for today
+                let totalSecondsToday = 0;
+                let membersStudiedToday = 0;
+                const memberPromises = members.map(async (memberId) => {
+                    const userDocRef = doc(db, 'artifacts', appId, 'users', memberId);
+                    const userSnap = await getDoc(userDocRef);
+                    if (userSnap.exists()) {
+                        const userData = userSnap.data();
+                        if (userData.totalTimeToday && userData.totalTimeToday.date === todayStr) {
+                            const memberSeconds = userData.totalTimeToday.seconds || 0;
+                            if (memberSeconds > 0) {
+                                membersStudiedToday++;
+                            }
+                            totalSecondsToday += memberSeconds;
+                        }
+                    }
+                });
+                await Promise.all(memberPromises);
+
+                // Fetch new messages (in the last 24 hours)
+                const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+                const messagesRef = collection(groupDoc.ref, 'messages');
+                const newMessagesQuery = query(messagesRef, where('timestamp', '>=', twentyFourHoursAgo));
+                const newMessagesSnap = await getDocs(newMessagesQuery);
+
+                const attendance = members.length > 0 ? Math.round((membersStudiedToday / members.length) * 100) : 0;
+                const avgTime = members.length > 0 ? totalSecondsToday / members.length : 0;
+                
+                return { ...group, attendance, avgTime, newMessages: newMessagesSnap.size };
             });
-            html += '</div>';
-            container.innerHTML = html;
+
+            const groupsWithRealtimeData = await Promise.all(groupPromises);
+
+            container.innerHTML = '<div class="space-y-4">' + groupsWithRealtimeData.map(group => {
+                const memberCount = group.members ? group.members.length : 0;
+                return `
+                <div class="group-card bg-gray-800 rounded-2xl overflow-hidden shadow-lg cursor-pointer" data-group-id="${group.id}">
+                    <div class="p-5">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <div class="text-xs uppercase text-blue-400 font-semibold">${group.category}</div>
+                                <h3 class="text-xl font-bold text-white truncate">${group.name}</h3>
+                                <div class="text-sm text-gray-400 mt-1">Goal: ${group.timeGoal} hours/day</div>
+                            </div>
+                            <div class="text-xs text-gray-500 text-right flex-shrink-0 ml-2">
+                                Leader: ${group.leaderName}
+                            </div>
+                        </div>
+                        <div class="mt-4 grid grid-cols-3 gap-4 text-center">
+                            <div>
+                                <div class="text-2xl font-bold text-green-400">${group.attendance || 0}%</div>
+                                <div class="text-xs text-gray-400">Attendance</div>
+                            </div>
+                            <div>
+                                <div class="text-2xl font-bold text-cyan-400">${formatTime(group.avgTime || 0, false)}</div>
+                                <div class="text-xs text-gray-400">Avg. Time</div>
+                            </div>
+                            <div>
+                                <div class="text-2xl font-bold text-white">${memberCount}/${group.capacity}</div>
+                                <div class="text-xs text-gray-400">Members</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-700/50 px-5 py-3 flex justify-between items-center text-sm">
+                        <span class="text-gray-400">Started: ${group.createdAt?.toDate().toLocaleDateString()}</span>
+                        ${group.newMessages > 0 ? `
+                            <span class="flex items-center gap-2 text-blue-400 animate-pulse">
+                                <i class="fas fa-comment-dots"></i> ${group.newMessages} new
+                            </span>
+                        ` : `
+                            <span class="text-gray-500">No new messages</span>
+                        `}
+                    </div>
+                </div>
+                `;
+            }).join('') + '</div>';
         }
 
         function timeSince(date) {
@@ -5231,20 +5310,15 @@ if (achievementsGrid) {
                 }
                 const groupData = groupDoc.data();
 
-                // --- NEW: Render Settings Button for Leader ---
+                // --- NEW: Render Settings Button for ALL members ---
                 const settingsBtnContainer = document.getElementById('group-settings-btn-container');
                 if (settingsBtnContainer) {
-                    if (currentUser.uid === groupData.leaderId) {
-                        settingsBtnContainer.innerHTML = `
-                            <button id="group-settings-btn" class="text-gray-400 hover:text-white w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-700">
-                                <i class="fas fa-cog"></i>
-                            </button>
-                        `;
-                    } else {
-                        settingsBtnContainer.innerHTML = ''; // Clear if not leader
-                    }
+                    settingsBtnContainer.innerHTML = `
+                        <button id="group-settings-btn" class="text-gray-400 hover:text-white w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-700">
+                            <i class="fas fa-cog"></i>
+                        </button>
+                    `;
                 }
-                // --- END NEW ---
                 
                 setupGroupMemberListeners(groupData.members || []);
 
@@ -6184,11 +6258,15 @@ if (achievementsGrid) {
                 renderGroupSubPage(subpage);
             }
         });
-
-        ael('page-group-detail', 'click', e => {
+        
+        ael('page-group-detail', 'click', async e => {
             const settingsBtn = e.target.closest('#group-settings-btn');
             if (settingsBtn) {
-                document.getElementById('group-settings-modal').classList.add('active');
+                const groupRef = doc(db, 'artifacts', appId, 'public', 'data', 'groups', currentGroupId);
+                const groupSnap = await getDoc(groupRef);
+                if (groupSnap.exists()) {
+                    openGroupSettingsModal(groupSnap.data());
+                }
                 return;
             }
 
@@ -6235,6 +6313,28 @@ if (achievementsGrid) {
                 }
             }
         });
+
+        function openGroupSettingsModal(groupData) {
+            const modal = document.getElementById('group-settings-modal');
+            const isLeader = currentUser.uid === groupData.leaderId;
+
+            modal.querySelectorAll('.group-settings-item').forEach(item => {
+                const action = item.dataset.action;
+                const leaderActions = ['edit-info', 'kick-member', 'promote-member', 'member-logs', 'group-settings'];
+                
+                if (leaderActions.includes(action) && !isLeader) {
+                    item.style.opacity = '0.5';
+                    item.style.cursor = 'not-allowed';
+                    item.dataset.disabled = 'true';
+                } else {
+                    item.style.opacity = '1';
+                    item.style.cursor = 'pointer';
+                    item.dataset.disabled = 'false';
+                }
+            });
+            
+            modal.classList.add('active');
+        }
 
         ael('pomodoro-settings-form', 'submit', async (e) => {
             e.preventDefault();
@@ -6494,6 +6594,65 @@ if (achievementsGrid) {
                 document.getElementById('global-ranking-scope-btn').classList.add('active');
                 const activePeriod = document.querySelector('#group-ranking-period-tabs .ranking-tab-btn.active')?.dataset.period || 'weekly';
                 renderLeaderboard(activePeriod, 'group-ranking-list');
+            }
+        });
+
+        ael('group-settings-modal', 'click', async (e) => {
+            const item = e.target.closest('.group-settings-item');
+            if (!item) return;
+
+            if (item.dataset.disabled === 'true') {
+                showToast('Only the group leader can access this setting.', 'info');
+                return;
+            }
+
+            const action = item.dataset.action;
+            const modal = document.getElementById('group-settings-modal');
+
+            switch(action) {
+                case 'leave-group':
+                    modal.classList.remove('active'); // Close settings modal first
+                    showConfirmationModal(
+                        'Leave Group?',
+                        'Are you sure you want to leave this group? This action cannot be undone.',
+                        async () => {
+                            if (!currentUser || !currentGroupId) return;
+                            const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
+                            const groupRef = doc(db, 'artifacts', appId, 'public', 'data', 'groups', currentGroupId);
+                            
+                            const groupSnap = await getDoc(groupRef);
+                            if (groupSnap.exists()) {
+                                const groupData = groupSnap.data();
+                                if (groupData.leaderId === currentUser.uid && groupData.members.length > 1) {
+                                    showToast('Please transfer leadership or kick all members before leaving.', 'error');
+                                    return;
+                                }
+                            }
+
+                            try {
+                                const batch = firestoreWriteBatch(db);
+                                batch.update(userRef, { joinedGroups: arrayRemove(currentGroupId) });
+                                batch.update(groupRef, { members: arrayRemove(currentUser.uid) });
+                                await batch.commit();
+
+                                showToast('You have left the group.', 'success');
+                                renderJoinedGroups();
+                                showPage('page-my-groups');
+                            } catch (error) {
+                                console.error("Error leaving group:", error);
+                                showToast("Failed to leave the group.", "error");
+                            }
+                        }
+                    );
+                    break;
+                case 'edit-info':
+                    openEditGroupInfoModal();
+                    modal.classList.remove('active');
+                    break;
+                default:
+                    showToast(`'${item.textContent.trim()}' feature is coming soon!`, 'info');
+                    modal.classList.remove('active');
+                    break;
             }
         });
 
@@ -6785,6 +6944,8 @@ if (achievementsGrid) {
     </script>
 </body>
 </html>
+
+
 
 
 
