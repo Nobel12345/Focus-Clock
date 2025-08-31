@@ -1606,15 +1606,17 @@
                         </div>
 
                         <!-- Desktop Home Controls -->
-                        <div id="group-desktop-controls" class="hidden md:flex items-center gap-2">
-                            <div id="group-view-switch" class="timer-switch-container bg-gray-800 p-1">
-                                <button id="realtime-view-btn" data-view-target="realtime" class="timer-switch-btn text-xs px-3 py-1 active">Realtime</button>
-                                <button id="studicon-view-btn" data-view-target="studicon" class="timer-switch-btn text-xs px-3 py-1">Studicon</button>
+                        <div id="group-desktop-controls" class="hidden">
+                            <div class="hidden md:flex items-center gap-2">
+                                <div id="group-view-switch" class="timer-switch-container bg-gray-800 p-1">
+                                    <button id="realtime-view-btn" data-view-target="realtime" class="timer-switch-btn text-xs px-3 py-1 active">Realtime</button>
+                                    <button id="studicon-view-btn" data-view-target="studicon" class="timer-switch-btn text-xs px-3 py-1">Studicon</button>
+                                </div>
+                                <button id="studicon-store-btn" class="text-gray-400 hover:text-white w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-700">
+                                    <i class="fas fa-store"></i>
+                                </button>
+                                <div id="group-settings-btn-container" class="w-10 h-10"></div>
                             </div>
-                            <button id="studicon-store-btn" class="text-gray-400 hover:text-white w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-700">
-                                <i class="fas fa-store"></i>
-                            </button>
-                            <div id="group-settings-btn-container" class="w-10 h-10"></div>
                         </div>
                     </div>
                 </header>
@@ -7274,6 +7276,7 @@ if (achievementsGrid) {
     </script>
 </body>
 </html>
+
 
 
 
