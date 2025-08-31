@@ -1693,8 +1693,7 @@
     <!-- Edit Subject Modal -->
     <div id="edit-subject-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Edit Subject</div><button class="close-modal">&times;</button></div><form id="edit-subject-form"><input type="hidden" id="edit-subject-id"><div class="mb-4"><label for="edit-subject-name" class="block text-gray-300 mb-2">Subject Name</label><input type="text" id="edit-subject-name" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required></div><div class="mb-4"><label class="block text-gray-300 mb-2">Color</label><div class="subject-color-picker" id="edit-subject-color-picker"></div></div><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Save Changes</button></form></div></div>
 
-    <!-- Group Settings Modal -->
-    <div id="group-settings-modal" class="modal">
+        <div id="group-settings-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
                 <div class="modal-title">Group Settings</div>
@@ -1707,6 +1706,7 @@
                 <div class="group-settings-item" data-action="member-logs"><i class="fas fa-history"></i><span>Member Logs</span></div>
                 <div class="group-settings-item" data-action="group-ranking"><i class="fas fa-trophy"></i><span>External Rankings</span></div>
                 <div class="group-settings-item" data-action="group-settings"><i class="fas fa-cog"></i><span>General Settings</span></div>
+                <div class="group-settings-item text-cyan-400 hover:bg-cyan-500/10" data-action="wake-up-group"><i class="fas fa-bell"></i><span>Wake Up Idle Members</span></div>
                 <hr class="border-gray-600 !my-3">
                 <div class="group-settings-item text-red-400 hover:bg-red-500/10" data-action="leave-group">
                     <i class="fas fa-sign-out-alt"></i><span>Leave Group</span>
@@ -2037,6 +2037,8 @@ import {
         let isAddingSubjectFromStartSession = false; // Flag to track modal origin
         let fcmToken;
         let sendPomodoroNotification;
+        let sendWakeUpNotification;
+        let sendGroupWakeUpNotification;
 
 /**
  * Initializes push notifications: requests permission, gets FCM token, and saves it to Firestore.
@@ -3177,6 +3179,8 @@ let pauseStartTime = 0;
         // --- MOVE THESE TWO LINES HERE ---
         
         sendPomodoroNotification = httpsCallable(functions, 'sendPomodoroNotification'); // Assign callable function
+        sendWakeUpNotification = httpsCallable(functions, 'sendWakeUpNotification');
+        sendGroupWakeUpNotification = httpsCallable(functions, 'sendGroupWakeUpNotification');
         // ---------------------------------
 
                 onAuthStateChanged(auth, async (user) => {
@@ -4292,36 +4296,45 @@ if (achievementsGrid) {
             
             const todayStr = getCurrentDate().toISOString().split('T')[0];
             
+            const studyingCount = membersArray.filter(m => !!m.studying).length;
+            const totalMembers = membersArray.length;
+
             container.innerHTML = `
-                <div class="p-4 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4">
-                    ${membersArray.map(member => {
-                        const isStudying = !!member.studying;
-                        const studiconUrl = member.studiconURL || 'https://api.dicebear.com/8.x/miniavs/svg?seed=Angel';
+                <div class="p-4">
+                    <div class="text-center mb-6 bg-gray-800 p-3 rounded-lg">
+                        <p class="text-2xl font-bold text-cyan-400">${studyingCount} / ${totalMembers}</p>
+                        <p class="text-sm text-gray-400">Members Currently Studying</p>
+                    </div>
+                    <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4">
+                        ${membersArray.map(member => {
+                            const isStudying = !!member.studying;
+                            const studiconUrl = member.studiconURL || 'https://api.dicebear.com/8.x/miniavs/svg?seed=Angel';
 
-                        // --- NEW: Calculate total time today for display ---
-                        let totalTodaySeconds = 0;
-                        if (member.totalTimeToday && member.totalTimeToday.date === todayStr) {
-                            totalTodaySeconds = member.totalTimeToday.seconds || 0;
-                        }
-                        const currentSessionElapsed = (isStudying && member.studying.type === 'study') 
-                            ? (Date.now() - member.studying.startTime.toDate()) / 1000 
-                            : 0;
-                        const effectiveTotalToday = totalTodaySeconds + currentSessionElapsed;
-                        // --- END NEW ---
+                            // --- NEW: Calculate total time today for display ---
+                            let totalTodaySeconds = 0;
+                            if (member.totalTimeToday && member.totalTimeToday.date === todayStr) {
+                                totalTodaySeconds = member.totalTimeToday.seconds || 0;
+                            }
+                            const currentSessionElapsed = (isStudying && member.studying.type === 'study' && member.studying.startTime) 
+                                ? (Date.now() - member.studying.startTime.toDate()) / 1000 
+                                : 0;
+                            const effectiveTotalToday = totalTodaySeconds + currentSessionElapsed;
+                            // --- END NEW ---
 
-                        return `
-                            <div class="text-center cursor-pointer studicon-member-card" data-user-id="${member.uid}">
-                                <div class="relative w-20 h-20 mx-auto">
-                                    <div class="member-avatar ${isStudying ? 'studying' : ''} w-full h-full">
-                                        <img src="${studiconUrl}" class="w-full h-full object-cover rounded-full pointer-events-none">
-                                        ${isStudying ? '<div class="member-status-icon"></div>' : ''}
+                            return `
+                                <div class="text-center cursor-pointer studicon-member-card" data-user-id="${member.uid}">
+                                    <div class="relative w-20 h-20 mx-auto">
+                                        <div class="member-avatar ${isStudying ? 'studying' : ''} w-full h-full">
+                                            <img src="${studiconUrl}" class="w-full h-full object-cover rounded-full pointer-events-none">
+                                            ${isStudying ? '<div class="member-status-icon"></div>' : ''}
+                                        </div>
                                     </div>
+                                    <p class="mt-2 text-sm font-semibold truncate text-white pointer-events-none">${member.username || 'Anonymous'}</p>
+                                    <p class="text-lg font-bold text-cyan-400 pointer-events-none">${formatTime(effectiveTotalToday)}</p>
                                 </div>
-                                <p class="mt-2 text-sm font-semibold truncate text-white pointer-events-none">${member.username || 'Anonymous'}</p>
-                                <p class="text-lg font-bold text-cyan-400 pointer-events-none">${formatTime(effectiveTotalToday)}</p>
-                            </div>
-                        `;
-                    }).join('')}
+                            `;
+                        }).join('')}
+                    </div>
                 </div>
             `;
         }
@@ -5588,7 +5601,7 @@ if (achievementsGrid) {
                 }
                 const isStudying = memberData.studying;
                 // If currently studying, add current session elapsed time to total today
-                const currentSessionElapsed = (isStudying && memberData.studying.type === 'study') ? (Date.now() - memberData.studying.startTime.toDate()) / 1000 : 0;
+                const currentSessionElapsed = (isStudying && memberData.studying.type === 'study' && memberData.studying.startTime) ? (Date.now() - memberData.studying.startTime.toDate()) / 1000 : 0;
                 const effectiveTotalToday = totalTodaySeconds + currentSessionElapsed;
 
                 return {
@@ -5619,24 +5632,37 @@ if (achievementsGrid) {
                 const avatarHTML = memberData.photoURL
                     ? `<img src="${memberData.photoURL}" class="w-full h-full object-cover">`
                     : `<span>${(memberData.username || 'U').charAt(0).toUpperCase()}</span>`;
+                
+                const wakeUpButtonHTML = memberId !== currentUser.uid
+                    ? `<button 
+                          class="wake-up-btn text-xs py-1 px-3 rounded-full transition ${isStudying ? 'bg-gray-700 text-gray-500 cursor-not-allowed' : 'bg-cyan-500 hover:bg-cyan-600 text-white'}" 
+                          data-target-user-id="${memberId}" 
+                          data-target-user-name="${memberData.username || 'Anonymous'}"
+                          ${isStudying ? 'disabled' : ''}>
+                          <i class="fas fa-bell"></i> Wake Up
+                       </button>`
+                    : '';
 
                 return `
-                    <div class="member-list-card cursor-pointer" data-user-id="${member.id}">
-                        <div class="member-avatar ${isStudying ? 'studying' : ''} overflow-hidden pointer-events-none">
-                            ${avatarHTML}
-                            ${isStudying ? '<div class="member-status-icon"></div>' : ''}
-                        </div>
-                        <div class="flex-grow pointer-events-none">
-                            <div class="font-bold text-white">${memberData.username || 'Anonymous'}</div>
-                            <div class="text-sm ${isStudying ? 'text-green-400' : 'text-gray-400'}" id="member-subject-${memberId}">
-                                ${isStudying ? `Studying: ${memberData.studying.subject}` : 'Idle'}
+                     <div class="member-list-card" data-user-id="${memberId}">
+                        <div class="flex items-center flex-grow cursor-pointer member-profile-link">
+                            <div class="member-avatar ${isStudying ? 'studying' : ''} overflow-hidden pointer-events-none">
+                                ${avatarHTML}
+                                ${isStudying ? '<div class="member-status-icon"></div>' : ''}
+                            </div>
+                            <div class="flex-grow pointer-events-none">
+                                <div class="font-bold text-white">${memberData.username || 'Anonymous'}</div>
+                                <div class="text-sm ${isStudying ? 'text-green-400' : 'text-gray-400'}" id="member-subject-${memberId}">
+                                    ${isStudying ? `Studying: ${memberData.studying.subject}` : 'Idle'}
+                                </div>
                             </div>
                         </div>
-                        <div class="text-right pointer-events-none">
-                            <div class="text-xl font-semibold text-white" id="member-time-${memberId}" data-base-time="${member.data.totalTimeToday && member.data.totalTimeToday.date === todayStr ? member.data.totalTimeToday.seconds : 0}" data-start-time="${isStudying ? memberData.studying.startTime.toDate().getTime() : 0}">
+                        <div class="text-right flex-shrink-0 ml-4">
+                            <div class="text-xl font-semibold text-white" id="member-time-${memberId}" data-base-time="${member.data.totalTimeToday && member.data.totalTimeToday.date === todayStr ? member.data.totalTimeToday.seconds : 0}" data-start-time="${isStudying && memberData.studying.startTime ? memberData.studying.startTime.toDate().getTime() : 0}">
                                 ${formatTime(totalTodaySeconds)}
                             </div>
-                            <div class="text-xs text-gray-500">Total Today</div>
+                            <div class="text-xs text-gray-500 mb-2">Total Today</div>
+                            ${wakeUpButtonHTML}
                         </div>
                     </div>
                 `;
@@ -6509,6 +6535,42 @@ if (achievementsGrid) {
                 return;
             }
 
+            const wakeUpBtn = e.target.closest('.wake-up-btn');
+            if (wakeUpBtn && !wakeUpBtn.disabled) {
+                const targetUserId = wakeUpBtn.dataset.targetUserId;
+                const targetUserName = wakeUpBtn.dataset.targetUserName;
+                
+                showConfirmationModal(
+                    `Send Wake Up Call?`,
+                    `This will send a notification to ${targetUserName}.`,
+                    async () => {
+                        try {
+                            wakeUpBtn.disabled = true;
+                            wakeUpBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                            
+                            const result = await sendWakeUpNotification({
+                                targetUserId: targetUserId,
+                                senderName: currentUserData.username,
+                                appId: appId
+                            });
+                            
+                            if (result.data.success) {
+                                showToast(`Wake up call sent to ${targetUserName}!`, 'success');
+                            } else {
+                                showToast(result.data.message || 'Could not send wake up call.', 'error');
+                            }
+                        } catch (error) {
+                            console.error("Error sending wake up call:", error);
+                            showToast('An error occurred.', 'error');
+                        } finally {
+                            wakeUpBtn.disabled = false;
+                            wakeUpBtn.innerHTML = '<i class="fas fa-bell"></i> Wake Up';
+                        }
+                    }
+                );
+                return;
+            }
+
             // Studicon Store Button
             const storeBtn = e.target.closest('#studicon-store-btn, #studicon-store-btn-mobile');
             if (storeBtn) {
@@ -6549,9 +6611,9 @@ if (achievementsGrid) {
                  document.getElementById('chat-attachment-menu').classList.add('hidden');
             }
 
-            const userCard = e.target.closest('[data-user-id]');
-            if (userCard) {
-                const userId = userCard.dataset.userId;
+            const userProfileTrigger = e.target.closest('.member-profile-link, .studicon-member-card');
+            if (userProfileTrigger) {
+                const userId = userProfileTrigger.closest('[data-user-id]').dataset.userId;
                 if (userId && userId !== currentUser.uid) {
                     showUserProfileModal(userId);
                 }
@@ -6564,7 +6626,7 @@ if (achievementsGrid) {
 
             modal.querySelectorAll('.group-settings-item').forEach(item => {
                 const action = item.dataset.action;
-                const leaderActions = ['edit-info', 'kick-member', 'promote-member', 'member-logs', 'group-settings'];
+                const leaderActions = ['edit-info', 'kick-member', 'promote-member', 'member-logs', 'group-settings', 'wake-up-group'];
                 
                 if (leaderActions.includes(action) && !isLeader) {
                     item.style.opacity = '0.5';
@@ -6889,6 +6951,30 @@ if (achievementsGrid) {
                         }
                     );
                     break;
+                case 'wake-up-group':
+                    modal.classList.remove('active');
+                    showConfirmationModal(
+                        'Wake Up All Idle Members?',
+                        'This will send a notification to every member who is not currently studying.',
+                        async () => {
+                            try {
+                                const result = await sendGroupWakeUpNotification({
+                                    groupId: currentGroupId,
+                                    senderId: currentUser.uid,
+                                    appId: appId
+                                });
+                                if (result.data.success) {
+                                    showToast(`Wake up call sent to ${result.data.sentCount} members.`, 'success');
+                                } else {
+                                    showToast(result.data.message || 'Could not send wake up call.', 'error');
+                                }
+                            } catch (error) {
+                                console.error("Error sending group wake up call:", error);
+                                showToast('An error occurred.', 'error');
+                            }
+                        }
+                    );
+                    break;
                 case 'edit-info':
                     openEditGroupInfoModal();
                     modal.classList.remove('active');
@@ -7188,6 +7274,7 @@ if (achievementsGrid) {
     </script>
 </body>
 </html>
+
 
 
 
