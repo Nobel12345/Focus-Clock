@@ -1595,6 +1595,10 @@
                          <select id="group-selector"></select>
                     </div>
                     
+                    <button id="group-rules-header-btn" class="ml-2 text-gray-400 hover:text-white p-2 rounded-full flex items-center justify-center hover:bg-gray-700 transition" title="Group Rules">
+                        <i class="fas fa-gavel"></i>
+                    </button>
+
                     <div class="ml-auto flex items-center gap-2">
                         <!-- New Ranking Switch -->
                         <div id="ranking-scope-switch" class="hidden timer-switch-container bg-gray-800 p-1">
@@ -1697,6 +1701,7 @@
             </div>
             <div class="space-y-2">
                 <div class="group-settings-item" data-action="edit-info"><i class="fas fa-edit"></i><span>Change Group Info</span></div>
+                <div class="group-settings-item" data-action="group-rules"><i class="fas fa-gavel"></i><span>Group Rules</span></div>
                 <div class="group-settings-item" data-action="kick-member"><i class="fas fa-user-slash"></i><span>Kick Member</span></div>
                 <div class="group-settings-item" data-action="promote-member"><i class="fas fa-user-shield"></i><span>Promote Member</span></div>
                 <div class="group-settings-item" data-action="member-logs"><i class="fas fa-history"></i><span>Member Logs</span></div>
@@ -1841,6 +1846,28 @@
                 <input type="text" id="quick-add-task-title-input" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Task title..." required>
                 <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition mt-4">Add Task</button>
             </form>
+        </div>
+    </div>
+
+    <!-- Group Rules Modal -->
+    <div id="group-rules-modal" class="modal">
+        <div class="modal-content max-w-lg w-full">
+            <div class="modal-header">
+                <div class="modal-title">Group Rules</div>
+                <div class="flex items-center gap-4">
+                    <div id="group-rules-controls">
+                        <!-- Edit button for leader goes here -->
+                    </div>
+                    <button class="close-modal">&times;</button>
+                </div>
+            </div>
+            <div id="group-rules-display" class="prose prose-invert max-w-none text-gray-300 whitespace-pre-wrap p-1 mt-4">
+                <!-- Rules text will be displayed here -->
+            </div>
+            <div id="group-rules-edit-container" class="hidden mt-4">
+                <textarea id="group-rules-textarea" class="w-full bg-gray-800 rounded-lg p-3 h-48 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter group rules..."></textarea>
+                <button id="save-group-rules-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition mt-4">Save Rules</button>
+            </div>
         </div>
     </div>
 
@@ -6530,6 +6557,12 @@ if (achievementsGrid) {
                 return;
             }
 
+            const rulesBtn = e.target.closest('#group-rules-header-btn');
+            if (rulesBtn) {
+                openGroupRulesModal();
+                return;
+            }
+
             const wakeUpBtn = e.target.closest('.wake-up-btn');
             if (wakeUpBtn && !wakeUpBtn.disabled) {
                 const targetUserId = wakeUpBtn.dataset.targetUserId;
@@ -6635,6 +6668,73 @@ if (achievementsGrid) {
             });
             
             modal.classList.add('active');
+        }
+
+        async function openGroupRulesModal() {
+            if (!currentGroupId) return;
+
+            const modal = document.getElementById('group-rules-modal');
+            const displayEl = document.getElementById('group-rules-display');
+            const editContainer = document.getElementById('group-rules-edit-container');
+            const textarea = document.getElementById('group-rules-textarea');
+            const controlsEl = document.getElementById('group-rules-controls');
+            const saveBtn = document.getElementById('save-group-rules-btn');
+
+            try {
+                const groupRef = doc(db, 'artifacts', appId, 'public', 'data', 'groups', currentGroupId);
+                const groupSnap = await getDoc(groupRef);
+
+                if (!groupSnap.exists()) {
+                    showToast('Could not load group rules.', 'error');
+                    return;
+                }
+
+                const groupData = groupSnap.data();
+                const rules = groupData.rules || 'No rules have been set for this group yet.';
+                const isLeader = currentUser.uid === groupData.leaderId;
+
+                // Reset state
+                displayEl.textContent = rules;
+                textarea.value = rules;
+                displayEl.classList.remove('hidden');
+                editContainer.classList.add('hidden');
+                controlsEl.innerHTML = '';
+
+                if (isLeader) {
+                    controlsEl.innerHTML = '<button id="edit-group-rules-btn" class="text-sm text-blue-400 hover:text-blue-300 font-semibold">Edit</button>';
+                    
+                    const editBtn = document.getElementById('edit-group-rules-btn');
+                    editBtn.onclick = () => {
+                        displayEl.classList.add('hidden');
+                        editContainer.classList.remove('hidden');
+                        editBtn.classList.add('hidden');
+                    };
+                }
+
+                saveBtn.onclick = async () => {
+                    const newRules = textarea.value.trim();
+                    saveBtn.disabled = true;
+                    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+                    
+                    try {
+                        await updateDoc(groupRef, { rules: newRules });
+                        showToast('Group rules updated!', 'success');
+                        modal.classList.remove('active');
+                    } catch (error) {
+                        console.error("Error saving group rules:", error);
+                        showToast('Failed to save rules.', 'error');
+                    } finally {
+                        saveBtn.disabled = false;
+                        saveBtn.textContent = 'Save Rules';
+                    }
+                };
+
+                modal.classList.add('active');
+
+            } catch (error) {
+                console.error("Error opening group rules modal:", error);
+                showToast('An error occurred.', 'error');
+            }
         }
 
         ael('pomodoro-settings-form', 'submit', async (e) => {
@@ -6974,6 +7074,10 @@ if (achievementsGrid) {
                     openEditGroupInfoModal();
                     modal.classList.remove('active');
                     break;
+                case 'group-rules':
+                    openGroupRulesModal();
+                    modal.classList.remove('active');
+                    break;
                 default:
                     showToast(`'${item.textContent.trim()}' feature is coming soon!`, 'info');
                     modal.classList.remove('active');
@@ -7269,6 +7373,7 @@ if (achievementsGrid) {
     </script>
 </body>
 </html>
+
 
 
 
