@@ -3468,7 +3468,7 @@ let pauseStartTime = 0;
                 db = getFirestore(app);
 
                 messaging = getMessaging(app); // Initialize Firebase Messaging service
-        functions = getFunctions(app); // Initialize Firebase Functions service
+        functions = getFunctions(app, 'us-central1'); // Initialize Firebase Functions service
 
         // --- PASTE THE onMessage LISTENER HERE ---
         onMessage(messaging, (payload) => {
