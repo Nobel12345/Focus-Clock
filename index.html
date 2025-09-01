@@ -2411,15 +2411,13 @@ async function triggerServerNotification(messageData) {
         return;
     }
     try {
-        // Call the Cloud Function
+        // FIX: The backend function automatically gets the user's ID from the authentication context.
+        // We no longer need to send userId or appId in the data payload.
         const result = await sendPomodoroNotification({
-            userId: currentUser.uid, // Required by your Cloud Function
-            appId: appId,            // Required by your Cloud Function to build Firestore path
             title: messageData.title,
-            body: messageData.options.body, // Use 'options.body' as FCM notification body
+            body: messageData.options.body,
             newState: messageData.newState,
             oldState: messageData.oldState,
-            // Any other data you want to send and retrieve in the notification click handler
         });
         console.log('Server notification triggered:', result.data);
     } catch (error) {
@@ -7901,6 +7899,7 @@ if (achievementsGrid) {
     </script>
 </body>
 </html>
+
 
 
 
