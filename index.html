@@ -2273,31 +2273,6 @@ import {
         const blob = new Blob([workerCode], { type: 'application/javascript' });
         const pomodoroWorker = new Worker(URL.createObjectURL(blob));
 
-        // --- FIX: Add message listener to update UI from worker ---
-        pomodoroWorker.onmessage = (e) => {
-            const { type, timeLeft } = e.data;
-            if (type === 'tick') {
-                sessionTimerDisplay.textContent = formatPomodoroTime(timeLeft);
-            } else if (type === 'phase_ended') {
-                // This handles the phase transition if the tab is active
-                console.log("Worker signaled phase end. Current state:", pomodoroState);
-                const oldState = pomodoroState;
-                let newState = 'idle';
-
-                // Determine the next state based on the one that just ended
-                if (oldState === 'work') {
-                    const currentCycle = Math.floor(((currentUserData.pomodoroCycle || 0) + 1) / 2);
-                    newState = (currentCycle % pomodoroSettings.long_break_interval === 0) ? 'long_break' : 'short_break';
-                } else if (oldState.includes('break')) {
-                    newState = 'work';
-                }
-                
-                if (newState !== 'idle') {
-                    handlePomodoroPhaseEnd({ oldState: oldState, newState: newState });
-                }
-            }
-        };
-
         // --- Service Worker Communication Functions ---
         function scheduleSWAlarm(payload) {
             if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
@@ -2600,52 +2575,41 @@ let pauseStartTime = 0;
             }
         }
 
-        // --- NEW: Handle Pomodoro phase transitions (work/break) ---
-        async function handlePomodoroPhaseEnd(data) {
-            const { newState, oldState } = data;
-
-            // Save the session that just completed
-            if (oldState === 'work') {
-                const workDurationSeconds = pomodoroSettings.work * 60;
-                await saveSession(activeSubject, workDurationSeconds, 'study');
-            } else if (oldState && oldState.includes('break')) {
-                const breakDuration = oldState === 'short_break' ? pomodoroSettings.short_break * 60 : pomodoroSettings.long_break * 60;
-                await saveSession('Pomodoro Break', breakDuration, 'break');
+        async function uploadProfilePicture(file) {
+            if (!currentUser) return;
+            if (!file.type.startsWith('image/')) {
+                showToast('Please select an image file.', 'error');
+                return;
             }
-
-            // Play a sound to signal the transition
-            playSound(newState === 'work' ? pomodoroSounds.focus : pomodoroSounds.break, pomodoroSounds.volume);
-
-            // Check user settings to see if the next phase should start automatically
-            const shouldAutoStart = (newState === 'work' && pomodoroSettings.autoStartFocus) || (newState.includes('break') && pomodoroSettings.autoStartBreak);
-
-            if (shouldAutoStart) {
-                startNextPomodoroPhase(newState);
-            } else {
-                // If not auto-starting, set up the UI for manual start
-                nextPomodoroPhase = newState;
-                pomodoroState = 'idle'; 
-                
-                document.getElementById('stop-studying-btn').classList.add('hidden');
-                document.getElementById('pause-btn').classList.add('hidden');
-                document.getElementById('resume-btn').classList.add('hidden');
-                document.getElementById('manual-start-btn').classList.remove('hidden');
-                
-                pomodoroStatusDisplay.textContent = `Click to start ${newState.replace('_', ' ')}`;
-                let duration = 0;
-                if (newState === 'work') duration = pomodoroSettings.work * 60;
-                else if (newState === 'short_break') duration = pomodoroSettings.short_break * 60;
-                else if (newState === 'long_break') duration = pomodoroSettings.long_break * 60;
-                sessionTimerDisplay.textContent = formatPomodoroTime(duration);
+            if (file.size > 5 * 1024 * 1024) { // 5MB limit
+                showToast('Image is too large (max 5MB).', 'error');
+                return;
             }
-        }
+            showToast('Uploading profile picture...', 'info');
 
-        async function handleProfilePictureUpload(file) {
-            // ... (checks)
             const toBase64 = file => new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.readAsDataURL(file);
-                reader.onload = () => resolve(reader.result);
+                reader.onload = () => {
+                    const img = new Image();
+                    img.src = reader.result;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const MAX_WIDTH = 400; // Smaller size for profile pics
+                        let width = img.width;
+                        let height = img.height;
+
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        resolve(canvas.toDataURL('image/jpeg', 0.8)); // Use JPEG for smaller size
+                    };
+                };
                 reader.onerror = error => reject(error);
             });
 
@@ -6618,17 +6582,6 @@ if (achievementsGrid) {
         ael('pause-btn', 'click', pauseTimer);
         ael('resume-btn', 'click', resumeTimer);
         
-        // --- FIX: Add listener for the manual start button ---
-        ael('manual-start-btn', 'click', () => {
-            if (nextPomodoroPhase) {
-                document.getElementById('manual-start-btn').classList.add('hidden');
-                document.getElementById('stop-studying-btn').classList.remove('hidden');
-                document.getElementById('pause-btn').classList.remove('hidden');
-                startNextPomodoroPhase(nextPomodoroPhase);
-                nextPomodoroPhase = null; // Clear it after starting
-            }
-        });
-
         ael('start-session-form', 'submit', (e) => {
             e.preventDefault();
             const selectedSubjectEl = document.querySelector('#subject-selection-list .subject-item.selected');
@@ -6884,6 +6837,69 @@ if (achievementsGrid) {
                 showToast('Please enter a title for the task.', 'error');
             }
         });
+
+        // Add Subject Modal
+        ael('add-subject-btn', 'click', () => {
+            isAddingSubjectFromStartSession = false; // Reset flag
+            document.getElementById('add-subject-form').reset();
+            document.getElementById('add-subject-modal').classList.add('active');
+        });
+
+        ael('open-add-subject-modal-from-start', 'click', () => {
+            isAddingSubjectFromStartSession = true; // Set flag
+            document.getElementById('start-session-modal').classList.remove('active');
+            document.getElementById('add-subject-form').reset();
+            document.getElementById('add-subject-modal').classList.add('active');
+        });
+
+        ael('add-subject-form', 'submit', async (e) => {
+            e.preventDefault();
+            if (!currentUser) return;
+            const modal = document.getElementById('add-subject-modal');
+            const subjectNameInput = document.getElementById('add-subject-name');
+            const subjectName = subjectNameInput.value.trim();
+            const colorEl = document.querySelector('#add-subject-modal .color-dot.selected');
+            
+            if (!subjectName || !colorEl) {
+                showToast('Please provide a name and select a color.', 'error');
+                return;
+            }
+            const color = colorEl.dataset.color;
+
+            const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
+            const subjectsRef = collection(userRef, 'subjects');
+            const q = query(subjectsRef, orderBy('order', 'desc'), limit(1));
+            const lastSubjectSnap = await getDocs(q);
+            const lastOrder = lastSubjectSnap.empty ? -1 : lastSubjectSnap.docs[0].data().order;
+
+            await addDoc(subjectsRef, { name: subjectName, color: color, order: lastOrder + 1 });
+            
+            subjectNameInput.value = '';
+            modal.classList.remove('active');
+            showToast(`Subject "${subjectName}" added!`, 'success');
+
+            if (isAddingSubjectFromStartSession) {
+                setTimeout(() => {
+                    document.getElementById('start-session-modal').classList.add('active');
+                    // The onSnapshot listener will automatically re-render the list.
+                    // This logic selects the newly added item.
+                    const newSubjectEl = Array.from(document.querySelectorAll('#subject-selection-list .subject-item')).find(el => el.dataset.subjectName === subjectName);
+                    if(newSubjectEl) {
+                        document.querySelectorAll('#subject-selection-list .subject-item').forEach(el => el.classList.remove('selected'));
+                        newSubjectEl.classList.add('selected');
+                    }
+                }, 300); 
+            }
+        });
+        
+        // Add Subject Modal Color Picker
+        ael('add-subject-modal', 'click', (e) => {
+            if (e.target.classList.contains('color-dot')) {
+                document.querySelectorAll('#add-subject-modal .color-dot').forEach(el => el.classList.remove('selected'));
+                e.target.classList.add('selected');
+            }
+        });
+
 
         // Create Group Controls
         ael('create-group-done-btn', 'click', async () => {
@@ -7901,7 +7917,6 @@ if (achievementsGrid) {
     </script>
 </body>
 </html>
-
 
 
 
