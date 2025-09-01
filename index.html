@@ -638,6 +638,253 @@
             }
         }
 
+        /* New Planner List View Styles */
+        #planner-list-view-container {
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            background-color: #111827; /* Match page bg */
+        }
+        .planner-search-bar {
+            position: relative;
+            margin-bottom: 1rem;
+        }
+        .planner-search-bar i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6b7280;
+        }
+        .planner-search-bar input {
+            width: 100%;
+            background-color: #1F2937;
+            border: none;
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem 0.75rem 2.75rem;
+            color: white;
+            font-size: 1rem;
+            outline: none;
+        }
+        .planner-search-bar input::placeholder {
+            color: #9ca3af;
+        }
+        .planner-list-section {
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+        .planner-list-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 0.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .planner-list-item:hover {
+            background-color: #374151;
+        }
+        .planner-list-item .icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+            color: white;
+            flex-shrink: 0;
+        }
+        .planner-list-item .icon i {
+            font-size: 0.9rem;
+        }
+        .planner-list-item .text {
+            flex-grow: 1;
+            font-weight: 500;
+            font-size: 1rem;
+        }
+        .planner-list-item .counts {
+            color: #9ca3af;
+            font-size: 0.9rem;
+        }
+        .planner-actions {
+            padding: 1rem 0.5rem 0;
+            border-top: 1px solid #374151;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .planner-add-project-btn {
+            background: none;
+            border: none;
+            color: #ef4444;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        .planner-add-project-btn i {
+            font-size: 1.25rem;
+        }
+        .planner-actions .action-icons {
+            display: flex;
+            gap: 1.25rem;
+            color: #9ca3af;
+            font-size: 1.1rem;
+        }
+        .planner-actions .action-icons i {
+            cursor: pointer;
+        }
+
+        /* New Planner Category View Styles */
+        .planner-category-view {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            background-color: #111827;
+        }
+        .category-view-header {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            border-bottom: 1px solid #374151;
+            flex-shrink: 0;
+        }
+        .category-back-btn {
+            margin-right: 1rem;
+        }
+        .category-view-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+        .category-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            padding: 1rem;
+            border-bottom: 1px solid #374151;
+            flex-shrink: 0;
+        }
+        @media (min-width: 640px) {
+            .category-stats-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+        .category-stat-card {
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #ef4444; /* Red color from image */
+        }
+        .stat-label {
+            font-size: 0.75rem;
+            color: #9ca3af;
+            margin-top: 0.25rem;
+        }
+        .category-add-task-container {
+            padding: 1rem;
+            flex-shrink: 0;
+        }
+        .add-task-input-wrapper {
+            display: flex;
+            align-items: center;
+            background-color: #1F2937;
+            border-radius: 0.75rem;
+            padding: 0.5rem 1rem;
+        }
+        .add-task-input-wrapper i {
+            color: #9ca3af;
+            margin-right: 0.75rem;
+        }
+        .category-add-task-input {
+            background: transparent;
+            border: none;
+            outline: none;
+            color: white;
+            width: 100%;
+            font-size: 1rem;
+            padding: 0.5rem 0;
+        }
+        .category-task-list-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 0 1rem 1rem;
+        }
+        .no-tasks-placeholder {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: #6b7280;
+        }
+        .no-tasks-placeholder i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        .no-tasks-placeholder h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #d1d5db;
+        }
+        .category-task-item {
+            display: flex;
+            align-items: center;
+            background-color: #1F2937;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+        }
+        .task-checkbox-category {
+            width: 24px;
+            height: 24px;
+            border: 2px solid #ef4444;
+            border-radius: 50%;
+            margin-right: 1rem;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: all 0.2s;
+        }
+        .task-checkbox-category.completed {
+            background-color: #ef4444;
+            border-color: #ef4444;
+        }
+        .category-task-item.completed .task-title-category {
+            text-decoration: line-through;
+            color: #6b7280;
+        }
+        .task-title-category {
+            flex-grow: 1;
+            font-weight: 500;
+        }
+        .task-play-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background-color: transparent;
+            border: 2px solid #ef4444;
+            color: #ef4444;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .task-play-btn:hover {
+            background-color: #ef4444;
+            color: white;
+        }
+        .completed-tasks-toggle {
+            text-align: center;
+            padding: 0.5rem;
+            cursor: pointer;
+            color: #9ca3af;
+            font-size: 0.875rem;
+        }
+
+
         /* Modal Styles */
         .modal {
             position: fixed;
@@ -2026,6 +2273,31 @@ import {
         const blob = new Blob([workerCode], { type: 'application/javascript' });
         const pomodoroWorker = new Worker(URL.createObjectURL(blob));
 
+        // --- FIX: Add message listener to update UI from worker ---
+        pomodoroWorker.onmessage = (e) => {
+            const { type, timeLeft } = e.data;
+            if (type === 'tick') {
+                sessionTimerDisplay.textContent = formatPomodoroTime(timeLeft);
+            } else if (type === 'phase_ended') {
+                // This handles the phase transition if the tab is active
+                console.log("Worker signaled phase end. Current state:", pomodoroState);
+                const oldState = pomodoroState;
+                let newState = 'idle';
+
+                // Determine the next state based on the one that just ended
+                if (oldState === 'work') {
+                    const currentCycle = Math.floor(((currentUserData.pomodoroCycle || 0) + 1) / 2);
+                    newState = (currentCycle % pomodoroSettings.long_break_interval === 0) ? 'long_break' : 'short_break';
+                } else if (oldState.includes('break')) {
+                    newState = 'work';
+                }
+                
+                if (newState !== 'idle') {
+                    handlePomodoroPhaseEnd({ oldState: oldState, newState: newState });
+                }
+            }
+        };
+
         // --- Service Worker Communication Functions ---
         function scheduleSWAlarm(payload) {
             if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
@@ -2328,41 +2600,52 @@ let pauseStartTime = 0;
             }
         }
 
-        async function uploadProfilePicture(file) {
-            if (!currentUser) return;
-            if (!file.type.startsWith('image/')) {
-                showToast('Please select an image file.', 'error');
-                return;
-            }
-            if (file.size > 5 * 1024 * 1024) { // 5MB limit
-                showToast('Image is too large (max 5MB).', 'error');
-                return;
-            }
-            showToast('Uploading profile picture...', 'info');
+        // --- NEW: Handle Pomodoro phase transitions (work/break) ---
+        async function handlePomodoroPhaseEnd(data) {
+            const { newState, oldState } = data;
 
+            // Save the session that just completed
+            if (oldState === 'work') {
+                const workDurationSeconds = pomodoroSettings.work * 60;
+                await saveSession(activeSubject, workDurationSeconds, 'study');
+            } else if (oldState && oldState.includes('break')) {
+                const breakDuration = oldState === 'short_break' ? pomodoroSettings.short_break * 60 : pomodoroSettings.long_break * 60;
+                await saveSession('Pomodoro Break', breakDuration, 'break');
+            }
+
+            // Play a sound to signal the transition
+            playSound(newState === 'work' ? pomodoroSounds.focus : pomodoroSounds.break, pomodoroSounds.volume);
+
+            // Check user settings to see if the next phase should start automatically
+            const shouldAutoStart = (newState === 'work' && pomodoroSettings.autoStartFocus) || (newState.includes('break') && pomodoroSettings.autoStartBreak);
+
+            if (shouldAutoStart) {
+                startNextPomodoroPhase(newState);
+            } else {
+                // If not auto-starting, set up the UI for manual start
+                nextPomodoroPhase = newState;
+                pomodoroState = 'idle'; 
+                
+                document.getElementById('stop-studying-btn').classList.add('hidden');
+                document.getElementById('pause-btn').classList.add('hidden');
+                document.getElementById('resume-btn').classList.add('hidden');
+                document.getElementById('manual-start-btn').classList.remove('hidden');
+                
+                pomodoroStatusDisplay.textContent = `Click to start ${newState.replace('_', ' ')}`;
+                let duration = 0;
+                if (newState === 'work') duration = pomodoroSettings.work * 60;
+                else if (newState === 'short_break') duration = pomodoroSettings.short_break * 60;
+                else if (newState === 'long_break') duration = pomodoroSettings.long_break * 60;
+                sessionTimerDisplay.textContent = formatPomodoroTime(duration);
+            }
+        }
+
+        async function handleProfilePictureUpload(file) {
+            // ... (checks)
             const toBase64 = file => new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.readAsDataURL(file);
-                reader.onload = () => {
-                    const img = new Image();
-                    img.src = reader.result;
-                    img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        const MAX_WIDTH = 400; // Smaller size for profile pics
-                        let width = img.width;
-                        let height = img.height;
-
-                        if (width > MAX_WIDTH) {
-                            height *= MAX_WIDTH / width;
-                            width = MAX_WIDTH;
-                        }
-                        canvas.width = width;
-                        canvas.height = height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, width, height);
-                        resolve(canvas.toDataURL('image/jpeg', 0.8)); // Use JPEG for smaller size
-                    };
-                };
+                reader.onload = () => resolve(reader.result);
                 reader.onerror = error => reject(error);
             });
 
@@ -3947,6 +4230,8 @@ if (achievementsGrid) {
             activeListId: 'inbox',
             selectedTaskId: null,
             currentView: 'list', // 'list', 'board', 'calendar'
+            activeCategory: 'list', // 'list', 'today', 'tomorrow', 'thisweek', etc.
+            showCompletedInCategory: false,
             plannerUnsubscribers: [],
             calendarYear: new Date().getFullYear(),
             calendarMonth: new Date().getMonth(),
@@ -4036,10 +4321,29 @@ if (achievementsGrid) {
             });
             
             const tasksForCurrentList = plannerState.tasks.filter(t => t.listId === plannerState.activeListId);
+            const sidebar = document.getElementById('planner-sidebar');
+            const detailsPanel = document.getElementById('planner-task-details');
+
+            // Reset styles and visibility
+            if(sidebar) sidebar.style.display = '';
+            mainContent.style.padding = '';
+            if(detailsPanel) detailsPanel.classList.add('hidden');
+
 
             switch (plannerState.currentView) {
                 case 'list':
-                    renderPlannerListView(tasksForCurrentList);
+                    if(sidebar) sidebar.style.display = 'none';
+                    if(detailsPanel) detailsPanel.classList.add('hidden');
+                    mainContent.style.padding = '0';
+                    
+                    if (plannerState.activeCategory && plannerState.activeCategory !== 'list') {
+                        // We are in a detailed category view
+                        renderPlannerCategoryView(plannerState.activeCategory);
+                    } else {
+                        // We are in the main list view
+                        document.getElementById('planner-header-title').textContent = 'Planner';
+                        renderPlannerListView(plannerState.tasks); // Pass all tasks for the list view
+                    }
                     break;
                 case 'board':
                     renderPlannerBoardView(tasksForCurrentList);
@@ -4050,43 +4354,205 @@ if (achievementsGrid) {
             }
         }
         
-        function renderPlannerListView(tasks) {
+        function renderPlannerListView(allTasks) {
             const mainContent = document.getElementById('planner-main-content');
             
-            const uncompletedTasks = tasks
-                .filter(t => !t.completed)
-                .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+            // Date helpers
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            const tomorrow = new Date(today);
+            tomorrow.setDate(today.getDate() + 1);
+            
+            const startOfWeek = new Date(today);
+            const dayOfWeek = today.getDay(); // 0=Sun, 1=Mon
+            const diff = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1); // adjust when day is sunday
+            startOfWeek.setDate(diff);
 
-            const completedTasks = tasks
-                .filter(t => t.completed)
-                .sort((a, b) => (b.completedAt?.seconds || 0) - (a.completedAt?.seconds || 0));
+            const endOfWeek = new Date(startOfWeek);
+            endOfWeek.setDate(startOfWeek.getDate() + 6);
+            endOfWeek.setHours(23,59,59,999);
 
-            const uncompletedHtml = uncompletedTasks.length > 0
-                ? uncompletedTasks.map(task => renderPlannerTaskItem(task)).join('')
-                : '<p class="text-gray-500 px-3 py-2">No active tasks here. Add one above!</p>';
+            const isSameDay = (d1, d2) => d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate();
 
-            const completedHtml = completedTasks.length > 0
-                ? `
-                    <div class="mt-8">
-                        <h3 class="px-3 py-1 text-sm font-semibold text-gray-400 border-b border-gray-700 mb-3 flex items-center gap-2">
-                            <i class="fas fa-check-circle"></i>
-                            Completed (${completedTasks.length})
-                        </h3>
-                        <div class="space-y-2">
-                            ${completedTasks.map(task => renderPlannerTaskItem(task)).join('')}
-                        </div>
-                    </div>
-                ` : '';
+            // Filter tasks
+            const todayTasks = allTasks.filter(t => t.dueDate && isSameDay(new Date(t.dueDate.seconds * 1000), today) && !t.completed);
+            const tomorrowTasks = allTasks.filter(t => t.dueDate && isSameDay(new Date(t.dueDate.seconds * 1000), tomorrow) && !t.completed);
+            const thisWeekTasks = allTasks.filter(t => {
+                if (!t.dueDate || t.completed) return false;
+                const taskDate = new Date(t.dueDate.seconds * 1000);
+                return taskDate >= startOfWeek && taskDate <= endOfWeek;
+            });
+            const plannedTasks = allTasks.filter(t => t.dueDate && !t.completed);
+            const completedTasks = allTasks.filter(t => t.completed);
+            const inboxTasks = allTasks.filter(t => t.listId === 'inbox' && !t.completed);
+
+            const categories = [
+                { name: 'Today', icon: 'fa-sun', color: 'bg-yellow-500', count: todayTasks.length },
+                { name: 'Tomorrow', icon: 'fa-cloud-sun', color: 'bg-orange-400', count: tomorrowTasks.length },
+                { name: 'This Week', icon: 'fa-calendar-week', color: 'bg-purple-500', count: thisWeekTasks.length },
+                { name: 'Planned', icon: 'fa-calendar-alt', color: 'bg-blue-500', count: plannedTasks.length },
+                { name: 'Events', icon: 'fa-calendar-star', color: 'bg-green-500', count: 0 }, // Placeholder
+                { name: 'Completed', icon: 'fa-check-circle', color: 'bg-gray-500', count: completedTasks.length },
+                { name: 'Tasks', icon: 'fa-tasks', color: 'bg-indigo-500', count: inboxTasks.length },
+            ];
 
             mainContent.innerHTML = `
-                <form id="add-planner-task-form" class="mb-4">
-                    <input type="text" id="add-planner-task-input" class="w-full bg-gray-800 border-2 border-gray-700 rounded-lg p-3 text-white focus:outline-none focus:border-blue-500" placeholder="+ Add a new task to ${plannerState.activeListId === 'inbox' ? 'Inbox' : plannerState.lists.find(l=>l.id===plannerState.activeListId)?.name || ''}..."/>
-                </form>
-                <div id="planner-task-list">
-                    <div class="space-y-2">
-                        ${uncompletedHtml}
+                <div id="planner-list-view-container">
+                    <div class="planner-search-bar">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Search">
                     </div>
-                    ${completedHtml}
+                    <div class="planner-list-section no-scrollbar">
+                        ${categories.map(cat => `
+                            <div class="planner-list-item" data-category="${cat.name.toLowerCase()}">
+                                <div class="icon ${cat.color}"><i class="fas ${cat.icon}"></i></div>
+                                <span class="text">${cat.name}</span>
+                                <div class="counts">${cat.count}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="planner-actions">
+                        <button class="planner-add-project-btn">
+                            <i class="fas fa-plus-circle"></i>
+                            <span>Add Project</span>
+                        </button>
+                        <div class="action-icons">
+                            <i class="fas fa-flag"></i>
+                            <i class="fas fa-folder-open"></i>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderPlannerCategoryView(category) {
+            const mainContent = document.getElementById('planner-main-content');
+
+            // --- 1. Filter Tasks ---
+            const allTasks = plannerState.tasks;
+            let tasksToShow = [];
+            let title = category.charAt(0).toUpperCase() + category.slice(1);
+            
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            const tomorrow = new Date(today);
+            tomorrow.setDate(today.getDate() + 1);
+            const isSameDay = (d1, d2) => d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate();
+
+            switch (category) {
+                case 'today':
+                    tasksToShow = allTasks.filter(t => t.dueDate && isSameDay(new Date(t.dueDate.seconds * 1000), today));
+                    break;
+                case 'tomorrow':
+                    tasksToShow = allTasks.filter(t => t.dueDate && isSameDay(new Date(t.dueDate.seconds * 1000), tomorrow));
+                    break;
+                case 'this week':
+                    title = 'This Week';
+                    const startOfWeek = new Date(today);
+                    const dayOfWeek = today.getDay();
+                    const diff = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+                    startOfWeek.setDate(diff);
+                    const endOfWeek = new Date(startOfWeek);
+                    endOfWeek.setDate(startOfWeek.getDate() + 6);
+                    endOfWeek.setHours(23, 59, 59, 999);
+                    tasksToShow = allTasks.filter(t => {
+                        if (!t.dueDate) return false;
+                        const taskDate = new Date(t.dueDate.seconds * 1000);
+                        return taskDate >= startOfWeek && taskDate <= endOfWeek;
+                    });
+                    break;
+                case 'planned':
+                    tasksToShow = allTasks.filter(t => t.dueDate && !t.completed);
+                    break;
+                case 'completed':
+                    tasksToShow = allTasks.filter(t => t.completed);
+                    break;
+                 case 'events': // Placeholder
+                    tasksToShow = []; // No event tasks for now
+                    break;
+            }
+
+            // --- 2. Calculate Stats ---
+            const uncompletedTasks = tasksToShow.filter(t => !t.completed);
+            const tasksToBeCompletedCount = uncompletedTasks.length;
+            const completedTasks = tasksToShow.filter(t => t.completed);
+            const completedTasksCount = completedTasks.length;
+
+            const estimatedTimeMinutes = uncompletedTasks.reduce((total, task) => total + (task.estimatedMinutes || 0), 0);
+            const estimatedHours = Math.floor(estimatedTimeMinutes / 60).toString().padStart(2, '0');
+            const estimatedMins = (estimatedTimeMinutes % 60).toString().padStart(2, '0');
+
+            const elapsedTimeMinutes = uncompletedTasks.reduce((total, task) => {
+                const session = userSessions.find(s => s.subject === task.title && s.type === 'study');
+                return total + (session ? session.durationSeconds / 60 : 0);
+            }, 0);
+            const elapsedHours = Math.floor(elapsedTimeMinutes / 60).toString().padStart(2, '0');
+            const elapsedMins = (elapsedTimeMinutes % 60).toString().padStart(2, '0');
+            
+            let tasksToRender;
+            if (category === 'completed') {
+                tasksToRender = tasksToShow;
+            } else {
+                tasksToRender = plannerState.showCompletedInCategory ? tasksToShow.filter(t => t.completed) : uncompletedTasks;
+            }
+
+            // --- 3. Generate HTML ---
+            mainContent.innerHTML = `
+                <div class="planner-category-view">
+                    <header class="category-view-header">
+                        <button class="category-back-btn text-gray-400 hover:text-white">
+                             <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                            </svg>
+                        </button>
+                        <h2 class="category-view-title">${title}</h2>
+                    </header>
+                    <div class="category-stats-grid">
+                        <div class="category-stat-card">
+                            <div class="stat-value">${estimatedHours}:${estimatedMins}</div>
+                            <div class="stat-label">Estimated Time</div>
+                        </div>
+                        <div class="category-stat-card">
+                            <div class="stat-value">${tasksToBeCompletedCount}</div>
+                            <div class="stat-label">Tasks to be Completed</div>
+                        </div>
+                        <div class="category-stat-card">
+                            <div class="stat-value">${elapsedHours}:${elapsedMins}</div>
+                            <div class="stat-label">Elapsed Time</div>
+                        </div>
+                         <div class="category-stat-card">
+                            <div class="stat-value">${completedTasksCount}</div>
+                            <div class="stat-label">Completed Tasks</div>
+                        </div>
+                    </div>
+                    <div class="category-add-task-container">
+                        <form id="category-add-task-form">
+                            <div class="add-task-input-wrapper">
+                                <i class="fas fa-plus"></i>
+                                <input type="text" id="category-add-task-input" class="category-add-task-input" placeholder="Add a task...">
+                            </div>
+                        </form>
+                    </div>
+                    <div class="category-task-list-container no-scrollbar">
+                        ${tasksToRender.length > 0 ? tasksToRender.map(task => `
+                             <div class="category-task-item ${task.completed ? 'completed' : ''}" data-task-id="${task.id}">
+                                <div class="task-checkbox-category ${task.completed ? 'completed' : ''}"></div>
+                                <span class="task-title-category">${task.title}</span>
+                                <button class="task-play-btn"><i class="fas fa-play"></i></button>
+                            </div>
+                        `).join('') : `
+                             <div class="no-tasks-placeholder">
+                                <i class="fas fa-calendar-check"></i>
+                                <h3>No Tasks</h3>
+                                <p>Tap the input box above to add a new task.</p>
+                            </div>
+                        `}
+                    </div>
+                    ${completedTasks.length > 0 ? `
+                        <div class="completed-tasks-toggle">
+                            ${plannerState.showCompletedInCategory ? 'Hide' : 'Show'} Completed Tasks <i class="fas fa-chevron-down"></i>
+                        </div>
+                    ` : ''}
                 </div>
             `;
         }
@@ -4218,34 +4684,67 @@ if (achievementsGrid) {
                 return;
             }
 
+            const listName = selectedTask.listId === 'inbox' ? 'Tasks' : (plannerState.lists.find(l => l.id === selectedTask.listId)?.name || 'Tasks');
+            const createdDate = selectedTask.createdAt ? new Date(selectedTask.createdAt.seconds * 1000).toLocaleDateString(undefined, { month: 'long', day: 'numeric' }) : 'Today';
+
             detailsPanel.innerHTML = `
-                <div class="p-4 h-full flex flex-col">
-                    <div class="flex-shrink-0">
-                        <button id="close-task-details" class="float-right p-1 rounded-full hover:bg-gray-700">&times;</button>
-                        <input id="task-detail-title" class="text-xl font-semibold bg-transparent w-full border-none focus:ring-0 p-0 mb-4" value="${selectedTask.title}">
+                <div class="p-4 h-full flex flex-col bg-gray-800 text-white">
+                    <!-- Header -->
+                    <div class="flex-shrink-0 flex items-center mb-4">
+                        <input type="checkbox" class="task-checkbox-planner w-6 h-6 bg-gray-700 rounded-full text-blue-500 focus:ring-blue-500 mr-4 flex-shrink-0" ${selectedTask.completed ? 'checked' : ''} />
+                        <button class="mr-2 text-red-400"><i class="fas fa-play"></i></button>
+                        <input id="task-detail-title" class="text-xl font-semibold bg-transparent w-full border-none focus:ring-0 p-0" value="${selectedTask.title}">
+                        <button class="text-gray-400"><i class="fas fa-flag"></i></button>
+                        <button id="close-task-details" class="ml-2 p-1 rounded-full hover:bg-gray-700">&times;</button>
                     </div>
                     
-                    <div class="flex-grow overflow-y-auto pr-2">
-                        <div class="text-sm text-gray-400 mb-2">Due Date</div>
-                        <input type="date" id="task-detail-due-date" class="w-full bg-gray-800 p-2 rounded-md mb-4" value="${selectedTask.dueDate ? new Date(selectedTask.dueDate.seconds * 1000).toISOString().split('T')[0] : ''}">
-
-                        <div class="text-sm text-gray-400 mb-2">Priority</div>
-                        <select id="task-detail-priority" class="w-full bg-gray-800 p-2 rounded-md mb-4">
-                            <option value="none" ${selectedTask.priority === 'none' ? 'selected' : ''}>No Priority</option>
-                            <option value="low" ${selectedTask.priority === 'low' ? 'selected' : ''}>Low</option>
-                            <option value="medium" ${selectedTask.priority === 'medium' ? 'selected' : ''}>Medium</option>
-                            <option value="high" ${selectedTask.priority === 'high' ? 'selected' : ''}>High</option>
-                        </select>
+                    <!-- Main Content -->
+                    <div class="flex-grow overflow-y-auto pr-2 text-sm">
+                        <button class="border border-gray-600 rounded-full px-3 py-1 text-gray-400 mb-4 hover:bg-gray-700">+ Tags</button>
                         
-                        <div class="text-sm text-gray-400 mb-2">Notes</div>
-                        <textarea id="task-detail-notes" class="w-full bg-gray-800 p-2 rounded-md h-32 mb-4">${selectedTask.notes || ''}</textarea>
+                        <div class="space-y-3">
+                             <div class="flex items-center">
+                                <i class="fas fa-stopwatch text-gray-400 w-6 text-center mr-3"></i>
+                                <span>Pomodoro</span>
+                                <div class="ml-auto text-right">
+                                    <span class="text-red-400">0 / 0</span>
+                                    <p class="text-xs text-gray-500">= 25m</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center">
+                                <i class="fas fa-calendar-day text-gray-400 w-6 text-center mr-3"></i>
+                                <span>Due Date</span>
+                                <input type="date" id="task-detail-due-date" class="ml-auto bg-transparent text-right p-0 border-none focus:ring-0" value="${selectedTask.dueDate ? new Date(selectedTask.dueDate.seconds * 1000).toISOString().split('T')[0] : ''}">
+                            </div>
+                             <div class="flex items-center">
+                                <i class="fas fa-tasks text-gray-400 w-6 text-center mr-3"></i>
+                                <span>Project</span>
+                                <span class="ml-auto text-gray-300">${listName}</span>
+                            </div>
+                            <div class="flex items-center">
+                                <i class="fas fa-bell text-gray-400 w-6 text-center mr-3"></i>
+                                <span>Reminder</span>
+                                <span class="ml-auto text-gray-500">None</span>
+                            </div>
+                            <div class="flex items-center">
+                                <i class="fas fa-redo text-gray-400 w-6 text-center mr-3"></i>
+                                <span>Repeat</span>
+                                <span class="ml-auto text-gray-500">None</span>
+                            </div>
+                            <div class="flex items-center text-gray-400">
+                                <i class="fas fa-plus w-6 text-center mr-3"></i>
+                                <input class="bg-transparent w-full border-none p-0 focus:ring-0" placeholder="Add a subtask...">
+                            </div>
+                        </div>
+
+                        <textarea id="task-detail-notes" class="w-full bg-transparent p-0 mt-4 h-24 border-none focus:ring-0" placeholder="Add a note...">${selectedTask.notes || ''}</textarea>
                     </div>
 
-                    <div class="flex-shrink-0 pt-2 border-t border-gray-700">
-                        <button id="add-to-google-calendar-btn" class="w-full flex items-center justify-center gap-2 text-white bg-blue-600 hover:bg-blue-700 py-2 rounded-md mb-2 ${!selectedTask.dueDate ? 'opacity-50 cursor-not-allowed' : ''}" ${!selectedTask.dueDate ? 'disabled' : ''}>
-                            <i class="fab fa-google"></i> Add to Google Calendar
-                        </button>
-                        <button id="delete-task-btn" class="w-full text-red-500 hover:bg-red-500/10 py-2 rounded-md">Delete Task</button>
+                    <!-- Footer -->
+                    <div class="flex-shrink-0 pt-2 flex justify-between items-center text-xs text-gray-500">
+                        <button><i class="fas fa-arrow-left"></i></button>
+                        <span>Created on ${createdDate}</span>
+                        <button id="delete-task-btn" class="text-gray-400 hover:text-red-500 text-base"><i class="fas fa-trash-alt"></i></button>
                     </div>
                 </div>
             `;
@@ -6119,6 +6618,17 @@ if (achievementsGrid) {
         ael('pause-btn', 'click', pauseTimer);
         ael('resume-btn', 'click', resumeTimer);
         
+        // --- FIX: Add listener for the manual start button ---
+        ael('manual-start-btn', 'click', () => {
+            if (nextPomodoroPhase) {
+                document.getElementById('manual-start-btn').classList.add('hidden');
+                document.getElementById('stop-studying-btn').classList.remove('hidden');
+                document.getElementById('pause-btn').classList.remove('hidden');
+                startNextPomodoroPhase(nextPomodoroPhase);
+                nextPomodoroPhase = null; // Clear it after starting
+            }
+        });
+
         ael('start-session-form', 'submit', (e) => {
             e.preventDefault();
             const selectedSubjectEl = document.querySelector('#subject-selection-list .subject-item.selected');
@@ -6174,8 +6684,47 @@ if (achievementsGrid) {
             // Main click handler
             plannerPage.addEventListener('click', e => {
                 const target = e.target;
+                
+                // --- NEW: Category List Item Click ---
+                const categoryItem = target.closest('.planner-list-item');
+                if (categoryItem) {
+                    const category = categoryItem.dataset.category;
+                    if(category) {
+                        plannerState.activeCategory = category;
+                        renderPlannerMainContent();
+                    }
+                    return;
+                }
+                
+                // --- NEW: Category View Back Button ---
+                if (target.closest('.category-back-btn')) {
+                    plannerState.activeCategory = 'list';
+                    plannerState.showCompletedInCategory = false; // Reset toggle on exit
+                    renderPlannerMainContent();
+                    return;
+                }
 
-                // --- NEW: Calendar day click for adding task ---
+                // --- NEW: Category View Checkbox ---
+                const categoryCheckbox = target.closest('.task-checkbox-category');
+                if (categoryCheckbox) {
+                    const taskItem = categoryCheckbox.closest('.category-task-item');
+                    const taskId = taskItem.dataset.taskId;
+                    const isCompleted = !categoryCheckbox.classList.contains('completed');
+                    updatePlannerTask(taskId, {
+                        completed: isCompleted,
+                        completedAt: isCompleted ? serverTimestamp() : null
+                    });
+                    return;
+                }
+
+                // --- NEW: Completed Tasks Toggle ---
+                if (target.closest('.completed-tasks-toggle')) {
+                    plannerState.showCompletedInCategory = !plannerState.showCompletedInCategory;
+                    renderPlannerCategoryView(plannerState.activeCategory);
+                    return;
+                }
+
+                // --- Calendar day click for adding task ---
                 const dayCell = target.closest('.calendar-day-cell:not(.other-month)');
                 if (dayCell && !target.closest('.calendar-task')) {
                     const dateStr = dayCell.dataset.date;
@@ -6231,10 +6780,10 @@ if (achievementsGrid) {
                 }
 
                 // Task item selection (in any view)
-                const taskItem = target.closest('.task-item, .kanban-card, .calendar-task');
+                const taskItem = target.closest('.task-item, .kanban-card, .calendar-task, .category-task-item');
                 if (taskItem && taskItem.dataset.taskId) {
                     // Don't select if a checkbox was the direct target of the click
-                    if (!target.classList.contains('task-checkbox-planner')) {
+                    if (!target.classList.contains('task-checkbox-planner') && !target.classList.contains('task-checkbox-category')) {
                         plannerState.selectedTaskId = taskItem.dataset.taskId;
                         // Re-render to highlight selection and show details panel
                         renderPlannerPage(); 
@@ -6295,25 +6844,10 @@ if (achievementsGrid) {
                         completedAt: isCompleted ? serverTimestamp() : null // Add/remove completion timestamp
                     });
                 }
-                
-                // Task details panel inputs (selects, date pickers)
-                if(target.closest('#planner-task-details')) {
-                    const taskId = plannerState.selectedTaskId;
-                     if (!taskId) return;
-                    if (target.matches('#task-detail-due-date, #task-detail-priority')) {
-                        const updateData = {};
-                        if(target.id === 'task-detail-due-date') {
-                            updateData.dueDate = target.value ? new Date(target.value + 'T00:00:00') : null;
-                        } else if (target.id === 'task-detail-priority') {
-                            updateData.priority = target.value;
-                        }
-                        updatePlannerTask(taskId, updateData);
-                    }
-                }
             });
 
-            // Handler for text inputs with debouncing
-            plannerPage.addEventListener('input', e => {
+            // Handler for form inputs that change value
+            plannerPage.addEventListener('change', e => {
                 const target = e.target;
                 if(target.closest('#planner-task-details')) {
                     const taskId = plannerState.selectedTaskId;
@@ -7139,39 +7673,33 @@ if (achievementsGrid) {
                 }
             });
 
-            ael('profile-picture-upload', 'change', (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    uploadProfilePicture(file);
+            // Handler for form submissions
+            plannerPage.addEventListener('submit', e => {
+                 if (e.target.id === 'category-add-task-form') {
+                    e.preventDefault();
+                    const input = document.getElementById('category-add-task-input');
+                    const title = input.value.trim();
+                    if (title) {
+                        let dueDate = null;
+                        const today = new Date();
+                        if (plannerState.activeCategory === 'today') {
+                            dueDate = today;
+                        } else if (plannerState.activeCategory === 'tomorrow') {
+                            const tomorrow = new Date();
+                            tomorrow.setDate(today.getDate() + 1);
+                            dueDate = tomorrow;
+                        }
+                        
+                        addPlannerTask(title, dueDate ? dueDate.toISOString().split('T')[0] : null);
+                        input.value = '';
+                    }
                 }
-                e.target.value = ''; // Reset input
             });
 
-            ael('image-upload-input', 'change', (e) => {
-                const file = e.target.files[0];
-                if (file && currentGroupId) {
-                    handleImageUpload(file, currentGroupId);
-                }
-                e.target.value = ''; // Reset input
-            });
+        // --- END OF UNIFIED PLANNER LISTENERS ---
 
-            // --- START: ADDED EVENT LISTENERS ---
-
-            // Add Subject Modal and Form
-            const addSubjectModal = document.getElementById('add-subject-modal');
-            ael('add-subject-btn', 'click', () => {
-                if (!addSubjectModal) return;
-                // Reset form state for a new subject
-                document.getElementById('add-subject-form').reset();
-                document.querySelectorAll('#add-subject-modal .color-dot').forEach(el => el.classList.remove('selected'));
-                // Select default color
-                const defaultColor = document.querySelector('#add-subject-modal .color-dot[data-color="bg-blue-500"]');
-                if (defaultColor) defaultColor.classList.add('selected');
-                addSubjectModal.classList.add('active');
-            });
-
-            ael('add-subject-form', 'submit', async (e) => {
-                e.preventDefault();
+        ael('quick-add-task-form', 'submit', async (e) => {
+            e.preventDefault();
                 if (!currentUser) return;
                 const modal = document.getElementById('add-subject-modal');
                 const subjectName = document.getElementById('add-subject-name').value.trim();
@@ -7294,9 +7822,9 @@ if (achievementsGrid) {
             }
         }
     };
-        
-        document.addEventListener('DOMContentLoaded', () => {
-            const usernameAvatarPicker = document.getElementById('username-avatar-picker');
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const usernameAvatarPicker = document.getElementById('username-avatar-picker');
             if (usernameAvatarPicker) {
                 usernameAvatarPicker.innerHTML = PRESET_AVATARS.map((url, index) => `
                     <div class="avatar-option ${index === 0 ? 'selected' : ''}">
@@ -7373,6 +7901,16 @@ if (achievementsGrid) {
     </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
 
 
 
