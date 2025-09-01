@@ -3466,10 +3466,10 @@ let pauseStartTime = 0;
                 db = getFirestore(app);
 
                 messaging = getMessaging(app); // Initialize Firebase Messaging service
-        functions = getFunctions(app, 'us-central1'); // Initialize Firebase Functions service
+                functions = getFunctions(app, 'us-central1'); // Initialize Firebase Functions service
 
-        // --- PASTE THE onMessage LISTENER HERE ---
-        onMessage(messaging, (payload) => {
+                // --- PASTE THE onMessage LISTENER HERE ---
+                onMessage(messaging, (payload) => {
             console.log('Foreground Push Message received:', payload);
             // If a foreground message signals a timer end, handle it.
             // This is useful if the server sends a message that also impacts the UI immediately.
@@ -3478,18 +3478,19 @@ let pauseStartTime = 0;
                 showToast(payload.notification?.body || 'Timer ended!', 'info');
             }
             // You can handle other types of foreground messages here
-        });
-
-        // --- MOVE THESE TWO LINES HERE ---
-        
-        sendPomodoroNotification = httpsCallable(functions, 'sendPomodoroNotification'); // Assign callable function
-        sendWakeUpNotification = httpsCallable(functions, 'sendWakeUpNotification');
-        sendGroupWakeUpNotification = httpsCallable(functions, 'sendGroupWakeUpNotification');
-        // ---------------------------------
+                    // You can handle other types of foreground messages here
+                });
 
                 onAuthStateChanged(auth, async (user) => {
                     if (user) {
                         currentUser = user;
+
+                        // --- FIX: Initialize callable functions only AFTER user is authenticated ---
+                        sendPomodoroNotification = httpsCallable(functions, 'sendPomodoroNotification');
+                        sendWakeUpNotification = httpsCallable(functions, 'sendWakeUpNotification');
+                        sendGroupWakeUpNotification = httpsCallable(functions, 'sendGroupWakeUpNotification');
+                        // -------------------------------------------------------------------------
+
                         const userDoc = await getOrCreateUserDocument(user);
                         currentUserData = userDoc.data();
                         
@@ -3514,6 +3515,11 @@ let pauseStartTime = 0;
                     } else {
                         currentUser = null;
                         currentUserData = {};
+                        // --- FIX: Clear callable functions on sign-out ---
+                        sendPomodoroNotification = null;
+                        sendWakeUpNotification = null;
+                        sendGroupWakeUpNotification = null;
+                        // ----------------------------------------------
                         showPage('auth-screen');
                     }
                 });
@@ -7899,6 +7905,7 @@ if (achievementsGrid) {
     </script>
 </body>
 </html>
+
 
 
 
