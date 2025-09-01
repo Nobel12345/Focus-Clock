@@ -2411,13 +2411,15 @@ async function triggerServerNotification(messageData) {
         return;
     }
     try {
-        // FIX: The backend function automatically gets the user's ID from the authentication context.
-        // We no longer need to send userId or appId in the data payload.
+        // Call the Cloud Function
         const result = await sendPomodoroNotification({
+            userId: currentUser.uid, // Required by your Cloud Function
+            appId: appId,            // Required by your Cloud Function to build Firestore path
             title: messageData.title,
-            body: messageData.options.body,
+            body: messageData.options.body, // Use 'options.body' as FCM notification body
             newState: messageData.newState,
             oldState: messageData.oldState,
+            // Any other data you want to send and retrieve in the notification click handler
         });
         console.log('Server notification triggered:', result.data);
     } catch (error) {
@@ -3459,81 +3461,69 @@ let pauseStartTime = 0;
                     measurementId: "G-RRFK3LY0E4"
                 };
 
+                console.log("Initializing Firebase with config:", firebaseConfig); // Add this line for debugging
+
                 const app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
-                functions = getFunctions(app, 'us-central1');
 
-                // --- FIX: Defer messaging setup until SW is ready ---
-                navigator.serviceWorker.ready.then(registration => {
-                    console.log('Service Worker is ready, now initializing messaging.');
-                    messaging = getMessaging(app);
+                messaging = getMessaging(app); // Initialize Firebase Messaging service
+        functions = getFunctions(app); // Initialize Firebase Functions service
 
-                    onMessage(messaging, (payload) => {
-                        console.log('Foreground Push Message received:', payload);
-                        if (payload.data && payload.data.type === 'TIMER_ENDED') {
-                            handlePomodoroPhaseEnd(payload.data);
-                            showToast(payload.notification?.body || 'Timer ended!', 'info');
+        // --- PASTE THE onMessage LISTENER HERE ---
+        onMessage(messaging, (payload) => {
+            console.log('Foreground Push Message received:', payload);
+            // If a foreground message signals a timer end, handle it.
+            // This is useful if the server sends a message that also impacts the UI immediately.
+            if (payload.data && payload.data.type === 'TIMER_ENDED') {
+                handlePomodoroPhaseEnd(payload.data);
+                showToast(payload.notification?.body || 'Timer ended!', 'info');
+            }
+            // You can handle other types of foreground messages here
+        });
+
+        // --- MOVE THESE TWO LINES HERE ---
+        
+        sendPomodoroNotification = httpsCallable(functions, 'sendPomodoroNotification'); // Assign callable function
+        sendWakeUpNotification = httpsCallable(functions, 'sendWakeUpNotification');
+        sendGroupWakeUpNotification = httpsCallable(functions, 'sendGroupWakeUpNotification');
+        // ---------------------------------
+
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        currentUser = user;
+                        const userDoc = await getOrCreateUserDocument(user);
+                        currentUserData = userDoc.data();
+                        
+                        if (currentUserData.pomodoroSettings) {
+                            pomodoroSettings = {...pomodoroSettings, ...currentUserData.pomodoroSettings};
                         }
-                    });
-                    
-                    // Now that messaging is configured, proceed with auth.
-                    initializeAuthStateListener();
+                        if (currentUserData.pomodoroSounds) {
+                            pomodoroSounds = {...pomodoroSounds, ...currentUserData.pomodoroSounds};
+                        }
+                        pomodoroWorker.postMessage({ command: 'updateSettings', newSettings: pomodoroSettings });
 
-                }).catch(error => {
-                    console.error("Service worker ready check failed:", error);
-                    // Fallback to still make the app work, but notifications will fail.
-                    initializeAuthStateListener();
+
+                        if (!currentUserData || !currentUserData.username) {
+                            showPage('page-username-setup');
+                        } else {
+                            updateProfileUI(currentUserData);
+                            showPage('page-timer');
+                            setupRealtimeListeners();
+                            await loadDailyTotal();
+                            initializePushNotifications();
+                        }
+                    } else {
+                        currentUser = null;
+                        currentUserData = {};
+                        showPage('auth-screen');
+                    }
                 });
 
             } catch (e) {
                 console.error("Firebase initialization failed:", e);
                 showToast("Could not connect to the backend.", "error");
             }
-        }
-        
-        // --- NEW: Extracted Auth State Listener into its own function for clarity ---
-        function initializeAuthStateListener() {
-            onAuthStateChanged(auth, async (user) => {
-                if (user) {
-                    currentUser = user;
-
-                    // Initialize callable functions only AFTER user is authenticated
-                    sendPomodoroNotification = httpsCallable(functions, 'sendPomodoroNotification');
-                    sendWakeUpNotification = httpsCallable(functions, 'sendWakeUpNotification');
-                    sendGroupWakeUpNotification = httpsCallable(functions, 'sendGroupWakeUpNotification');
-
-                    const userDoc = await getOrCreateUserDocument(user);
-                    currentUserData = userDoc.data();
-                    
-                    if (currentUserData.pomodoroSettings) {
-                        pomodoroSettings = {...pomodoroSettings, ...currentUserData.pomodoroSettings};
-                    }
-                    if (currentUserData.pomodoroSounds) {
-                        pomodoroSounds = {...pomodoroSounds, ...currentUserData.pomodoroSounds};
-                    }
-                    pomodoroWorker.postMessage({ command: 'updateSettings', newSettings: pomodoroSettings });
-
-                    if (!currentUserData || !currentUserData.username) {
-                        showPage('page-username-setup');
-                    } else {
-                        updateProfileUI(currentUserData);
-                        showPage('page-timer');
-                        setupRealtimeListeners();
-                        await loadDailyTotal();
-                        // Now that auth is confirmed AND messaging is ready, get the token.
-                        initializePushNotifications(); 
-                    }
-                } else {
-                    currentUser = null;
-                    currentUserData = {};
-                    // Clear callable functions on sign-out
-                    sendPomodoroNotification = null;
-                    sendWakeUpNotification = null;
-                    sendGroupWakeUpNotification = null;
-                    showPage('auth-screen');
-                }
-            });
         }
 
         // --- Page Navigation ---
@@ -7789,12 +7779,16 @@ if (achievementsGrid) {
             // --- Service Worker Registration (Robust Version) ---
         if ('serviceWorker' in navigator) {
             // Service Workers require a secure context (HTTPS or localhost) to register.
+            // This check prevents the registration error in unsupported environments (like 'blob:').
             if (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
-                // --- MOVED from initializeFirebase to here for earlier registration ---
+                // IMPORTANT CHANGE HERE: Use './service-worker.js' or '/Focus-Clock/service-worker.js'
+                // if your app is hosted in a subfolder like /Focus-Clock/
+                // './service-worker.js' is generally preferred for relative paths.
                 navigator.serviceWorker
-                    .register('./service-worker.js', { scope: './' })
+                    .register('./service-worker.js', { scope: './' }) // Updated path and added scope
                     .then(registration => {
                         console.log('Service Worker registered successfully with scope:', registration.scope);
+                        // --- START NEW CODE FOR SERVICE WORKER UPDATES ---
                         registration.onupdatefound = () => {
                             const installingWorker = registration.installing;
                             if (installingWorker) {
@@ -7802,6 +7796,7 @@ if (achievementsGrid) {
                                     if (installingWorker.state === 'installed') {
                                         if (navigator.serviceWorker.controller) {
                                             showToast('New version available! Refresh for updates.', 'info', 5000);
+                                            console.log('New content is available; please refresh.');
                                         } else {
                                             console.log('Content is cached for offline use.');
                                         }
@@ -7809,18 +7804,21 @@ if (achievementsGrid) {
                                 };
                             }
                         };
+                        // --- END NEW CODE FOR SERVICE WORKER UPDATES ---
                     })
                     .catch(error => {
                         console.error('Service Worker registration failed:', error);
                     });
 
+                // --- START NEW CODE TO RELOAD PAGE ON CONTROLLER CHANGE ---
                 navigator.serviceWorker.addEventListener('controllerchange', () => {
                     console.log('New service worker activated, reloading page for latest content.');
                     window.location.reload();
                 });
-                 // --- END MOVED BLOCK ---
+                // --- END NEW CODE TO RELOAD PAGE ON CONTROLLER CHANGE ---
+
             } else {
-                console.warn('Service Worker not registered. This feature requires a secure context (HTTPS or localhost).');
+                console.warn('Service Worker not registered. This feature requires a secure context (HTTPS or localhost). The Pomodoro timer will be less reliable in the background.');
             }
         }
     };
@@ -7903,10 +7901,6 @@ if (achievementsGrid) {
     </script>
 </body>
 </html>
-
-
-
-
 
 
 
