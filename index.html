@@ -2374,9 +2374,25 @@ import {
                 sessionTimerDisplay.textContent = formatPomodoroTime(timeLeft);
             } else if (type === 'phase_ended') {
                 // This is a local trigger from the worker when a phase ends.
-                // The primary mechanism is the server push notification, but this ensures
-                // the UI transitions even if the notification is delayed.
-                console.log('Worker signaled phase end. The app will transition via push notification.');
+                // It's the primary way the UI transitions when the app is in the foreground.
+                console.log('Worker signaled phase end. Handling transition locally.');
+                
+                const oldState = pomodoroState;
+                if (oldState === 'idle') return; // Safety check, don't transition if already stopped
+
+                let newState;
+                if (oldState === 'work') {
+                    // A work session just finished. Check if it's time for a long break.
+                    const completedWorkSessions = currentUserData.pomodoroCycle || 0;
+                    const isLongBreakTime = completedWorkSessions > 0 && (completedWorkSessions % pomodoroSettings.long_break_interval === 0);
+                    newState = isLongBreakTime ? 'long_break' : 'short_break';
+                } else {
+                    // A break just finished. Time to get back to work.
+                    newState = 'work';
+                }
+
+                // Call the existing handler function to manage the transition.
+                handlePomodoroPhaseEnd({ newState, oldState });
             }
         };
         // --- FIX END ---
@@ -8190,6 +8206,7 @@ if (achievementsGrid) {
     </script>
 </body>
 </html>
+
 
 
 
