@@ -22,10 +22,12 @@
             font-family: 'Inter', sans-serif; 
             -webkit-tap-highlight-color: transparent;
             overflow-x: hidden; /* Prevent horizontal scrolling on the entire body */
+            background-color: #0d1117; /* Darker, modern background */
+            color: #e6edf3; /* Brighter default text */
         }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .nav-item.active svg, .nav-item.active p, .group-nav-item.active i, .group-nav-item.active p { color: #3B82F6; }
+        .nav-item.active svg, .nav-item.active p, .group-nav-item.active i, .group-nav-item.active p { color: #2dd4bf; } /* Teal-400 */
 
         /* Page and container visibility */
         #auth-screen, .page, #app-container, .modal { display: none; }
@@ -41,7 +43,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background-color: #1f2937;
+            background-color: #161b22; /* Darker secondary bg */
             padding: 0.5rem;
             border-radius: 9999px;
             width: fit-content;
@@ -57,9 +59,9 @@
             transition: all 0.3s ease;
         }
         .timer-switch-btn.active {
-            background-color: #3b82f6;
+            background-image: linear-gradient(to right, #2dd4bf, #38bdf8); /* Teal to Sky gradient */
             color: white;
-            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+            box-shadow: 0 4px 15px rgba(56, 189, 248, 0.2);
         }
         #pomodoro-status {
             font-size: 1.25rem;
@@ -110,7 +112,7 @@
             border-radius: 50%;
         }
         input:checked + .slider {
-            background-color: #3b82f6;
+            background-color: #2dd4bf; /* Teal-400 */
         }
         input:checked + .slider:before {
             transform: translateX(22px);
@@ -136,7 +138,7 @@
             height: 20px;
             width: 20px;
             border-radius: 50%;
-            background: #3b82f6;
+            background: #2dd4bf; /* Teal-400 */
             cursor: pointer;
             -webkit-appearance: none;
             margin-top: -6px;
@@ -144,7 +146,8 @@
 
         /* Group study styles */
         .group-card {
-            background: #1f2937;
+            background: #161b22; /* Darker secondary bg */
+            border: 1px solid #30363d; /* Subtle border */
             border-radius: 12px;
             overflow: hidden;
             transition: all 0.3s ease;
@@ -153,11 +156,12 @@
         }
         .group-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+            box-shadow: 0 8px 20px rgba(45, 212, 191, 0.1); /* Teal glow */
+            border-color: #2dd4bf;
         }
         .group-header {
             padding: 16px;
-            background: linear-gradient(135deg, #4361ee 0%, #4895ef 100%);
+            background: linear-gradient(135deg, #2dd4bf 0%, #38bdf8 100%); /* Teal to Sky gradient */
             color: white;
         }
         .group-category {
@@ -204,7 +208,7 @@
             align-items: center;
             gap: 6px;
             font-weight: 600;
-            color: #3B82F6;
+            color: #38bdf8; /* Sky-400 */
         }
         .leader i { color: gold; }
         .group-description {
@@ -227,7 +231,22 @@
             display: block;
             width: 100%;
             padding: 10px;
-            background: #4cc9f0;
+            background: #38bdf8; /* Sky-400 */
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 12px;
+        }
+        .join-btn:hover { background: #2dd4bf; }
+        .join-btn:disabled { background: #6c757d; cursor: not-allowed; }
+        .joined-badge {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            background: #2dd4bf; /* Teal-400 */
             color: white;
             border: none;
             border-radius: 8px;
@@ -255,24 +274,24 @@
             padding: 40px 20px;
             color: #9CA3AF;
         }
-        .empty-group i { font-size: 3rem; color: #374151; margin-bottom: 16px; }
+        .empty-group i { font-size: 3rem; color: #30363d; margin-bottom: 16px; }
         .empty-group h3 { font-size: 1.5rem; margin-bottom: 12px; color: white; }
         .empty-group p { font-size: 1rem; max-width: 500px; margin: 0 auto 20px; }
         .category-option, .time-option {
             padding: 12px;
             text-align: center;
-            background: #374151;
+            background: #21262d;
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.3s ease;
             border: 2px solid transparent;
             font-weight: 600;
         }
-        .category-option:hover, .time-option:hover { background: #4B5563; }
+        .category-option:hover, .time-option:hover { background: #30363d; }
         .category-option.selected, .time-option.selected {
-            background: #3B82F6;
+            background: #2dd4bf;
             color: white;
-            border-color: #2563EB;
+            border-color: #14b8a6;
         }
         .create-group-btn {
             position: fixed;
@@ -280,18 +299,18 @@
             right: 20px;
             width: 56px;
             height: 56px;
-            background: #3B82F6;
+            background: linear-gradient(to right, #2dd4bf, #38bdf8); /* Teal to Sky gradient */
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+            box-shadow: 0 4px 15px rgba(56, 189, 248, 0.3);
             cursor: pointer;
             transition: all 0.3s ease;
             z-index: 30;
         }
-        .create-group-btn:hover { background: #2563EB; transform: scale(1.05); }
+        .create-group-btn:hover { background: #2dd4bf; transform: scale(1.05); }
 
         /* Group Ranking Styles */
         .group-filter-btn {
@@ -303,9 +322,9 @@
             transition: all 0.2s;
         }
         .group-filter-btn.active {
-            background-color: #3B82F6;
+            background-image: linear-gradient(to right, #2dd4bf, #38bdf8);
             color: white;
-            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+            box-shadow: 0 2px 8px rgba(56, 189, 248, 0.3);
         }
         .group-card.ranking {
             cursor: default;
@@ -318,7 +337,8 @@
         /* Stats page styles */
         .stats-container { padding: 20px; }
         .stat-card {
-            background: #1F2937;
+            background: #161b22;
+            border: 1px solid #30363d;
             border-radius: 12px;
             padding: 20px;
             margin-bottom: 20px;
@@ -336,7 +356,8 @@
             display: flex;
             align-items: center;
             padding: 15px;
-            background: #1F2937;
+            background: #161b22;
+            border: 1px solid #30363d;
             border-radius: 10px;
             margin-bottom: 10px;
         }
@@ -353,7 +374,7 @@
             width: 40px;
             height: 40px;
             border-radius: 50%;
-            background: #374151;
+            background: #30363d;
             margin-right: 15px;
             display: flex;
             align-items: center;
@@ -364,20 +385,20 @@
         .user-name { font-weight: 600; }
         .user-time { color: #9CA3AF; font-size: 0.9rem; }
         .ranking-tab-btn {
-            background-color: #374151;
+            background-color: transparent;
+            border-bottom: 2px solid transparent;
             color: #9CA3AF;
             transition: all 0.2s;
         }
         .ranking-tab-btn.active {
-            background-color: #1F2937;
-            color: white;
-            border-bottom: 2px solid #3B82F6;
+            color: #2dd4bf;
+            border-bottom: 2px solid #2dd4bf;
         }
         
         /* Planner page styles */
         .planner-container { padding: 20px; }
         .planner-day {
-            background: #1F2937;
+            background: #161b22;
             border-radius: 12px;
             padding: 15px;
             margin-bottom: 15px;
@@ -392,7 +413,7 @@
             display: flex;
             align-items: center;
             padding: 10px 0;
-            border-bottom: 1px solid #374151;
+            border-bottom: 1px solid #30363d;
         }
         .task-checkbox { margin-right: 10px; }
         .task-name { flex-grow: 1; }
@@ -401,7 +422,7 @@
         /* New Planner Styles */
         #page-planner {
             /* The .active class handles display. This rule ensures the page is opaque and controls overflow. */
-            background-color: #111827;
+            background-color: #0d1117;
             overflow: hidden;
         }
         .planner-main-layout {
@@ -412,8 +433,8 @@
         #planner-sidebar {
             width: 250px;
             flex-shrink: 0;
-            background-color: #111827;
-            border-right: 1px solid #374151;
+            background-color: #0d1117;
+            border-right: 1px solid #30363d;
             padding: 1rem;
             display: flex;
             flex-direction: column;
@@ -434,10 +455,10 @@
             transition: background-color 0.2s;
         }
         .planner-sidebar-item:hover {
-            background-color: #374151;
+            background-color: #30363d;
         }
         .planner-sidebar-item.active {
-            background-color: #3B82F6;
+            background-color: #2dd4bf;
             color: white;
         }
          #planner-main-content {
@@ -448,8 +469,8 @@
          #planner-task-details {
             width: 350px;
             flex-shrink: 0;
-            background-color: #111827;
-            border-left: 1px solid #374151;
+            background-color: #0d1117;
+            border-left: 1px solid #30363d;
             overflow-y: auto;
             transition: width 0.3s ease;
         }
@@ -471,12 +492,12 @@
             gap: 1rem;
         }
         .kanban-column {
-            background-color: #1f2937;
+            background-color: #161b22;
             border-radius: 0.75rem;
             padding: 0.75rem;
         }
         .kanban-card {
-             background-color: #374151;
+             background-color: #21262d;
         }
 
         /* NEW Calendar View Styles */
@@ -501,8 +522,8 @@
             gap: 0.5rem;
         }
         .calendar-nav-btn {
-            background-color: #374151;
-            border: 1px solid #4b5563;
+            background-color: #21262d;
+            border: 1px solid #30363d;
             color: white;
             padding: 0.5rem 1rem;
             border-radius: 0.5rem;
@@ -510,19 +531,19 @@
             transition: background-color 0.2s;
         }
         .calendar-nav-btn:hover {
-            background-color: #4b5563;
+            background-color: #30363d;
         }
         .calendar-grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
             flex-grow: 1;
-            border-top: 1px solid #374151;
-            border-left: 1px solid #374151;
+            border-top: 1px solid #30363d;
+            border-left: 1px solid #30363d;
         }
         .calendar-day-header, .calendar-day-cell {
             padding: 0.5rem;
-            border-right: 1px solid #374151;
-            border-bottom: 1px solid #374151;
+            border-right: 1px solid #30363d;
+            border-bottom: 1px solid #30363d;
         }
         .calendar-day-header {
             text-align: center;
@@ -537,14 +558,14 @@
             transition: background-color 0.2s;
         }
         .calendar-day-cell:not(.other-month):hover {
-            background-color: #1f2937;
+            background-color: #161b22;
         }
         .day-number {
             font-weight: 500;
             margin-bottom: 0.25rem;
         }
         .day-number.today {
-            background-color: #3b82f6;
+            background: linear-gradient(to right, #2dd4bf, #38bdf8);
             color: white;
             width: 28px;
             height: 28px;
@@ -644,7 +665,7 @@
             display: flex;
             flex-direction: column;
             height: 100%;
-            background-color: #111827; /* Match page bg */
+            background-color: #0d1117; /* Match page bg */
         }
         .planner-search-bar {
             position: relative;
@@ -659,8 +680,8 @@
         }
         .planner-search-bar input {
             width: 100%;
-            background-color: #1F2937;
-            border: none;
+            background-color: #161b22;
+            border: 1px solid #30363d;
             border-radius: 0.5rem;
             padding: 0.75rem 1rem 0.75rem 2.75rem;
             color: white;
@@ -683,7 +704,7 @@
             transition: background-color 0.2s;
         }
         .planner-list-item:hover {
-            background-color: #374151;
+            background-color: #21262d;
         }
         .planner-list-item .icon {
             width: 28px;
@@ -710,7 +731,7 @@
         }
         .planner-actions {
             padding: 1rem 0.5rem 0;
-            border-top: 1px solid #374151;
+            border-top: 1px solid #30363d;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -744,13 +765,13 @@
             display: flex;
             flex-direction: column;
             height: 100%;
-            background-color: #111827;
+            background-color: #0d1117;
         }
         .category-view-header {
             display: flex;
             align-items: center;
             padding: 1rem;
-            border-bottom: 1px solid #374151;
+            border-bottom: 1px solid #30363d;
             flex-shrink: 0;
         }
         .category-back-btn {
@@ -765,7 +786,7 @@
             grid-template-columns: repeat(2, 1fr);
             gap: 1rem;
             padding: 1rem;
-            border-bottom: 1px solid #374151;
+            border-bottom: 1px solid #30363d;
             flex-shrink: 0;
         }
         @media (min-width: 640px) {
@@ -793,7 +814,7 @@
         .add-task-input-wrapper {
             display: flex;
             align-items: center;
-            background-color: #1F2937;
+            background-color: #161b22;
             border-radius: 0.75rem;
             padding: 0.5rem 1rem;
         }
@@ -832,7 +853,7 @@
         .category-task-item {
             display: flex;
             align-items: center;
-            background-color: #1F2937;
+            background-color: #161b22;
             border-radius: 0.75rem;
             padding: 1rem;
             margin-bottom: 0.75rem;
@@ -889,7 +910,8 @@
         .modal {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(13, 17, 23, 0.7); /* Darker backdrop */
+            backdrop-filter: blur(5px);
             display: none;
             align-items: center;
             justify-content: center;
@@ -897,7 +919,8 @@
         }
         .modal.active { display: flex; }
         .modal-content {
-            background: #1F2937;
+            background: #161b22;
+            border: 1px solid #30363d;
             border-radius: 12px;
             padding: 25px;
             width: 90%;
@@ -929,7 +952,7 @@
             width: 80px;
             height: 80px;
             border-radius: 50%;
-            background: #374151;
+            background: #30363d;
             margin-right: 20px;
             display: flex;
             align-items: center;
@@ -948,12 +971,12 @@
         .profile-email { color: #9CA3AF; }
         .settings-item {
             padding: 15px 0;
-            border-bottom: 1px solid #374151;
+            border-bottom: 1px solid #30363d;
             cursor: pointer;
             transition: background-color 0.2s;
         }
         .settings-item:hover {
-            background-color: #37415120;
+            background-color: rgba(48, 54, 61, 0.3);
         }
         .settings-label { font-weight: 600; margin-bottom: 5px; }
         .settings-value { color: #9CA3AF; }
@@ -1026,8 +1049,8 @@
             position: absolute;
             right: 25px;
             top: 25px;
-            background-color: #111827;
-            border: 1px solid #374151;
+            background-color: #0d1117;
+            border: 1px solid #30363d;
             border-radius: 0.5rem;
             box-shadow: 0 4px 6px rgba(0,0,0,0.2);
             z-index: 10;
@@ -1047,7 +1070,7 @@
             cursor: pointer;
         }
         .subject-options-menu button:hover {
-            background-color: #374151;
+            background-color: #30363d;
         }
         .subject-options-menu .delete-btn:hover {
             background-color: #ef4444;
@@ -1057,7 +1080,8 @@
             display: flex;
             align-items: center;
             padding: 1rem;
-            background-color: #1F2937;
+            background-color: #161b22;
+            border: 1px solid #30363d;
             border-radius: 0.75rem;
             width: 100%;
         }
@@ -1120,7 +1144,7 @@
             border-bottom-right-radius: 0.25rem;
         }
         .chat-bubble.received {
-            background-color: #374151;
+            background-color: #21262d;
             color: white;
             border-bottom-left-radius: 0.25rem;
         }
@@ -1144,7 +1168,7 @@
             width: 36px;
             height: 36px;
             border-radius: 50%;
-            background: #374151;
+            background: #21262d;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -1152,7 +1176,7 @@
             transition: all 0.2s;
         }
         .attendance-nav-btn:hover {
-            background: #4B5563;
+            background: #30363d;
         }
         .attendance-title {
             font-size: 1.2rem;
@@ -1167,7 +1191,7 @@
         }
         .calendar-day {
             aspect-ratio: 1/1;
-            background: #1F2937;
+            background: #161b22;
             border-radius: 8px;
             display: flex;
             flex-direction: column;
@@ -1185,14 +1209,14 @@
         }
         .day-time {
             font-size: 0.7rem;
-            color: #10B981;
+            color: #2dd4bf;
         }
         .calendar-day.today .day-number {
-            color: #3B82F6;
+            color: #38bdf8;
             font-weight: 700;
         }
         .calendar-day.active {
-            background: #3B82F6;
+            background-image: linear-gradient(to top, #2dd4bf, #38bdf8);
         }
         .calendar-day.active .day-number {
             color: white;
@@ -1203,7 +1227,7 @@
         .attendance-stats {
             margin-top: 20px;
             padding: 16px;
-            background: #1F2937;
+            background: #161b22;
             border-radius: 12px;
         }
         .stats-grid {
@@ -1213,7 +1237,7 @@
             margin-top: 12px;
         }
         .stat-box {
-            background: #111827;
+            background: #0d1117;
             border-radius: 8px;
             padding: 12px;
             text-align: center;
@@ -1234,7 +1258,7 @@
             display: flex;
             align-items: center;
             padding: 12px;
-            background: #1F2937;
+            background: #161b22;
             border-radius: 8px;
             margin-bottom: 8px;
         }
@@ -1284,7 +1308,7 @@
             transition: background-color 0.2s;
         }
         .group-settings-item:hover {
-            background-color: #374151;
+            background-color: #30363d;
         }
         .group-settings-item i {
             width: 20px;
@@ -1301,13 +1325,13 @@
             justify-content: space-between;
             align-items: center;
             padding: 16px;
-            background-color: #374151;
+            background-color: #21262d;
             border-radius: 8px;
             cursor: pointer;
             transition: background-color 0.2s;
         }
         .edit-group-item:hover {
-            background-color: #4B5563;
+            background-color: #30363d;
         }
         .edit-group-item .value {
             color: #9CA3AF;
@@ -1342,7 +1366,7 @@
             opacity: 1;
             transform: translateY(0);
         }
-        .toast.info { background-color: #3B82F6; }
+        .toast.info { background-image: linear-gradient(to right, #2dd4bf, #38bdf8); }
         .toast.success { background-color: #10B981; }
         .toast.error { background-color: #EF4444; }
 
@@ -1386,7 +1410,7 @@
         }
         .card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0, 255, 255, 0.1);
+            box-shadow: 0 10px 20px rgba(45, 212, 191, 0.1);
         }
         .nav-btn {
             padding: 0.5rem 1.5rem;
@@ -1397,9 +1421,9 @@
             border: 1px solid transparent;
         }
         .nav-btn.active {
-            background-color: #0ea5e9; /* sky-500 */
-            color: #ffffff;
-            box-shadow: 0 0 15px rgba(14, 165, 233, 0.5);
+            background-color: #2dd4bf; /* Teal-400 */
+            color: #0d1117;
+            box-shadow: 0 0 15px rgba(45, 212, 191, 0.5);
         }
         .nav-btn:not(.active) {
             background-color: #334155; /* slate-700 */
@@ -1471,9 +1495,9 @@
             gap: 0.5rem;
         }
         #group-study-timer-btn:hover {
-            background-color: #3b82f6;
+            background-image: linear-gradient(to right, #2dd4bf, #38bdf8);
             color: white;
-            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+            box-shadow: 0 2px 8px rgba(56, 189, 248, 0.3);
         }
 
         /* Group Detail Header Dropdown */
@@ -1483,9 +1507,9 @@
         }
 
         .group-detail-header-dropdown select {
-            background-color: #1f2937;
+            background-color: #161b22;
             color: white;
-            border: 1px solid #374151;
+            border: 1px solid #30363d;
             border-radius: 8px;
             padding: 8px 12px;
             font-size: 1rem;
@@ -1530,7 +1554,7 @@
             border-radius: 50%;
         }
         .avatar-option.selected {
-            border-color: #3B82F6;
+            border-color: #2dd4bf; /* Teal-400 */
             transform: scale(1.1);
         }
         .avatar-upload-label {
@@ -1556,20 +1580,36 @@
 
     <div id="auth-screen" class="active flex-col items-center justify-center h-full p-4 fade-in">
         <div class="w-full max-w-sm text-center">
-            <h1 class="text-4xl font-bold text-white mb-2">FocusFlow</h1>
+             <div class="flex items-center justify-center mb-6">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="url(#paint0_linear_auth)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M12 6V12L16 14" stroke="url(#paint1_linear_auth)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <defs>
+                    <linearGradient id="paint0_linear_auth" x1="2" y1="12" x2="22" y2="12" gradientUnits="userSpaceOnUse">
+                    <stop stop-color="#2DD4BF"/>
+                    <stop offset="1" stop-color="#38BDF8"/>
+                    </linearGradient>
+                    <linearGradient id="paint1_linear_auth" x1="12" y1="6" x2="16" y2="14" gradientUnits="userSpaceOnUse">
+                    <stop stop-color="#2DD4BF"/>
+                    <stop offset="1" stop-color="#38BDF8"/>
+                    </linearGradient>
+                    </defs>
+                </svg>
+                <span class="text-4xl font-bold ml-3 bg-clip-text text-transparent bg-gradient-to-r from-teal-400 to-sky-400">FocusFlow</span>
+            </div>
             <p class="text-gray-400 mb-8">Your Ultimate Study Companion</p>
             <div id="auth-form-container" class="bg-gray-800 p-8 rounded-2xl shadow-lg">
                 <form id="login-form" class="space-y-4">
                     <h2 class="text-2xl font-bold text-white mb-4">Login</h2>
-                    <input type="email" id="login-email" placeholder="Email" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                    <input type="password" id="login-password" placeholder="Password" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Sign In</button>
+                    <input type="email" id="login-email" placeholder="Email" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400" required>
+                    <input type="password" id="login-password" placeholder="Password" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400" required>
+                    <button type="submit" class="w-full bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white font-bold py-3 rounded-lg transition transform hover:scale-105">Sign In</button>
                 </form>
                 <form id="signup-form" class="hidden space-y-4">
                     <h2 class="text-2xl font-bold text-white mb-4">Create Account</h2>
-                    <input type="email" id="signup-email" placeholder="Email" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                    <input type="password" id="signup-password" placeholder="Password (min. 6 characters)" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required minlength="6">
-                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Sign Up</button>
+                    <input type="email" id="signup-email" placeholder="Email" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400" required>
+                    <input type="password" id="signup-password" placeholder="Password (min. 6 characters)" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400" required minlength="6">
+                    <button type="submit" class="w-full bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white font-bold py-3 rounded-lg transition transform hover:scale-105">Sign Up</button>
                 </form>
                 <p id="auth-error" class="text-red-400 text-sm mt-4 h-5"></p>
                 <div class="flex items-center my-6">
@@ -1603,9 +1643,9 @@
                     <div class="avatar-picker" id="username-avatar-picker">
                         <!-- Avatar options will be injected here -->
                     </div>
-                    <input type="text" id="username-input" placeholder="Enter your username" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required minlength="3">
+                    <input type="text" id="username-input" placeholder="Enter your username" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400" required minlength="3">
                     <p id="username-error" class="text-red-400 text-sm h-5"></p>
-                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Save Profile</button>
+                    <button type="submit" class="w-full bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white font-bold py-3 rounded-lg transition transform hover:scale-105">Save Profile</button>
                 </form>
             </div>
         </div>
@@ -1615,7 +1655,23 @@
         <main class="flex-grow overflow-y-auto no-scrollbar">
             <div id="page-timer" class="page active flex-col h-full">
                 <header class="p-4 md:p-6 flex items-center justify-between z-20">
-                    <h1 class="text-2xl font-bold text-white">FocusFlow</h1>
+                     <div class="flex items-center">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="url(#paint0_linear_header)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M12 6V12L16 14" stroke="url(#paint1_linear_header)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <defs>
+                            <linearGradient id="paint0_linear_header" x1="2" y1="12" x2="22" y2="12" gradientUnits="userSpaceOnUse">
+                            <stop stop-color="#2DD4BF"/>
+                            <stop offset="1" stop-color="#38BDF8"/>
+                            </linearGradient>
+                            <linearGradient id="paint1_linear_header" x1="12" y1="6" x2="16" y2="14" gradientUnits="userSpaceOnUse">
+                            <stop stop-color="#2DD4BF"/>
+                            <stop offset="1" stop-color="#38BDF8"/>
+                            </linearGradient>
+                            </defs>
+                        </svg>
+                        <span class="text-2xl font-bold ml-2 bg-clip-text text-transparent bg-gradient-to-r from-teal-400 to-sky-400">FocusFlow</span>
+                    </div>
                     <div class="flex items-center space-x-4">
                         <button id="groups-btn" class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-gray-400 hover:bg-gray-600 transition">
                             <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
@@ -1644,7 +1700,7 @@
                         <!-- New element for Total Break Time -->
                         <p id="total-break-time-display" class="text-gray-400 mt-1">Total Break: 00:00:00</p>
                         <div id="timer-controls" class="mt-8">
-                            <button id="start-studying-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-full text-lg transition-transform transform hover:scale-105">Start Studying</button>
+                            <button id="start-studying-btn" class="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white font-bold py-4 px-8 rounded-full text-lg transition-transform transform hover:scale-105">Start Studying</button>
                             <button id="stop-studying-btn" class="hidden bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-10 rounded-full text-lg transition-transform transform hover:scale-105">Stop</button>
                             <button id="manual-start-btn" class="hidden bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-8 rounded-full text-lg transition-transform transform hover:scale-105">Start Next</button>
                             <button id="pause-btn" class="hidden bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-4 px-10 rounded-full text-lg transition-transform transform hover:scale-105">Pause</button>
@@ -1664,7 +1720,7 @@
                     <h1 class="text-xl font-bold text-gray-100">Stats & Insights</h1>
                     <div class="w-6"></div> 
                 </header>
-                <div id="insights-container" class="p-4 md:p-6">
+                <div id="insights-container" class="p-4 md:p-6 bg-[#0d1117]">
                     <!-- New Dashboard HTML will be injected here -->
                 </div>
             </div>
@@ -1678,7 +1734,7 @@
                     </button>
                     <h1 class="text-xl font-bold text-gray-100">Leaderboard</h1>
                     <div class="w-6"></div> </header>
-                <div class="px-4 pt-4 border-b border-gray-800">
+                <div class="px-4 pt-4">
                     <div class="flex space-x-1" id="ranking-period-tabs">
                         <button class="ranking-tab-btn flex-1 py-2 px-4 rounded-t-lg font-semibold text-sm" data-period="daily">Daily</button>
                         <button class="ranking-tab-btn flex-1 py-2 px-4 rounded-t-lg font-semibold text-sm active" data-period="weekly">Last 7 Days</button>
@@ -1817,7 +1873,7 @@
                         </svg>
                     </button>
                     <h1 class="text-xl font-bold text-gray-100">Create New Group</h1>
-                    <button id="create-group-done-btn" class="px-4 py-2 bg-blue-600 rounded-lg font-semibold">Done</button>
+                    <button id="create-group-done-btn" class="px-4 py-2 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-lg font-semibold text-white">Done</button>
                 </header>
                 <div class="p-4 md:p-6">
                     <form id="create-group-form" class="space-y-6">
@@ -1912,33 +1968,33 @@
             <button class="nav-item p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors" data-page="stats"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg><p class="text-xs mt-1">Stats</p></button>
             <button class="nav-item p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors" data-page="ranking"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg><p class="text-xs mt-1">Ranking</p></button>
             <button class="nav-item p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors" data-page="planner"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg><p class="text-xs mt-1">Planner</p></button>
-            <button id="add-subject-btn" class="p-3 flex flex-col items-center justify-center text-gray-400 hover:bg-gray-700 transition-colors"><svg class="w-6 h-6 text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg><p class="text-xs mt-1 text-blue-400">Add Subject</p></button>
+            <button id="add-subject-btn" class="p-3 flex flex-col items-center justify-center text-teal-400 hover:bg-gray-700 transition-colors"><svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg><p class="text-xs mt-1">Add Subject</p></button>
         </nav>
     </div>
 
     <div id="toast-container"></div>
-    <div id="add-subject-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Add New Subject</div><button class="close-modal">&times;</button></div><form id="add-subject-form"><div class="mb-4"><label for="add-subject-name" class="block text-gray-300 mb-2">Subject Name</label><input type="text" id="add-subject-name" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required></div><div class="mb-4"><label class="block text-gray-300 mb-2">Color</label><div class="subject-color-picker"><div class="color-dot bg-red-500" data-color="bg-red-500"></div><div class="color-dot bg-blue-500 selected" data-color="bg-blue-500"></div><div class="color-dot bg-green-500" data-color="bg-green-500"></div><div class="color-dot bg-yellow-500" data-color="bg-yellow-500"></div><div class="color-dot bg-purple-500" data-color="bg-purple-500"></div><div class="color-dot bg-pink-500" data-color="bg-pink-500"></div><div class="color-dot bg-indigo-500" data-color="bg-indigo-500"></div><div class="color-dot bg-teal-500" data-color="bg-teal-500"></div><div class="color-dot bg-orange-500" data-color="bg-orange-500"></div><div class="color-dot bg-cyan-500" data-color="bg-cyan-500"></div><div class="color-dot bg-lime-500" data-color="bg-lime-500"></div><div class="color-dot bg-fuchsia-500" data-color="bg-fuchsia-500"></div><div class="color-dot bg-rose-500" data-color="bg-rose-500"></div><div class="color-dot bg-sky-500" data-color="bg-sky-500"></div><div class="color-dot bg-emerald-500" data-color="bg-emerald-500"></div><div class="color-dot bg-amber-500" data-color="bg-amber-500"></div><div class="color-dot bg-violet-500" data-color="bg-violet-500"></div></div></div><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Add Subject</button></form></div></div>
-    <div id="start-session-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Start New Session</div><button id="close-start-session-modal" class="close-modal">&times;</button></div><form id="start-session-form"><div id="subject-selection-list" class="mb-4 max-h-60 overflow-y-auto space-y-2"></div><div class="flex items-center gap-4 mt-4"><button type="button" id="open-add-subject-modal-from-start" class="w-full text-center py-3 bg-gray-600 hover:bg-gray-500 rounded-lg font-medium transition">Add New Subject</button><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Start Timer</button></div></form></div></div>
-    <div id="add-task-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Add New Task</div><button class="close-modal">&times;</button></div><form id="add-task-form"><div class="mb-4"><label for="add-task-name" class="block text-gray-300 mb-2">Task Description</label><input type="text" id="add-task-name" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required></div><div class="mb-4"><label for="add-task-date" class="block text-gray-300 mb-2">Date</label><input type="date" id="add-task-date" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required></div><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Add Task</button></form></div></div>
-    <div id="password-prompt-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Enter Group Password</div><button class="close-modal">&times;</button></div><form id="password-prompt-form"><input type="password" id="group-password-prompt-input" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required><div class="flex gap-2 mt-4"><button type="button" class="close-modal w-full py-2 bg-gray-600 rounded-lg">Cancel</button><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-lg transition">Submit</button></div></form></div></div>
+    <div id="add-subject-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Add New Subject</div><button class="close-modal">&times;</button></div><form id="add-subject-form"><div class="mb-4"><label for="add-subject-name" class="block text-gray-300 mb-2">Subject Name</label><input type="text" id="add-subject-name" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400" required></div><div class="mb-4"><label class="block text-gray-300 mb-2">Color</label><div class="subject-color-picker"><div class="color-dot bg-red-500" data-color="bg-red-500"></div><div class="color-dot bg-blue-500 selected" data-color="bg-blue-500"></div><div class="color-dot bg-green-500" data-color="bg-green-500"></div><div class="color-dot bg-yellow-500" data-color="bg-yellow-500"></div><div class="color-dot bg-purple-500" data-color="bg-purple-500"></div><div class="color-dot bg-pink-500" data-color="bg-pink-500"></div><div class="color-dot bg-indigo-500" data-color="bg-indigo-500"></div><div class="color-dot bg-teal-500" data-color="bg-teal-500"></div><div class="color-dot bg-orange-500" data-color="bg-orange-500"></div><div class="color-dot bg-cyan-500" data-color="bg-cyan-500"></div><div class="color-dot bg-lime-500" data-color="bg-lime-500"></div><div class="color-dot bg-fuchsia-500" data-color="bg-fuchsia-500"></div><div class="color-dot bg-rose-500" data-color="bg-rose-500"></div><div class="color-dot bg-sky-500" data-color="bg-sky-500"></div><div class="color-dot bg-emerald-500" data-color="bg-emerald-500"></div><div class="color-dot bg-amber-500" data-color="bg-amber-500"></div><div class="color-dot bg-violet-500" data-color="bg-violet-500"></div></div></div><button type="submit" class="w-full bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-bold py-3 rounded-lg transition">Add Subject</button></form></div></div>
+    <div id="start-session-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Start New Session</div><button id="close-start-session-modal" class="close-modal">&times;</button></div><form id="start-session-form"><div id="subject-selection-list" class="mb-4 max-h-60 overflow-y-auto space-y-2"></div><div class="flex items-center gap-4 mt-4"><button type="button" id="open-add-subject-modal-from-start" class="w-full text-center py-3 bg-gray-600 hover:bg-gray-500 rounded-lg font-medium transition">Add New Subject</button><button type="submit" class="w-full bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-bold py-3 rounded-lg transition">Start Timer</button></div></form></div></div>
+    <div id="add-task-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Add New Task</div><button class="close-modal">&times;</button></div><form id="add-task-form"><div class="mb-4"><label for="add-task-name" class="block text-gray-300 mb-2">Task Description</label><input type="text" id="add-task-name" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400" required></div><div class="mb-4"><label for="add-task-date" class="block text-gray-300 mb-2">Date</label><input type="date" id="add-task-date" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400" required></div><button type="submit" class="w-full bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-bold py-3 rounded-lg transition">Add Task</button></form></div></div>
+    <div id="password-prompt-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Enter Group Password</div><button class="close-modal">&times;</button></div><form id="password-prompt-form"><input type="password" id="group-password-prompt-input" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400" required><div class="flex gap-2 mt-4"><button type="button" class="close-modal w-full py-2 bg-gray-600 rounded-lg">Cancel</button><button type="submit" class="w-full bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-bold py-2 rounded-lg transition">Submit</button></div></form></div></div>
     <div id="confirmation-modal" class="modal"><div class="modal-content"><div class="modal-header"><h2 id="confirmation-modal-title" class="modal-title">Are you sure?</h2><button class="close-modal">&times;</button></div><p id="confirmation-modal-message">This action cannot be undone.</p><div id="confirmation-modal-buttons"><button id="cancel-btn">Cancel</button><button id="confirm-btn">Confirm</button></div></div></div>
     
     <!-- Edit Profile Modal -->
     <div id="edit-profile-modal" class="modal">
-        <div class="modal-content"><div class="modal-header"><div class="modal-title">Edit Profile</div><button class="close-modal">&times;</button></div><form id="edit-profile-form"><div class="mb-4"><label for="edit-username-input" class="block text-gray-300 mb-2">Username</label><input type="text" id="edit-username-input" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required minlength="3"></div><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Save Changes</button></form></div></div>
+        <div class="modal-content"><div class="modal-header"><div class="modal-title">Edit Profile</div><button class="close-modal">&times;</button></div><form id="edit-profile-form"><div class="mb-4"><label for="edit-username-input" class="block text-gray-300 mb-2">Username</label><input type="text" id="edit-username-input" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400" required minlength="3"></div><button type="submit" class="w-full bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-bold py-3 rounded-lg transition">Save Changes</button></form></div></div>
     </div>
     
     <!-- Study Goal Modal -->
-    <div id="study-goal-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Set Study Goal</div><button class="close-modal">&times;</button></div><form id="study-goal-form"><div class="mb-4"><label for="study-goal-input" class="block text-gray-300 mb-2">Daily Study Goal (hours)</label><input type="number" id="study-goal-input" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required min="1" max="24"></div><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Set Goal</button></form></div></div>
+    <div id="study-goal-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Set Study Goal</div><button class="close-modal">&times;</button></div><form id="study-goal-form"><div class="mb-4"><label for="study-goal-input" class="block text-gray-300 mb-2">Daily Study Goal (hours)</label><input type="number" id="study-goal-input" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400" required min="1" max="24"></div><button type="submit" class="w-full bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-bold py-3 rounded-lg transition">Set Goal</button></form></div></div>
 
     <!-- Pomodoro Settings Modal -->
-    <div id="pomodoro-settings-modal" class="modal"><div class="modal-content no-scrollbar"><div class="modal-header"><div class="modal-title">Pomodoro Settings</div><button class="close-modal">&times;</button></div><form id="pomodoro-settings-form" class="space-y-4"><div class="grid grid-cols-1 gap-4"><div><label for="pomodoro-work-duration" class="block text-sm font-medium text-gray-300">Focus Duration (minutes)</label><input type="number" id="pomodoro-work-duration" class="w-full bg-gray-700 border-gray-600 rounded-lg p-2 mt-1 text-white" min="1" required></div><div><label for="pomodoro-short-break-duration" class="block text-sm font-medium text-gray-300">Short Break (minutes)</label><input type="number" id="pomodoro-short-break-duration" class="w-full bg-gray-700 border-gray-600 rounded-lg p-2 mt-1 text-white" min="1" required></div><div><label for="pomodoro-long-break-duration" class="block text-sm font-medium text-gray-300">Long Break (minutes)</label><input type="number" id="pomodoro-long-break-duration" class="w-full bg-gray-700 border-gray-600 rounded-lg p-2 mt-1 text-white" min="1" required></div><div><label for="pomodoro-long-break-interval" class="block text-sm font-medium text-gray-300">Long Break Interval (sessions)</label><input type="number" id="pomodoro-long-break-interval" class="w-full bg-gray-700 border-gray-600 rounded-lg p-2 mt-1 text-white" min="2" required></div></div><hr class="border-gray-600 my-2"><h3 class="text-lg font-semibold text-gray-200">Alarms</h3><div class="grid grid-cols-1 gap-4"><div><label for="pomodoro-volume" class="block text-sm font-medium text-gray-300">Volume</label><input type="range" id="pomodoro-volume" min="0" max="1" step="0.1" class="w-full mt-1"></div><div><label for="pomodoro-start-sound" class="block text-sm font-medium text-gray-300">Starting Bell</label><select id="pomodoro-start-sound" class="w-full bg-gray-700 border-gray-600 rounded-lg p-2 mt-1 text-white"></select></div><div><label for="pomodoro-focus-sound" class="block text-sm font-medium text-gray-300">Focus Alarm (End of Break)</label><select id="pomodoro-focus-sound" class="w-full bg-gray-700 border-gray-600 rounded-lg p-2 mt-1 text-white"></select></div><div><label for="pomodoro-break-sound" class="block text-sm font-medium text-gray-300">Break Alarm (End of Focus)</label><select id="pomodoro-break-sound" class="w-full bg-gray-700 border-gray-600 rounded-lg p-2 mt-1 text-white"></select></div></div><hr class="border-gray-600 my-2"><h3 class="text-lg font-semibold text-gray-200">Automation</h3><div class="space-y-3"> <div class="flex items-center justify-between"><span class="text-sm font-medium text-gray-300">Auto-start next focus session?</span><label class="toggle-switch"><input type="checkbox" id="pomodoro-auto-start-focus"><span class="slider"></span></label></div><div class="flex items-center justify-between"><span class="text-sm font-medium text-gray-300">Auto-start next break?</span><label class="toggle-switch"><input type="checkbox" id="pomodoro-auto-start-break"><span class="slider"></span></label></div></div><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition mt-4">Save Settings</button></form></div></div>
+    <div id="pomodoro-settings-modal" class="modal"><div class="modal-content no-scrollbar"><div class="modal-header"><div class="modal-title">Pomodoro Settings</div><button class="close-modal">&times;</button></div><form id="pomodoro-settings-form" class="space-y-4"><div class="grid grid-cols-1 gap-4"><div><label for="pomodoro-work-duration" class="block text-sm font-medium text-gray-300">Focus Duration (minutes)</label><input type="number" id="pomodoro-work-duration" class="w-full bg-gray-700 border-gray-600 rounded-lg p-2 mt-1 text-white" min="1" required></div><div><label for="pomodoro-short-break-duration" class="block text-sm font-medium text-gray-300">Short Break (minutes)</label><input type="number" id="pomodoro-short-break-duration" class="w-full bg-gray-700 border-gray-600 rounded-lg p-2 mt-1 text-white" min="1" required></div><div><label for="pomodoro-long-break-duration" class="block text-sm font-medium text-gray-300">Long Break (minutes)</label><input type="number" id="pomodoro-long-break-duration" class="w-full bg-gray-700 border-gray-600 rounded-lg p-2 mt-1 text-white" min="1" required></div><div><label for="pomodoro-long-break-interval" class="block text-sm font-medium text-gray-300">Long Break Interval (sessions)</label><input type="number" id="pomodoro-long-break-interval" class="w-full bg-gray-700 border-gray-600 rounded-lg p-2 mt-1 text-white" min="2" required></div></div><hr class="border-gray-600 my-2"><h3 class="text-lg font-semibold text-gray-200">Alarms</h3><div class="grid grid-cols-1 gap-4"><div><label for="pomodoro-volume" class="block text-sm font-medium text-gray-300">Volume</label><input type="range" id="pomodoro-volume" min="0" max="1" step="0.1" class="w-full mt-1"></div><div><label for="pomodoro-start-sound" class="block text-sm font-medium text-gray-300">Starting Bell</label><select id="pomodoro-start-sound" class="w-full bg-gray-700 border-gray-600 rounded-lg p-2 mt-1 text-white"></select></div><div><label for="pomodoro-focus-sound" class="block text-sm font-medium text-gray-300">Focus Alarm (End of Break)</label><select id="pomodoro-focus-sound" class="w-full bg-gray-700 border-gray-600 rounded-lg p-2 mt-1 text-white"></select></div><div><label for="pomodoro-break-sound" class="block text-sm font-medium text-gray-300">Break Alarm (End of Focus)</label><select id="pomodoro-break-sound" class="w-full bg-gray-700 border-gray-600 rounded-lg p-2 mt-1 text-white"></select></div></div><hr class="border-gray-600 my-2"><h3 class="text-lg font-semibold text-gray-200">Automation</h3><div class="space-y-3"> <div class="flex items-center justify-between"><span class="text-sm font-medium text-gray-300">Auto-start next focus session?</span><label class="toggle-switch"><input type="checkbox" id="pomodoro-auto-start-focus"><span class="slider"></span></label></div><div class="flex items-center justify-between"><span class="text-sm font-medium text-gray-300">Auto-start next break?</span><label class="toggle-switch"><input type="checkbox" id="pomodoro-auto-start-break"><span class="slider"></span></label></div></div><button type="submit" class="w-full bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-bold py-3 rounded-lg transition mt-4">Save Settings</button></form></div></div>
 
     <!-- Edit Session Modal -->
-    <div id="edit-session-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Edit Session</div><button class="close-modal">&times;</button></div><form id="edit-session-form"><div class="mb-4"><label for="edit-session-duration" class="block text-gray-300 mb-2">Duration (minutes)</label><input type="number" id="edit-session-duration" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required min="1"></div><input type="hidden" id="edit-session-id"><input type="hidden" id="edit-session-old-duration"><input type="hidden" id="edit-session-ended-at"><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Save Changes</button></form></div></div>
+    <div id="edit-session-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Edit Session</div><button class="close-modal">&times;</button></div><form id="edit-session-form"><div class="mb-4"><label for="edit-session-duration" class="block text-gray-300 mb-2">Duration (minutes)</label><input type="number" id="edit-session-duration" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400" required min="1"></div><input type="hidden" id="edit-session-id"><input type="hidden" id="edit-session-old-duration"><input type="hidden" id="edit-session-ended-at"><button type="submit" class="w-full bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-bold py-3 rounded-lg transition">Save Changes</button></form></div></div>
     
     <!-- Edit Subject Modal -->
-    <div id="edit-subject-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Edit Subject</div><button class="close-modal">&times;</button></div><form id="edit-subject-form"><input type="hidden" id="edit-subject-id"><div class="mb-4"><label for="edit-subject-name" class="block text-gray-300 mb-2">Subject Name</label><input type="text" id="edit-subject-name" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required></div><div class="mb-4"><label class="block text-gray-300 mb-2">Color</label><div class="subject-color-picker" id="edit-subject-color-picker"></div></div><button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Save Changes</button></form></div></div>
+    <div id="edit-subject-modal" class="modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">Edit Subject</div><button class="close-modal">&times;</button></div><form id="edit-subject-form"><input type="hidden" id="edit-subject-id"><div class="mb-4"><label for="edit-subject-name" class="block text-gray-300 mb-2">Subject Name</label><input type="text" id="edit-subject-name" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400" required></div><div class="mb-4"><label class="block text-gray-300 mb-2">Color</label><div class="subject-color-picker" id="edit-subject-color-picker"></div></div><button type="submit" class="w-full bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-bold py-3 rounded-lg transition">Save Changes</button></form></div></div>
 
         <div id="group-settings-modal" class="modal">
         <div class="modal-content">
@@ -2008,7 +2064,7 @@
                     <input type="text" id="edit-group-password" class="w-full bg-gray-700 rounded-lg p-3" placeholder="Leave blank for public">
                 </div>
 
-                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition mt-4">Save Changes</button>
+                <button type="submit" class="w-full bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-bold py-3 rounded-lg transition mt-4">Save Changes</button>
             </form>
         </div>
     </div>
@@ -2025,7 +2081,7 @@
             <div id="avatar-character-picker" class="avatar-picker">
                 <!-- Character options will be injected here -->
             </div>
-            <button id="save-character-avatar-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition mt-4">Save Character</button>
+            <button id="save-character-avatar-btn" class="w-full bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-bold py-3 rounded-lg transition mt-4">Save Character</button>
         </div>
     </div>
 
@@ -2044,7 +2100,7 @@
                     <!-- Studicons will be injected here -->
                 </div>
             </div>
-            <button id="save-studicon-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition mt-4">Save Studicon</button>
+            <button id="save-studicon-btn" class="w-full bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-bold py-3 rounded-lg transition mt-4">Save Studicon</button>
         </div>
     </div>
 
@@ -2090,8 +2146,8 @@
             </div>
             <form id="quick-add-task-form">
                 <input type="hidden" id="quick-add-task-date-input">
-                <input type="text" id="quick-add-task-title-input" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Task title..." required>
-                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition mt-4">Add Task</button>
+                <input type="text" id="quick-add-task-title-input" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400" placeholder="Task title..." required>
+                <button type="submit" class="w-full bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-bold py-3 rounded-lg transition mt-4">Add Task</button>
             </form>
         </div>
     </div>
@@ -2112,8 +2168,8 @@
                 <!-- Rules text will be displayed here -->
             </div>
             <div id="group-rules-edit-container" class="hidden mt-4">
-                <textarea id="group-rules-textarea" class="w-full bg-gray-800 rounded-lg p-3 h-48 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter group rules..."></textarea>
-                <button id="save-group-rules-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition mt-4">Save Rules</button>
+                <textarea id="group-rules-textarea" class="w-full bg-gray-800 rounded-lg p-3 h-48 text-white focus:outline-none focus:ring-2 focus:ring-teal-400" placeholder="Enter group rules..."></textarea>
+                <button id="save-group-rules-btn" class="w-full bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-bold py-3 rounded-lg transition mt-4">Save Rules</button>
             </div>
         </div>
     </div>
@@ -2140,7 +2196,7 @@
             </div>
             <form id="repeat-settings-form">
                 <div class="space-y-4">
-                    <select id="repeat-type-select" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <select id="repeat-type-select" class="w-full bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400">
                         <option value="none">Does not repeat</option>
                         <option value="daily">Daily</option>
                         <option value="weekly">Weekly</option>
@@ -8133,6 +8189,7 @@ if (achievementsGrid) {
     </script>
 </body>
 </html>
+
 
 
 
