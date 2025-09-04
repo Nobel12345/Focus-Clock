@@ -2255,6 +2255,12 @@ import {
             runTransaction,
             writeBatch as firestoreWriteBatch // <-- Alias it here
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import {
+            getStorage,
+            ref,
+            uploadBytes,
+            getDownloadURL
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
         const ACHIEVEMENTS = {
     'novice_scholar': { name: 'Novice Scholar', description: 'Study for a total of 1 hour.' },
     'dedicated_learner': { name: 'Dedicated Learner', description: 'Study for a total of 10 hours.' },
@@ -2421,7 +2427,7 @@ import {
         const getCurrentDate = () => new Date();
 
         // --- App State ---
-        let db, auth, messaging, functions;
+        let db, auth, storage, messaging, functions;
         let currentUser = null;
         let currentUserData = {};
         let dashboardCharts = {};
@@ -2745,40 +2751,22 @@ let pauseStartTime = 0;
             }
             showToast('Uploading profile picture...', 'info');
 
-            const toBase64 = file => new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = () => {
-                    const img = new Image();
-                    img.src = reader.result;
-                    img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        const MAX_WIDTH = 400; // Smaller size for profile pics
-                        let width = img.width;
-                        let height = img.height;
-
-                        if (width > MAX_WIDTH) {
-                            height *= MAX_WIDTH / width;
-                            width = MAX_WIDTH;
-                        }
-                        canvas.width = width;
-                        canvas.height = height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, width, height);
-                        resolve(canvas.toDataURL('image/jpeg', 0.8)); // Use JPEG for smaller size
-                    };
-                };
-                reader.onerror = error => reject(error);
-            });
+            const storageRef = ref(storage, `profile-pictures/${currentUser.uid}/${file.name}`);
 
             try {
-                const base64Image = await toBase64(file);
+                // Upload the file
+                const snapshot = await uploadBytes(storageRef, file);
+                
+                // Get the download URL
+                const downloadURL = await getDownloadURL(snapshot.ref);
+
+                // Update Firestore documents
                 const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid);
                 const publicUserRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
                 
                 const batch = firestoreWriteBatch(db);
-                batch.update(userRef, { photoURL: base64Image });
-                batch.update(publicUserRef, { photoURL: base64Image });
+                batch.update(userRef, { photoURL: downloadURL });
+                batch.update(publicUserRef, { photoURL: downloadURL });
                 await batch.commit();
 
                 showToast('Profile picture updated!', 'success');
@@ -2800,39 +2788,21 @@ let pauseStartTime = 0;
             }
             showToast('Uploading image...', 'info');
 
-            const toBase64 = file => new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = () => {
-                    const img = new Image();
-                    img.src = reader.result;
-                    img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        const MAX_WIDTH = 800;
-                        let width = img.width;
-                        let height = img.height;
-
-                        if (width > MAX_WIDTH) {
-                            height *= MAX_WIDTH / width;
-                            width = MAX_WIDTH;
-                        }
-                        canvas.width = width;
-                        canvas.height = height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, width, height);
-                        resolve(canvas.toDataURL('image/jpeg', 0.8));
-                    };
-                };
-                reader.onerror = error => reject(error);
-            });
+            const storageRef = ref(storage, `group-chats/${groupId}/${Date.now()}_${file.name}`);
 
             try {
-                const base64Image = await toBase64(file);
+                // Upload the file
+                const snapshot = await uploadBytes(storageRef, file);
+                
+                // Get the download URL
+                const downloadURL = await getDownloadURL(snapshot.ref);
+
+                // Add message to Firestore
                 const messagesRef = collection(db, 'artifacts', appId, 'public', 'data', 'groups', groupId, 'messages');
                 const userDoc = await getDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid));
                 
                 await addDoc(messagesRef, {
-                    imageUrl: base64Image,
+                    imageUrl: downloadURL,
                     text: '',
                     senderId: currentUser.uid,
                     senderName: userDoc.data().username,
@@ -3588,6 +3558,7 @@ let pauseStartTime = 0;
                 const app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
+                storage = getStorage(app); // Initialize Firebase Storage
 
                 messaging = getMessaging(app); // Initialize Firebase Messaging service
         functions = getFunctions(app); // Initialize Firebase Functions service
